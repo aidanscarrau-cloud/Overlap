@@ -96,6 +96,9 @@ export type PlayerLoad = {
 };
 
 export type ClubData = {
+  evaluations: import("./idp").Evaluation[];
+  goals: import("./idp").Goal[];
+  goalUpdates: import("./idp").GoalUpdate[];
   loads: PlayerLoad[];
   announcements: Announcement[];
   replies: Reply[];

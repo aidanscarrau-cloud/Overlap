@@ -7,6 +7,7 @@ import { Crest, Icon, PitchLines, Shirt, Timeline, totalMins } from "@/component
 import { STATUS } from "@/lib/constants";
 import { ReplyButtons } from "../Replies";
 import { LoadWatch, MyLoadLine } from "../Load";
+import { overall, reviewDue } from "@/lib/idp";
 import { AnnouncementItem } from "./Announcements";
 import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
 import type { Status } from "@/lib/types";
@@ -149,6 +150,10 @@ export function Overview() {
           </div>
         </section>
       )}
+
+      {myPlayers.map((p) => (
+        <MyGoals key={"g" + p.id} playerId={p.id} name={kidName(p)} parent={parent} />
+      ))}
 
       {myPlayers.map((p) => (
         <MyAvailability key={p.id} playerId={p.id} status={p.status} note={p.status_note} name={kidName(p)} parent={parent} />
@@ -302,6 +307,7 @@ export function Overview() {
       </div>
 
       {can("attendance.view") && <LoadWatch />}
+      {can("idp.view") && <DevelopmentSummary />}
 
       <section className="card" style={{ marginTop: 16 }}>
         <div className="card-h">
@@ -372,6 +378,67 @@ function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string
             <ReplyButtons sessionId={s.id} playerId={playerId} />
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function MyGoals({ playerId, name, parent }: { playerId: string; name: string; parent: boolean }) {
+  const { goalsOf, evaluationsOf } = useApp();
+  const active = goalsOf(playerId).filter((g) => g.status === "active");
+  const latest = evaluationsOf(playerId)[0];
+  if (!active.length && !latest) return null;
+  return (
+    <section className="card" style={{ marginTop: 16 }}>
+      <div className="card-h">
+        <h2>{parent ? `${name}'s goals` : "Your goals"}</h2>
+        <Link className="btn sm" href={`/development/${playerId}`}>
+          Development plan
+        </Link>
+      </div>
+      <div className="card-b rows">
+        {active.slice(0, 3).map((g) => (
+          <Link key={g.id} href={`/development/${playerId}`} className="rowi" style={{ textDecoration: "none", color: "inherit" }}>
+            <span className="rt">
+              <b>{g.title}</b>
+              <span className="goal-progress" style={{ marginTop: 4 }}>
+                <span className="bar">
+                  <i style={{ width: `${g.progress}%` }} />
+                </span>
+                <b className="tnum" style={{ fontSize: 12.5 }}>
+                  {g.progress}%
+                </b>
+              </span>
+            </span>
+          </Link>
+        ))}
+        {!active.length && <p className="muted" style={{ margin: 0 }}>No active goals right now. Latest overall rating: {overall(latest?.ratings) ?? "–"}/10.</p>}
+      </div>
+    </section>
+  );
+}
+
+function DevelopmentSummary() {
+  const { squad, evaluationsOf, goalsOf } = useApp();
+  const players = squad();
+  if (!players.length) return null;
+  const due = players.filter((p) => reviewDue(evaluationsOf(p.id)[0])).length;
+  const active = players.reduce((n, p) => n + goalsOf(p.id).filter((g) => g.status === "active").length, 0);
+  return (
+    <section className="card" style={{ marginTop: 16 }}>
+      <div className="card-h">
+        <h2>Development</h2>
+        <Link className="btn sm" href="/development">
+          Open
+        </Link>
+      </div>
+      <div className="card-b" style={{ display: "flex", gap: 24, flexWrap: "wrap", fontSize: 14 }}>
+        <span>
+          <b className="tnum">{due}</b> {due === 1 ? "player is" : "players are"} due for review
+        </span>
+        <span>
+          <b className="tnum">{active}</b> active goal{active === 1 ? "" : "s"}
+        </span>
       </div>
     </section>
   );

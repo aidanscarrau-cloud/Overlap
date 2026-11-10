@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import type { ClubData, Drill, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import type { Perm } from "@/lib/permissions";
+import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 
 export type Sheet =
   | { kind: "session"; id: string | null }
@@ -13,6 +14,8 @@ export type Sheet =
   | { kind: "drill"; id: string }
   | { kind: "drill-edit"; id: string | null }
   | { kind: "team"; id: string | null }
+  | { kind: "evaluation"; playerId: string; id: string | null }
+  | { kind: "goal"; playerId: string; id: string | null }
   | null;
 
 type Ctx = {
@@ -36,6 +39,10 @@ type Ctx = {
   myPlayers: Player[];
   /** Training load across all the player's teams, if this person may see it. */
   loadOf: (playerId: string) => PlayerLoad | undefined;
+  /** Evaluations for a player, newest first. */
+  evaluationsOf: (playerId: string) => Evaluation[];
+  goalsOf: (playerId: string) => Goal[];
+  updatesOf: (goalId: string) => GoalUpdate[];
   /** First name, or full name if two of this person's players share a first name. */
   kidName: (p: Player) => string;
   playerRate: (p: Player) => number | null;
@@ -140,6 +147,9 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     repliesFor: (sid) => replyMap.get(sid) ?? new Map(),
     myPlayers,
     loadOf: (id) => loadMap.get(id),
+    evaluationsOf: (pid) => data.evaluations.filter((e) => e.player_id === pid),
+    goalsOf: (pid) => data.goals.filter((g) => g.player_id === pid),
+    updatesOf: (gid) => data.goalUpdates.filter((u) => u.goal_id === gid),
     kidName: (p) => {
       const f = p.full_name.split(" ")[0];
       return myPlayers.filter((x) => x.full_name.split(" ")[0] === f).length > 1 ? p.full_name : f;

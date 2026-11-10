@@ -5,6 +5,7 @@ import { useApp } from "../AppProvider";
 import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
 import { Shirt } from "@/components/ui";
 import { LoadCard } from "../Load";
+import Link from "next/link";
 import { POS, STATUS } from "@/lib/constants";
 import { errMsg } from "@/lib/format";
 import type { Position, Status } from "@/lib/types";
@@ -42,6 +43,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
           </div>
         </div>
         <OtherTeams playerId={p.id} />
+        <IdpLink playerId={p.id} />
         <LoadCard playerId={p.id} />
         {r !== null && <AttendanceCard r={r} />}
         <ReadOnlyNote>You can view this player but not edit their details.</ReadOnlyNote>
@@ -141,6 +143,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
         )}
       </div>
       {p && <OtherTeams playerId={p.id} />}
+      {p && <IdpLink playerId={p.id} />}
       {p && <LoadCard playerId={p.id} />}
       {r !== null && <AttendanceCard r={r} />}
       {p && (data.role === "admin" || can("members.view")) && (
@@ -201,6 +204,18 @@ function OtherTeams({ playerId }: { playerId: string }) {
         They&apos;ll appear in those teams&apos; squads, attendance and session replies. {data.teams.find((t) => t.id === p.team_id)?.name} stays their main team.
       </span>
     </div>
+  );
+}
+
+function IdpLink({ playerId }: { playerId: string }) {
+  const { can, myPlayers, close, evaluationsOf, goalsOf } = useApp();
+  if (!can("idp.view") && !myPlayers.some((p) => p.id === playerId)) return null;
+  const evs = evaluationsOf(playerId).length;
+  const goals = goalsOf(playerId).filter((g) => g.status === "active").length;
+  return (
+    <Link href={`/development/${playerId}`} className="btn" onClick={close} style={{ justifySelf: "start" }}>
+      Development plan · {evs} evaluation{evs === 1 ? "" : "s"}, {goals} active goal{goals === 1 ? "" : "s"} →
+    </Link>
   );
 }
 

@@ -483,3 +483,94 @@ fieldset.plain:disabled .acts,fieldset.plain:disabled .mins input{opacity:.6}
 .skel-block{border-radius:var(--r);background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:skel 1.2s ease-in-out infinite}
 @keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.skel-block{animation:none}}
+
+/* IDP charts */
+.radar{margin:0;display:grid;gap:8px;justify-items:center}
+.radar svg{width:100%;max-width:380px;height:auto;overflow:visible}
+.radar-grid{fill:none;stroke:var(--line);stroke-width:1}
+.radar-tick{font-size:9px;fill:var(--muted)}
+.radar-prev{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}
+.radar-latest{fill:color-mix(in srgb,var(--accent) 18%,transparent);stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+.radar-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.radar-pt:hover .radar-dot{r:6}
+.radar-label{font-size:11.5px;font-weight:600;fill:var(--ink)}
+.radar-val{font-weight:800;fill:var(--ink)}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.chart-legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:3px solid var(--accent)}
+.sw.prev{border-top:2px dashed var(--muted)}
+.spark{display:block;flex:none}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark circle{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+.rating{display:flex;align-items:center;gap:10px;min-width:0}
+.rating-track{position:relative;flex:1;height:8px;border-radius:99px;background:var(--surface-2);min-width:60px}
+.rating-track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--accent)}
+.rating-track b{position:absolute;top:-3px;width:2px;height:14px;background:var(--ink);opacity:.45;border-radius:1px;transform:translateX(-1px)}
+.rating-num{font-family:var(--display);font-weight:800;font-size:20px;min-width:22px;text-align:right}
+.delta{font-size:11.5px;font-weight:700;white-space:nowrap}
+.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
+
+/* IDP editors */
+.ov-big{font-family:var(--display);font-weight:800;font-size:40px;line-height:1}
+.eval-areas{display:grid;gap:12px}
+.eval-area{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.eval-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.eval-top label{display:grid;gap:2px;min-width:0}
+.eval-top label .muted{font-size:12.5px}
+.eval-score{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;display:flex;align-items:baseline;gap:4px}
+.eval-score small{font-family:var(--body);font-size:12px;font-weight:700}
+.eval-score small.up{color:var(--good)}.eval-score small.down{color:var(--bad)}
+.slider{width:100%;accent-color:var(--accent);height:28px}
+
+/* Development (IDPs) */
+.sec-title{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase}
+.idp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.idp-grid{grid-template-columns:1fr}}
+.idp-ov{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px}
+.area-list{display:grid;gap:14px}
+.area-row{display:grid;gap:6px}
+.area-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.area-comment{margin:0;font-size:13px;color:var(--muted)}
+.idp-note p{margin:0;white-space:pre-wrap}
+.idp-note.good{box-shadow:inset 3px 0 0 var(--good),var(--shadow-sm)}
+.idp-note.work{box-shadow:inset 3px 0 0 var(--gold),var(--shadow-sm)}
+.goal-list{display:grid;gap:12px}
+.goal{padding:16px 18px;display:grid;gap:8px}
+.goal.achieved{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.goal.dropped{opacity:.7}
+.goal h3{margin:0;font-size:17px;font-weight:700;line-height:1.3}
+.goal-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.goal-progress{display:flex;gap:10px;align-items:center}
+.goal-progress .bar{height:8px}
+.goal-progress b{min-width:40px;text-align:right}
+.goal-log{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:6px;border-left:2px solid var(--line);padding-left:12px}
+.goal-log li{display:grid;gap:1px;font-size:13.5px}
+.goal-log .who{font-size:12px;font-weight:700;color:var(--ink)}
+.goal-log li.player .who{color:var(--accent)}
+.goal-form{display:grid;gap:8px;margin-top:4px}
+.goal-slider{display:grid;gap:2px;font-size:12.5px}
+.done-goals{margin-top:12px}
+.done-goals summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;margin-bottom:10px}
+.evidence{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.evidence>div{display:grid;gap:2px}
+.evidence b{font-family:var(--display);font-weight:800;font-size:32px;line-height:1}
+.evidence .muted{font-size:12.5px}
+.team-profile{display:grid;gap:10px}
+.tp-row{display:grid;grid-template-columns:120px 1fr 36px;gap:12px;align-items:center}
+.tp-label{font-weight:600;font-size:14px}
+.tp-row b{font-family:var(--display);font-weight:800;font-size:20px;text-align:right}
+.dev-list{display:grid;gap:10px}
+.dev-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:12px 16px;text-decoration:none;color:inherit}
+.dev-row:hover{border-color:var(--accent)}
+.dev-main{display:grid;gap:3px;min-width:0}
+.dev-main>b{font-size:15.5px}
+.dev-main .muted{font-size:12.5px}
+.dev-goals{display:flex;gap:10px;flex-wrap:wrap;font-size:12.5px}
+.dev-goal{display:inline-flex;align-items:center;gap:6px;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev-goal .bar{width:40px;flex:none;height:5px}
+.dev-mini{display:flex;gap:3px;align-items:flex-end;height:30px}
+.dev-mini span{width:7px;height:100%;background:var(--surface-2);border-radius:2px;display:flex;align-items:flex-end;overflow:hidden}
+.dev-mini i{display:block;width:100%;background:var(--accent);border-radius:2px}
+.dev-ov{display:grid;justify-items:end;min-width:48px}
+.dev-ov b{font-family:var(--display);font-weight:800;font-size:28px;line-height:1}
+@media (max-width:640px){.dev-row{grid-template-columns:auto 1fr auto}.dev-mini{display:none}}

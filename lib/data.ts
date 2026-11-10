@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
+import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 import type { Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
@@ -43,6 +44,9 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("announcements").select("id,team_id,title,body,pinned,author_id,author_name,created_at").eq("club_id", clubId).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100),
       supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
       supabase.rpc("get_player_loads", { c: clubId }),
+      supabase.from("player_evaluations").select("id,player_id,evaluated_on,ratings,comments,strengths,improvements,summary,shared,author_name,created_at").eq("club_id", clubId).order("evaluated_on", { ascending: false }).order("created_at", { ascending: false }),
+      supabase.from("player_goals").select("id,player_id,area,title,detail,target_date,status,progress,achieved_on,author_name,created_at,updated_at").eq("club_id", clubId).order("created_at"),
+      supabase.from("goal_updates").select("id,goal_id,note,progress,by_staff,author_id,author_name,created_at").eq("club_id", clubId).order("created_at"),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     ]);
 
@@ -54,9 +58,9 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, profile] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
-  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads]) if (r.error) throw r.error;
+  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
   const teamsByMember = new Map<string, string[]>();
   ((memberTeams.data ?? []) as { membership_id: string; team_id: string }[]).forEach((r) => {
@@ -118,6 +122,9 @@ export async function getClubData(): Promise<ClubData> {
     announcements: (announcements.data ?? []) as Announcement[],
     replies: (replies.data ?? []) as Reply[],
     loads: (loads.data ?? []) as PlayerLoad[],
+    evaluations: (evaluations.data ?? []) as Evaluation[],
+    goals: (goals.data ?? []) as Goal[],
+    goalUpdates: (goalUpdates.data ?? []) as GoalUpdate[],
     members: memberList,
   };
 }

@@ -5,6 +5,7 @@ import { SessionSheet } from "./SessionSheet";
 import { PlayerSheet } from "./PlayerSheet";
 import { DrillView, DrillEdit } from "./DrillSheets";
 import { TeamSheet } from "./TeamSheet";
+import { EvaluationSheet, GoalSheet } from "../idp/IdpSheets";
 
 export function SheetHost() {
   const { sheet } = useApp();
@@ -21,5 +22,9 @@ export function SheetHost() {
       return <DrillEdit key={"de" + sheet.id} id={sheet.id} />;
     case "team":
       return <TeamSheet key={"t" + sheet.id} id={sheet.id} />;
+    case "evaluation":
+      return <EvaluationSheet key={"ev" + sheet.playerId + sheet.id} playerId={sheet.playerId} id={sheet.id} />;
+    case "goal":
+      return <GoalSheet key={"g" + sheet.playerId + sheet.id} playerId={sheet.playerId} id={sheet.id} />;
   }
 }
