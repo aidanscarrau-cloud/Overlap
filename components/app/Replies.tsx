@@ -5,7 +5,7 @@ import { useApp } from "./AppProvider";
 import { errMsg } from "@/lib/format";
 
 /** "Are you coming?" Yes / No for one player and one session, with an optional reason for No. */
-export function ReplyButtons({ sessionId, playerId, label }: { sessionId: string; playerId: string; label?: string }) {
+export function ReplyButtons({ sessionId, playerId, label, who }: { sessionId: string; playerId: string; label?: string; who?: string }) {
   const { repliesFor, supabase, refresh, toast } = useApp();
   const current = repliesFor(sessionId).get(playerId);
   const [askNote, setAskNote] = useState(false);
@@ -18,7 +18,7 @@ export function ReplyButtons({ sessionId, playerId, label }: { sessionId: string
     setBusy(false);
     if (error) return toast(errMsg(error));
     setAskNote(false);
-    toast(going ? "Thanks, you're down as coming" : "Thanks, your coach knows you can't make it");
+    toast(going ? `Thanks, ${who ?? "you're"} down as coming` : `Thanks, your coach knows ${who ?? "you"} can't make it`);
     refresh();
   }
 
@@ -35,7 +35,7 @@ export function ReplyButtons({ sessionId, playerId, label }: { sessionId: string
       </div>
       {current && !askNote && (
         <span className="reply-state">
-          {current.going ? "You're going" : `Not going${current.note ? `: ${current.note}` : ""}`}
+          {current.going ? (who ? "Going" : "You're going") : `Not going${current.note ? `: ${current.note}` : ""}`}
         </span>
       )}
       {askNote && (
@@ -60,11 +60,12 @@ export function ReplyButtons({ sessionId, playerId, label }: { sessionId: string
 }
 
 /** Small badge used on session cards. */
-export function ReplyBadge({ sessionId, playerId }: { sessionId: string; playerId: string }) {
+export function ReplyBadge({ sessionId, playerId, name }: { sessionId: string; playerId: string; name?: string }) {
   const { repliesFor } = useApp();
   const r = repliesFor(sessionId).get(playerId);
-  if (!r) return <span className="rbadge wait">Reply needed</span>;
-  return r.going ? <span className="rbadge yes">✓ Going</span> : <span className="rbadge no">✕ Not going</span>;
+  const who = name ? `${name}: ` : "";
+  if (!r) return <span className="rbadge wait">{who}Reply needed</span>;
+  return r.going ? <span className="rbadge yes">✓ {who}Going</span> : <span className="rbadge no">✕ {who}Not going</span>;
 }
 
 /** Going / not going / no reply counts for a team session. */

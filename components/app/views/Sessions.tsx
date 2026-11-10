@@ -9,7 +9,7 @@ import type { Session } from "@/lib/types";
 import { ReplyBadge, ReplyCounts } from "../Replies";
 
 export function Sessions() {
-  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayer } = useApp();
+  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayers, kidName } = useApp();
   const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("sessions.edit", team.id);
@@ -66,9 +66,13 @@ export function Sessions() {
                       {s.title || "Training session"}
                       {s.date === today && <span className="tag-today">Today</span>}
                     </h3>
-                    {!isPast && myPlayer?.team_id === s.team_id && (
-                      <div style={{ marginTop: 4 }}>
-                        <ReplyBadge sessionId={s.id} playerId={myPlayer.id} />
+                    {!isPast && myPlayers.some((p) => p.team_id === s.team_id) && (
+                      <div style={{ marginTop: 4, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {myPlayers
+                          .filter((p) => p.team_id === s.team_id)
+                          .map((p) => (
+                            <ReplyBadge key={p.id} sessionId={s.id} playerId={p.id} name={myPlayers.length > 1 ? kidName(p) : undefined} />
+                          ))}
                       </div>
                     )}
                     <div className="smeta">

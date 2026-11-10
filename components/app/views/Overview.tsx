@@ -11,7 +11,7 @@ import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, 
 import type { Status } from "@/lib/types";
 
 export function Overview() {
-  const { data, team, squad, sessionsOf, attendedSet, drillMap, can, canDo, playerRate, isAdmin, open, setTeam } = useApp();
+  const { data, team, squad, sessionsOf, attendedSet, drillMap, can, canDo, playerRate, isAdmin, open, setTeam, myPlayers, kidName } = useApp();
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("sessions.edit", team.id);
 
@@ -31,7 +31,7 @@ export function Overview() {
   const avgAtt = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
   const C = 2 * Math.PI * 26;
   const frac = sq.length ? c.available / sq.length : 0;
-  const myPlayer = data.me?.player_id ? data.players.find((p) => p.id === data.me.player_id) : null;
+  const parent = data.role === "parent";
 
   return (
     <>
@@ -114,7 +114,7 @@ export function Overview() {
         </section>
       )}
 
-      {!myPlayer && (data.role === "player" || data.role === "parent") && (
+      {!myPlayers.length && (data.role === "player" || data.role === "parent") && (
         <section className="card" style={{ marginTop: 16 }}>
           <div className="card-h">
             <h2>{data.role === "parent" ? "Link your child" : "Link your player profile"}</h2>
@@ -129,7 +129,9 @@ export function Overview() {
         </section>
       )}
 
-      {myPlayer && <TrainingReplies playerId={myPlayer.id} teamId={myPlayer.team_id} parent={data.role === "parent"} name={myPlayer.full_name} />}
+      {myPlayers.map((p) => (
+        <TrainingReplies key={p.id} playerId={p.id} teamId={p.team_id} parent={parent} name={kidName(p)} />
+      ))}
 
       {data.announcements.length > 0 && (
         <section className="card" style={{ marginTop: 16 }}>
@@ -147,7 +149,9 @@ export function Overview() {
         </section>
       )}
 
-      {myPlayer && <MyAvailability playerId={myPlayer.id} status={myPlayer.status} note={myPlayer.status_note} name={myPlayer.full_name} parent={data.role === "parent"} />}
+      {myPlayers.map((p) => (
+        <MyAvailability key={p.id} playerId={p.id} status={p.status} note={p.status_note} name={kidName(p)} parent={parent} />
+      ))}
 
       <div className="stats">
         <div className="card stat">
@@ -182,17 +186,36 @@ export function Overview() {
           </div>
           <span className="sub">{past.length ? `Average, last ${past.length} sessions` : "No completed sessions yet"}</span>
         </div>
-        ) : myPlayer && playerRate(myPlayer) !== null ? (
+        ) : myPlayers.length === 1 && playerRate(myPlayers[0]) !== null ? (
           <div className="card stat">
-            <span className="eyebrow">Your attendance</span>
+            <span className="eyebrow">{parent ? `${kidName(myPlayers[0])}'s attendance` : "Your attendance"}</span>
             <div className="v tnum">
-              {playerRate(myPlayer)}
+              {playerRate(myPlayers[0])}
               <small>%</small>
             </div>
             <div className="bar" style={{ flex: "none" }} aria-hidden="true">
-              <i style={{ width: `${playerRate(myPlayer)}%` }} />
+              <i style={{ width: `${playerRate(myPlayers[0])}%` }} />
             </div>
-            <span className="sub">of completed sessions{data.role === "parent" ? ` for ${myPlayer.full_name.split(" ")[0]}` : ""}</span>
+            <span className="sub">of completed sessions</span>
+          </div>
+        ) : myPlayers.length > 1 ? (
+          <div className="card stat">
+            <span className="eyebrow">Attendance</span>
+            <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
+              {myPlayers.map((p) => {
+                const r = playerRate(p);
+                return (
+                  <div key={p.id} className="att" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                    <span style={{ minWidth: 56 }}>{kidName(p)}</span>
+                    <span className="bar">
+                      <i style={{ width: `${r ?? 0}%` }} />
+                    </span>
+                    <b className="tnum">{r === null ? "–" : `${r}%`}</b>
+                  </div>
+                );
+              })}
+            </div>
+            <span className="sub">of completed sessions</span>
           </div>
         ) : null}
         <div className="card stat">
@@ -317,7 +340,7 @@ function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string;
   return (
     <section className="card" style={{ marginTop: 16 }}>
       <div className="card-h">
-        <h2>{parent ? `Is ${name.split(" ")[0]} coming?` : "Are you coming?"}</h2>
+        <h2>{parent ? `Is ${name} coming?` : "Are you coming?"}</h2>
         {teamName && <span className="muted" style={{ fontSize: 13 }}>{teamName}</span>}
       </div>
       <div className="card-b train-list">
@@ -362,11 +385,11 @@ function MyAvailability({ playerId, status, note, name, parent }: { playerId: st
   return (
     <section className="card" style={{ marginTop: 16 }}>
       <div className="card-h">
-        <h2>{parent ? `${name.split(" ")[0]}'s availability` : "Your availability"}</h2>
+        <h2>{parent ? `${name}'s availability` : "Your availability"}</h2>
       </div>
       <div className="card-b avail-me">
         <span className="muted" style={{ fontSize: 13.5 }}>
-          Let your coach know if {parent ? `${name.split(" ")[0]} can't` : "you can't"} make training.
+          Let your coach know if {parent ? `${name} can't` : "you can't"} make training.
         </span>
         <div className="chips" role="group" aria-label="Availability">
           {(Object.keys(STATUS) as Status[]).map((k) => (

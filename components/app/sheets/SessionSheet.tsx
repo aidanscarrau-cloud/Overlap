@@ -353,7 +353,7 @@ function DrillPicker({ onAdd }: { onAdd: (id: string) => void }) {
 }
 
 function SessionReadOnly({ id }: { id: string }) {
-  const { data, drillMap, open, myPlayer } = useApp();
+  const { data, drillMap, open, myPlayers, kidName } = useApp();
   const s = data.sessions.find((x) => x.id === id)!;
   let clock = hhmm(s.start_time);
   return (
@@ -368,11 +368,19 @@ function SessionReadOnly({ id }: { id: string }) {
         </h2>
         {s.focus && <p className="muted" style={{ margin: "6px 0 0" }}>Focus: {s.focus}</p>}
       </div>
-      {myPlayer && myPlayer.team_id === s.team_id && s.date >= todayIso() && (
-        <div className="card card-b" style={{ paddingTop: 16 }}>
-          <ReplyButtons sessionId={s.id} playerId={myPlayer.id} label={data.role === "parent" ? `Is ${myPlayer.full_name.split(" ")[0]} coming?` : "Are you coming?"} />
-        </div>
-      )}
+      {s.date >= todayIso() &&
+        myPlayers
+          .filter((p) => p.team_id === s.team_id)
+          .map((p) => (
+            <div key={p.id} className="card card-b" style={{ paddingTop: 16 }}>
+              <ReplyButtons
+                sessionId={s.id}
+                playerId={p.id}
+                who={data.role === "parent" ? kidName(p) : undefined}
+                label={data.role === "parent" ? `Is ${kidName(p)} coming?` : "Are you coming?"}
+              />
+            </div>
+          ))}
       {s.notes && (
         <div className="card card-b" style={{ paddingTop: 16 }}>
           <div className="eyebrow" style={{ marginBottom: 6 }}>Session notes</div>

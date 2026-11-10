@@ -55,7 +55,8 @@ export type Member = {
   user_id: string;
   role: Role;
   team_ids: string[];
-  player_id: string | null;
+  /** Players this account answers for (their own record, or their children). */
+  player_ids: string[];
   full_name: string;
 };
 export type Invite = {

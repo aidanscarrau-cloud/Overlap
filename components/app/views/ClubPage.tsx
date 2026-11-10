@@ -323,7 +323,8 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
   const { data, supabase, refresh, toast } = useApp();
   const [busy, setBusy] = useState(false);
   const teamNames = data.teams.filter((t) => m.team_ids.includes(t.id)).map((t) => t.name);
-  const playerName = data.players.find((p) => p.id === m.player_id)?.full_name;
+  const linkedPlayers = data.players.filter((p) => m.player_ids.includes(p.id));
+  const linkedNames = linkedPlayers.map((p) => p.full_name).join(", ");
   const isMe = m.user_id === data.userId;
 
   async function run(fn: () => PromiseLike<{ error: unknown }>, msg: string) {
@@ -335,12 +336,14 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
     refresh();
   }
   const setRole = (role: Role) => run(() => supabase.from("memberships").update({ role }).eq("id", m.id), "Role updated");
-  const setPlayer = (player_id: string | null) =>
-    run(() => supabase.from("memberships").update({ player_id }).eq("id", m.id), player_id ? "Player linked" : "Player unlinked");
+  const linkPlayer = (player_id: string) =>
+    run(() => supabase.from("member_players").insert({ membership_id: m.id, player_id }), "Player linked");
+  const unlinkPlayer = (player_id: string) =>
+    run(() => supabase.from("member_players").delete().eq("membership_id", m.id).eq("player_id", player_id), "Player unlinked");
   const linkable = m.role === "player" || m.role === "parent";
   // Offer players from the member's teams first; if they have none, every player in the club.
   const playerOptions = data.players
-    .filter((p) => !m.team_ids.length || m.team_ids.includes(p.team_id) || p.id === m.player_id)
+    .filter((p) => !m.player_ids.includes(p.id))
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
   const toggleTeam = (teamId: string, on: boolean) =>
     run(
@@ -360,7 +363,7 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
   const summary = [
     !editable && ROLES[m.role],
     m.role === "admin" ? "All teams" : teamNames.join(", ") || (m.role === "coach" ? "No teams assigned yet" : ""),
-    playerName && (m.role === "parent" ? `Parent of ${playerName}` : `Player: ${playerName}`),
+    linkedNames && (m.role === "parent" ? `Parent of ${linkedNames}` : `Player: ${linkedNames}`),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -379,26 +382,36 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
           </span>
         </span>
         {editable && linkable && (
-          <label className="insp-f" style={{ flexWrap: "wrap" }}>
+          <span className="insp-f" style={{ flexWrap: "wrap" }}>
             {m.role === "parent" ? "Parent of" : "Is player"}
-            <select
-              className="input"
-              style={{ width: "auto", maxWidth: 220 }}
-              aria-label={`Linked player for ${m.full_name}`}
-              value={m.player_id ?? ""}
-              disabled={busy}
-              onChange={(e) => setPlayer(e.target.value || null)}
-            >
-              <option value="">Not linked</option>
-              {playerOptions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.full_name}
-                  {data.teams.length > 1 ? ` (${data.teams.find((t) => t.id === p.team_id)?.name ?? ""})` : ""}
-                </option>
-              ))}
-            </select>
-            {!m.player_id && <span className="rbadge wait">Can&apos;t reply to sessions until linked</span>}
-          </label>
+            {linkedPlayers.map((p) => (
+              <span key={p.id} className="link-chip">
+                {p.full_name}
+                <button type="button" aria-label={`Unlink ${p.full_name}`} disabled={busy} onClick={() => unlinkPlayer(p.id)}>
+                  ✕
+                </button>
+              </span>
+            ))}
+            {(m.role === "parent" || !linkedPlayers.length) && (
+              <select
+                className="input"
+                style={{ width: "auto", maxWidth: 230 }}
+                aria-label={`Link a player to ${m.full_name}`}
+                value=""
+                disabled={busy}
+                onChange={(e) => e.target.value && linkPlayer(e.target.value)}
+              >
+                <option value="">{linkedPlayers.length ? "+ Add another child…" : m.role === "parent" ? "Choose their child…" : "Choose their player…"}</option>
+                {playerOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name}
+                    {data.teams.length > 1 ? ` (${data.teams.find((t) => t.id === p.team_id)?.name ?? ""})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            {!linkedPlayers.length && <span className="rbadge wait">Can&apos;t reply to sessions until linked</span>}
+          </span>
         )}
         {editable && m.role !== "admin" && data.teams.length > 0 && (
           <span className="chips" role="group" aria-label={`Teams for ${m.full_name}`}>
@@ -550,7 +563,7 @@ function AccountCard() {
             </button>
           </form>
           <a className="btn" href="/onboarding">
-            Join another club
+            Enter an invite code
           </a>
           {data.role !== "admin" && <ConfirmButton className="btn danger" label={`Leave ${data.club.name}`} onConfirm={leave} />}
         </div>

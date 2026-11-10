@@ -32,8 +32,10 @@ type Ctx = {
   attendedSet: (sessionId: string) => Set<string>;
   /** Replies for a session, by player id. */
   repliesFor: (sessionId: string) => Map<string, Reply>;
-  /** The player this person answers for (their own record, or their child). */
-  myPlayer: Player | null;
+  /** Players this person answers for (their own record, or their children). */
+  myPlayers: Player[];
+  /** First name, or full name if two of this person's players share a first name. */
+  kidName: (p: Player) => string;
   playerRate: (p: Player) => number | null;
   sheet: Sheet;
   open: (s: Sheet) => void;
@@ -79,7 +81,7 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     });
     return m;
   }, [data.replies]);
-  const myPlayer = data.me?.player_id ? (data.players.find((p) => p.id === data.me.player_id) ?? null) : null;
+  const myPlayers = useMemo(() => data.players.filter((p) => data.me?.player_ids.includes(p.id)), [data.players, data.me]);
 
   const squad = useCallback(
     (tid?: string) =>
@@ -127,7 +129,11 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     sessionsOf,
     attendedSet,
     repliesFor: (sid) => replyMap.get(sid) ?? new Map(),
-    myPlayer,
+    myPlayers,
+    kidName: (p) => {
+      const f = p.full_name.split(" ")[0];
+      return myPlayers.filter((x) => x.full_name.split(" ")[0] === f).length > 1 ? p.full_name : f;
+    },
     playerRate,
     sheet,
     open: setSheet,

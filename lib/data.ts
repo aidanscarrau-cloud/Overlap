@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Announcement, Attendance, Club, ClubData, Drill, Member, Player, Reply, Role, Session, Team } from "@/lib/types";
 
-type MemRow = { id: string; club_id: string; user_id: string; role: Role; player_id: string | null; clubs: Club | Club[] | null };
-type MemberRow = { id: string; user_id: string; role: Role; player_id: string | null; profiles: { full_name: string } | { full_name: string }[] | null };
+type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
+type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
 /** Everything the signed-in person may see in their current club. The database's rules decide what that is. */
@@ -18,7 +18,7 @@ export async function getClubData(): Promise<ClubData> {
 
   const { data: memsRaw, error } = await supabase
     .from("memberships")
-    .select("id,club_id,user_id,role,player_id,clubs(id,name,logo_url)")
+    .select("id,club_id,user_id,role,clubs(id,name,logo_url)")
     .eq("user_id", user.id)
     .order("created_at");
   if (error) throw error;
@@ -30,14 +30,15 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, profile] = await Promise.all([
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, rolePerms, playerNotes, sessionNotes, announcements, replies, profile] = await Promise.all([
     supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
     supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
     supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
     supabase.from("sessions").select("id,club_id,team_id,date,start_time,location,title,focus,plan").eq("club_id", clubId).order("date").order("start_time"),
     supabase.from("attendance").select("session_id,player_id").eq("club_id", clubId),
-    supabase.from("memberships").select("id,user_id,role,player_id,profiles(full_name)").eq("club_id", clubId).order("created_at"),
+    supabase.from("memberships").select("id,user_id,role,profiles(full_name)").eq("club_id", clubId).order("created_at"),
     supabase.from("member_teams").select("membership_id,team_id").eq("club_id", clubId),
+    supabase.from("member_players").select("membership_id,player_id").eq("club_id", clubId),
     supabase.from("role_permissions").select("role,perm,allowed").eq("club_id", clubId),
     supabase.rpc("get_player_notes", { c: clubId }),
     supabase.rpc("get_session_notes", { c: clubId }),
@@ -45,18 +46,22 @@ export async function getClubData(): Promise<ClubData> {
     supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
-  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, rolePerms, playerNotes, sessionNotes, announcements, replies]) if (r.error) throw r.error;
+  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, rolePerms, playerNotes, sessionNotes, announcements, replies]) if (r.error) throw r.error;
 
   const teamsByMember = new Map<string, string[]>();
   ((memberTeams.data ?? []) as { membership_id: string; team_id: string }[]).forEach((r) => {
     teamsByMember.set(r.membership_id, [...(teamsByMember.get(r.membership_id) ?? []), r.team_id]);
+  });
+  const playersByMember = new Map<string, string[]>();
+  ((memberPlayers.data ?? []) as { membership_id: string; player_id: string }[]).forEach((r) => {
+    playersByMember.set(r.membership_id, [...(playersByMember.get(r.membership_id) ?? []), r.player_id]);
   });
   const memberList: Member[] = ((members.data ?? []) as unknown as MemberRow[]).map((m) => ({
     id: m.id,
     user_id: m.user_id,
     role: m.role,
     team_ids: teamsByMember.get(m.id) ?? [],
-    player_id: m.player_id,
+    player_ids: playersByMember.get(m.id) ?? [],
     full_name: one(m.profiles)?.full_name || "Unnamed member",
   }));
 
@@ -71,11 +76,11 @@ export async function getClubData(): Promise<ClubData> {
     user_id: user.id,
     role: mine.role,
     team_ids: teamsByMember.get(mine.id) ?? [],
-    player_id: mine.player_id,
+    player_ids: playersByMember.get(mine.id) ?? [],
     full_name: profile.data?.full_name || "You",
   };
-  const linkedTeam = me.player_id ? playerList.find((p) => p.id === me.player_id)?.team_id : undefined;
-  const myTeamIds = mine.role === "admin" ? teamList.map((t) => t.id) : [...new Set([...me.team_ids, ...(linkedTeam ? [linkedTeam] : [])])];
+  const linkedTeams = playerList.filter((p) => me.player_ids.includes(p.id)).map((p) => p.team_id);
+  const myTeamIds = mine.role === "admin" ? teamList.map((t) => t.id) : [...new Set([...me.team_ids, ...linkedTeams])];
 
   return {
     userId: user.id,

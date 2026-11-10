@@ -20,7 +20,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<typeof d>) => setD((x) => ({ ...x, ...patch }));
   const r = p ? playerRate(p) : null;
-  const linked = p ? data.members.filter((m) => m.player_id === p.id) : [];
+  const linked = p ? data.members.filter((m) => m.player_ids.includes(p.id)) : [];
   const canEdit = canDo("squad.edit", p ? p.team_id : team?.id);
   const seeNotes = can("squad.view_notes");
   const myTeams = data.teams.filter((t) => manages(t.id));

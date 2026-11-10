@@ -70,7 +70,7 @@ export function Squad() {
                         </span>
                       </span>
                       {p.status_note && <span className="note">{p.status_note}</span>}
-                      {(seeAtt || p.id === data.me.player_id) && (
+                      {(seeAtt || data.me.player_ids.includes(p.id)) && (
                       <span className="att">
                         Attendance
                         <span className="bar">

@@ -65,11 +65,13 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
     <div className="auth-card">
       <div>
         <div className="eyebrow">Signed in as {email}</div>
-        <h2 style={{ marginTop: 6 }}>{!canCreate ? "Join your club" : hasClub ? "Add another club" : "Get started"}</h2>
+        <h2 style={{ marginTop: 6 }}>{hasClub ? "Enter an invite code" : !canCreate ? "Join your club" : "Get started"}</h2>
       </div>
       {!canCreate && (
         <p className="muted" style={{ margin: 0 }}>
-          Enter the invite code your club admin or coach sent you. If you don&apos;t have one, ask them for an invite.
+          {hasClub
+            ? "Got a code for another child or another club? Enter it here. A parent code for another child adds them to your account."
+            : "Enter the invite code your club admin or coach sent you. If you don't have one, ask them for an invite."}
         </p>
       )}
       {canCreate && (

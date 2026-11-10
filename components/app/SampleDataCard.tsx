@@ -19,7 +19,7 @@ export function SampleDataCard() {
   const sessions = data.sessions.filter((s) => teamIds.has(s.team_id));
   const drillNames = new Set(STARTER_DRILLS.map((d) => d.name));
   const drills = data.drills.filter((d) => drillNames.has(d.name));
-  const linkedMembers = data.members.filter((m) => m.player_id && players.some((p) => p.id === m.player_id));
+  const linkedMembers = data.members.filter((m) => m.player_ids.some((id) => players.some((p) => p.id === id)));
 
   if (!teams.length && !drills.length) return null;
 
