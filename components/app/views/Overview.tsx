@@ -114,6 +114,21 @@ export function Overview() {
         </section>
       )}
 
+      {!myPlayer && (data.role === "player" || data.role === "parent") && (
+        <section className="card" style={{ marginTop: 16 }}>
+          <div className="card-h">
+            <h2>{data.role === "parent" ? "Link your child" : "Link your player profile"}</h2>
+          </div>
+          <div className="card-b">
+            <p className="muted" style={{ margin: 0 }}>
+              {data.role === "parent"
+                ? "Your account isn't linked to your child yet, so you can't reply to sessions or update their availability. Ask your club admin to link you on the Club & members page."
+                : "Your account isn't linked to your player profile yet, so you can't reply to sessions or update your availability. Ask your club admin to link you on the Club & members page."}
+            </p>
+          </div>
+        </section>
+      )}
+
       {myPlayer && <TrainingReplies playerId={myPlayer.id} teamId={myPlayer.team_id} parent={data.role === "parent"} name={myPlayer.full_name} />}
 
       {data.announcements.length > 0 && (
@@ -298,7 +313,6 @@ function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string;
   const { sessionsOf, data } = useApp();
   const today = todayIso();
   const upcoming = sessionsOf(teamId).filter((s) => s.date >= today).slice(0, 4);
-  if (!upcoming.length) return null;
   const teamName = data.teams.find((t) => t.id === teamId)?.name;
   return (
     <section className="card" style={{ marginTop: 16 }}>
@@ -307,6 +321,7 @@ function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string;
         {teamName && <span className="muted" style={{ fontSize: 13 }}>{teamName}</span>}
       </div>
       <div className="card-b train-list">
+        {!upcoming.length && <p className="muted" style={{ margin: 0 }}>No upcoming sessions yet. When your coach plans one, you can reply here.</p>}
         {upcoming.map((s) => (
           <div key={s.id} className="train-row">
             <span className="dchip">
