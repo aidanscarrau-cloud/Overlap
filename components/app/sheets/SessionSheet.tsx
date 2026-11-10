@@ -282,7 +282,7 @@ export function SessionSheet({ id }: { id: string | null }) {
                 <Shirt p={p} small />
                 <span style={{ minWidth: 0 }}>
                   <b style={{ display: "block", fontSize: 14 }}>{p.full_name}</b>
-                  <span className={`status s-${p.status}`} style={{ fontSize: 12 }}>
+                  <span className={`status s-${p.status}`} style={{ fontSize: 13 }}>
                     {STATUS[p.status]}
                   </span>
                   {d.id && repliesFor(d.id).get(p.id) && (

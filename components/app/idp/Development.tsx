@@ -119,7 +119,7 @@ function TeamDevelopment() {
                 <b className="tnum">{avg ?? "–"}</b>
               </div>
             ))}
-            <p className="muted" style={{ margin: "4px 0 0", fontSize: 12.5 }}>
+            <p className="muted" style={{ margin: "4px 0 0", fontSize: 13 }}>
               Lowest area: <b style={{ color: "var(--ink)" }}>{[...teamAvg].filter((x) => x.avg !== null).sort((x, y) => x.avg! - y.avg!)[0]?.a.label ?? "–"}</b>. A good theme for upcoming sessions.
             </p>
           </div>

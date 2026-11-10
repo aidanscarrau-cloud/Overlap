@@ -275,7 +275,7 @@ function InvitesCard() {
                         {teamName(i.team_id) ? ` · ${teamName(i.team_id)}` : ""}
                         {playerName(i.player_id) ? ` · for ${playerName(i.player_id)}` : ""}
                       </b>
-                      <span className="muted" style={{ fontSize: 12.5, wordBreak: "break-all" }}>
+                      <span className="muted" style={{ fontSize: 13, wordBreak: "break-all" }}>
                         {link} · {i.max_uses > 1 ? `${i.uses}/${i.max_uses} used · ` : ""}expires {new Date(i.expires_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
                       </span>
                     </span>

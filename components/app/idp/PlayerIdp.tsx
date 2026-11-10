@@ -105,7 +105,7 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
             <section className="card">
               <div className="card-h">
                 <h2>By area</h2>
-                {previous && <span className="muted" style={{ fontSize: 12.5 }}>Marker = previous</span>}
+                {previous && <span className="muted" style={{ fontSize: 13 }}>Marker = previous</span>}
               </div>
               <div className="card-b area-list">
                 {AREAS.map((a) => (
@@ -201,7 +201,7 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
         <section className="card" style={{ marginTop: 20 }}>
           <div className="card-h">
             <h2>Evidence</h2>
-            <span className="muted" style={{ fontSize: 12.5 }}>
+            <span className="muted" style={{ fontSize: 13 }}>
               From attendance and training load
             </span>
           </div>
@@ -337,7 +337,7 @@ function GoalCard({ g, canEdit, canNote }: { g: Goal; canEdit: boolean; canNote:
         {g.status === "achieved" && <span className="rbadge yes">✓ Achieved {g.achieved_on ? `${fmtNum(g.achieved_on)} ${fmtMon(g.achieved_on)}` : ""}</span>}
         {g.status === "dropped" && <span className="rbadge wait">Dropped</span>}
         {g.target_date && g.status === "active" && (
-          <span className={overdue ? "rbadge no" : "muted"} style={{ fontSize: 12.5 }}>
+          <span className={overdue ? "rbadge no" : "muted"} style={{ fontSize: 13 }}>
             {overdue ? "Overdue · " : "Target "}
             {fmtNum(g.target_date)} {fmtMon(g.target_date)}
           </span>

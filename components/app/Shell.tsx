@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useApp } from "./AppProvider";
 import { SheetHost } from "./sheets/SheetHost";
 import { ROLES } from "@/lib/constants";
@@ -23,6 +24,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const [more, setMore] = useState(false);
+  useEffect(() => setMore(false), [path]);
+  // Phone menu: the four places people use most, the rest under More.
+  const PHONE = ["/", "/squad", "/sessions", "/development"];
+  const moreItems = NAV.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
     if (id === "__new") return router.push("/onboarding");
@@ -101,7 +107,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         {data.clubs.length === 1 && (
-          <Link href="/onboarding" style={{ fontSize: 12.5, color: "var(--on-navy-muted)" }}>
+          <Link href="/onboarding" style={{ fontSize: 13, color: "var(--on-navy-muted)" }}>
             Enter an invite code
           </Link>
         )}
@@ -123,8 +129,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <main id="main">{children}</main>
       </div>
 
-      <nav className="bnav" aria-label="Sections" style={{ gridTemplateColumns: `repeat(${NAV.length},1fr)` }}>
-        {NAV.map((n) => (
+      {more && (
+        <div className="more-sheet" role="menu" aria-label="More">
+          {moreItems.map((n) => (
+            <Link key={n.href} href={n.href} role="menuitem" aria-current={active(n.href) ? "page" : undefined} onClick={() => setMore(false)}>
+              <svg className="i">
+                <use href={`#${n.icon}`} />
+              </svg>
+              {n.label}
+            </Link>
+          ))}
+        </div>
+      )}
+      <nav className="bnav" aria-label="Sections">
+        {NAV.filter((n) => PHONE.includes(n.href)).map((n) => (
           <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
             <svg className="i">
               <use href={`#${n.icon}`} />
@@ -132,6 +150,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {n.short}
           </Link>
         ))}
+        <button type="button" aria-expanded={more} aria-haspopup="menu" onClick={() => setMore(!more)} style={moreItems.some((n) => active(n.href)) && !more ? { color: "var(--gold)" } : undefined}>
+          <svg className="i" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" />
+          </svg>
+          More
+        </button>
       </nav>
       <SheetHost />
     </div>

@@ -200,7 +200,7 @@ function OtherTeams({ playerId }: { playerId: string }) {
           );
         })}
       </div>
-      <span className="muted" style={{ fontSize: 12.5, textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+      <span className="muted" style={{ fontSize: 13, textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
         They&apos;ll appear in those teams&apos; squads, attendance and session replies. {data.teams.find((t) => t.id === p.team_id)?.name} stays their main team.
       </span>
     </div>

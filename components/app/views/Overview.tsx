@@ -405,7 +405,7 @@ function MyGoals({ playerId, name, parent }: { playerId: string; name: string; p
                 <span className="bar">
                   <i style={{ width: `${g.progress}%` }} />
                 </span>
-                <b className="tnum" style={{ fontSize: 12.5 }}>
+                <b className="tnum" style={{ fontSize: 13 }}>
                   {g.progress}%
                 </b>
               </span>

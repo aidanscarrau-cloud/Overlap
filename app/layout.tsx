@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Big_Shoulders, DM_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { SPRITE } from "@/components/sprite";
 import "./globals.css";
 
-const display = Big_Shoulders({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
-const body = DM_Sans({ subsets: ["latin"], variable: "--font-body" });
+// Funnel Display + Funnel Sans (SIL Open Font License), self-hosted variable fonts, Latin subset.
+const display = localFont({ src: "./fonts/FunnelDisplay-latin.woff2", weight: "300 800", variable: "--font-display", display: "swap" });
+const body = localFont({ src: "./fonts/FunnelSans-latin.woff2", weight: "300 800", variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Overlap", template: "%s · Overlap" },
