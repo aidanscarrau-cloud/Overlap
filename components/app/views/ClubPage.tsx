@@ -6,6 +6,7 @@ import { useApp } from "../AppProvider";
 import { ConfirmButton } from "../sheets/SheetFrame";
 import { Crest, Icon } from "@/components/ui";
 import { LogoPicker } from "../LogoPicker";
+import { SampleDataCard } from "../SampleDataCard";
 import { removeLogoFile, uploadLogo } from "@/lib/logo";
 import { ROLES, ROLE_HELP } from "@/lib/constants";
 import { errMsg, initials } from "@/lib/format";
@@ -23,6 +24,7 @@ export function ClubPage() {
       </div>
       <div style={{ display: "grid", gap: 16 }}>
         {isAdmin && <ClubSettings />}
+        {isAdmin && <SampleDataCard />}
         {isAdmin && <TeamsCard />}
         {canEdit && <InvitesCard />}
         <MembersCard />

@@ -3,6 +3,13 @@ import type { Position, Status } from "./types";
 import { STARTER_DRILLS } from "./starter-drills";
 import { iso } from "./format";
 
+/** The example teams added by addSampleData, used to find and remove them later. */
+export const SAMPLE_TEAMS = [
+  { name: "First Team", age_group: "Senior Men", coach_name: "Dan Hollis", size: 18, pool: "m", time: "18:30", loc: "Main Pitch" },
+  { name: "Women's First Team", age_group: "Senior Women", coach_name: "Priya Raman", size: 16, pool: "w", time: "19:00", loc: "Pitch 2 (synthetic)" },
+  { name: "U12 Mixed", age_group: "Under 12", coach_name: "Kate O\u2019Neill", size: 14, pool: "x", time: "16:30", loc: "Back Field" },
+];
+
 /** Fill a new, empty club with example teams, players, drills and sessions. Admin only (enforced by the database). */
 export async function addSampleData(supabase: SupabaseClient, clubId: string) {
   let seed = 42;
@@ -15,11 +22,7 @@ export async function addSampleData(supabase: SupabaseClient, clubId: string) {
   };
   const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
 
-  const teamDefs = [
-    { name: "First Team", age_group: "Senior Men", coach_name: "Dan Hollis", size: 18, pool: "m", time: "18:30", loc: "Main Pitch" },
-    { name: "Women's First Team", age_group: "Senior Women", coach_name: "Priya Raman", size: 16, pool: "w", time: "19:00", loc: "Pitch 2 (synthetic)" },
-    { name: "U12 Mixed", age_group: "Under 12", coach_name: "Kate O’Neill", size: 14, pool: "x", time: "16:30", loc: "Back Field" },
-  ];
+  const teamDefs = SAMPLE_TEAMS;
   const { data: teams, error: tErr } = await supabase
     .from("teams")
     .insert(teamDefs.map(({ name, age_group, coach_name }) => ({ club_id: clubId, name, age_group, coach_name })))
