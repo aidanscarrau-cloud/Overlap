@@ -40,6 +40,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
             {p.status_note && <div className="muted" style={{ fontSize: 13.5, marginTop: 4 }}>{p.status_note}</div>}
           </div>
         </div>
+        <OtherTeams playerId={p.id} />
         {r !== null && <AttendanceCard r={r} />}
         <ReadOnlyNote>You can view this player but not edit their details.</ReadOnlyNote>
       </SheetFrame>
@@ -109,7 +110,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
           </select>
         </label>
         <label className="field">
-          <span>Team</span>
+          <span>Main team</span>
           <select className="input" id="p-team" value={d.team_id} onChange={(e) => set({ team_id: e.target.value })}>
             {myTeams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -137,6 +138,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
           </label>
         )}
       </div>
+      {p && <OtherTeams playerId={p.id} />}
       {r !== null && <AttendanceCard r={r} />}
       {p && (data.role === "admin" || can("members.view")) && (
         <div className="muted" style={{ fontSize: 13.5 }}>
@@ -151,6 +153,51 @@ export function PlayerSheet({ id }: { id: string | null }) {
         </p>
       )}
     </SheetFrame>
+  );
+}
+
+/** Other teams this player plays or trains with. Each team can be switched on by people who manage that team. */
+function OtherTeams({ playerId }: { playerId: string }) {
+  const { data, canDo, supabase, refresh, toast } = useApp();
+  const p = data.players.find((x) => x.id === playerId)!;
+  const [busy, setBusy] = useState(false);
+  const others = data.teams.filter((t) => t.id !== p.team_id);
+  if (!others.length) return null;
+  const editable = others.filter((t) => canDo("squad.edit", t.id));
+  const shown = others.filter((t) => p.team_ids.includes(t.id) || canDo("squad.edit", t.id));
+  if (!shown.length) return null;
+
+  async function toggle(teamId: string, on: boolean) {
+    setBusy(true);
+    const { error } = on
+      ? await supabase.from("player_teams").insert({ player_id: playerId, team_id: teamId })
+      : await supabase.from("player_teams").delete().eq("player_id", playerId).eq("team_id", teamId);
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    const name = data.teams.find((t) => t.id === teamId)?.name;
+    toast(on ? `${p.full_name} added to ${name}` : `${p.full_name} removed from ${name}`);
+    refresh();
+  }
+
+  return (
+    <div className="field">
+      <span>Also plays or trains with</span>
+      <div className="chips" role="group" aria-label="Other teams">
+        {shown.map((t) => {
+          const on = p.team_ids.includes(t.id);
+          const can = editable.some((e) => e.id === t.id);
+          return (
+            <button key={t.id} type="button" className="chip" aria-pressed={on} disabled={busy || !can} onClick={() => toggle(t.id, !on)} title={can ? undefined : "Only that team's coaches can change this"}>
+              {on ? "✓ " : "+ "}
+              {t.name}
+            </button>
+          );
+        })}
+      </div>
+      <span className="muted" style={{ fontSize: 12.5, textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+        They&apos;ll appear in those teams&apos; squads, attendance and session replies. {data.teams.find((t) => t.id === p.team_id)?.name} stays their main team.
+      </span>
+    </div>
   );
 }
 

@@ -370,7 +370,7 @@ function SessionReadOnly({ id }: { id: string }) {
       </div>
       {s.date >= todayIso() &&
         myPlayers
-          .filter((p) => p.team_id === s.team_id)
+          .filter((p) => p.team_ids.includes(s.team_id))
           .map((p) => (
             <div key={p.id} className="card card-b" style={{ paddingTop: 16 }}>
               <ReplyButtons

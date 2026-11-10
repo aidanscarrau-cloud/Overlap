@@ -30,7 +30,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, rolePerms, playerNotes, sessionNotes, announcements, replies, profile] = await Promise.all([
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, profile] = await Promise.all([
     supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
     supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
     supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
@@ -39,6 +39,7 @@ export async function getClubData(): Promise<ClubData> {
     supabase.from("memberships").select("id,user_id,role,profiles(full_name)").eq("club_id", clubId).order("created_at"),
     supabase.from("member_teams").select("membership_id,team_id").eq("club_id", clubId),
     supabase.from("member_players").select("membership_id,player_id").eq("club_id", clubId),
+    supabase.from("player_teams").select("player_id,team_id").eq("club_id", clubId),
     supabase.from("role_permissions").select("role,perm,allowed").eq("club_id", clubId),
     supabase.rpc("get_player_notes", { c: clubId }),
     supabase.rpc("get_session_notes", { c: clubId }),
@@ -46,7 +47,7 @@ export async function getClubData(): Promise<ClubData> {
     supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
-  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, rolePerms, playerNotes, sessionNotes, announcements, replies]) if (r.error) throw r.error;
+  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies]) if (r.error) throw r.error;
 
   const teamsByMember = new Map<string, string[]>();
   ((memberTeams.data ?? []) as { membership_id: string; team_id: string }[]).forEach((r) => {
@@ -67,7 +68,15 @@ export async function getClubData(): Promise<ClubData> {
 
   const notes = new Map(((playerNotes.data ?? []) as { player_id: string; status_note: string }[]).map((n) => [n.player_id, n.status_note]));
   const sNotes = new Map(((sessionNotes.data ?? []) as { session_id: string; notes: string }[]).map((n) => [n.session_id, n.notes]));
-  const playerList = ((players.data ?? []) as Omit<Player, "status_note">[]).map((p) => ({ ...p, status_note: notes.get(p.id) ?? "" }));
+  const extraTeams = new Map<string, string[]>();
+  ((playerTeams.data ?? []) as { player_id: string; team_id: string }[]).forEach((r) => {
+    extraTeams.set(r.player_id, [...(extraTeams.get(r.player_id) ?? []), r.team_id]);
+  });
+  const playerList: Player[] = ((players.data ?? []) as Omit<Player, "status_note" | "team_ids">[]).map((p) => ({
+    ...p,
+    team_ids: [p.team_id, ...(extraTeams.get(p.id) ?? []).filter((t) => t !== p.team_id)],
+    status_note: notes.get(p.id) ?? "",
+  }));
   const teamList = (teams.data ?? []) as Team[];
   const rp = (rolePerms.data ?? []) as RolePerm[];
 
@@ -79,7 +88,7 @@ export async function getClubData(): Promise<ClubData> {
     player_ids: playersByMember.get(mine.id) ?? [],
     full_name: profile.data?.full_name || "You",
   };
-  const linkedTeams = playerList.filter((p) => me.player_ids.includes(p.id)).map((p) => p.team_id);
+  const linkedTeams = playerList.filter((p) => me.player_ids.includes(p.id)).flatMap((p) => p.team_ids);
   const myTeamIds = mine.role === "admin" ? teamList.map((t) => t.id) : [...new Set([...me.team_ids, ...linkedTeams])];
 
   return {

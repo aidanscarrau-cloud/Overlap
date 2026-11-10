@@ -85,7 +85,7 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
 
   const squad = useCallback(
     (tid?: string) =>
-      data.players.filter((p) => p.team_id === (tid ?? team?.id)).sort((a, b) => (a.shirt_number ?? 999) - (b.shirt_number ?? 999)),
+      data.players.filter((p) => p.team_ids.includes((tid ?? team?.id) as string)).sort((a, b) => (a.shirt_number ?? 999) - (b.shirt_number ?? 999)),
     [data.players, team],
   );
   const sessionsOf = useCallback(
@@ -96,7 +96,7 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
   const attendedSet = useCallback((sid: string) => attendanceMap.get(sid) ?? new Set<string>(), [attendanceMap]);
   const playerRate = useCallback(
     (p: Player) => {
-      const past = data.sessions.filter((s) => s.team_id === p.team_id && s.date < todayIso());
+      const past = data.sessions.filter((s) => p.team_ids.includes(s.team_id) && s.date < todayIso());
       if (!past.length) return null;
       return Math.round((100 * past.filter((s) => attendanceMap.get(s.id)?.has(p.id)).length) / past.length);
     },

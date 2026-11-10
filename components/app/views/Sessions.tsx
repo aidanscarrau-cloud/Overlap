@@ -66,10 +66,10 @@ export function Sessions() {
                       {s.title || "Training session"}
                       {s.date === today && <span className="tag-today">Today</span>}
                     </h3>
-                    {!isPast && myPlayers.some((p) => p.team_id === s.team_id) && (
+                    {!isPast && myPlayers.some((p) => p.team_ids.includes(s.team_id)) && (
                       <div style={{ marginTop: 4, display: "flex", gap: 6, flexWrap: "wrap" }}>
                         {myPlayers
-                          .filter((p) => p.team_id === s.team_id)
+                          .filter((p) => p.team_ids.includes(s.team_id))
                           .map((p) => (
                             <ReplyBadge key={p.id} sessionId={s.id} playerId={p.id} name={myPlayers.length > 1 ? kidName(p) : undefined} />
                           ))}

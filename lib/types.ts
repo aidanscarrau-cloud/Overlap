@@ -8,7 +8,10 @@ export type Team = { id: string; club_id: string; name: string; age_group: strin
 export type Player = {
   id: string;
   club_id: string;
+  /** Main team. */
   team_id: string;
+  /** Main team first, then any other teams they play or train with. */
+  team_ids: string[];
   full_name: string;
   shirt_number: number | null;
   position: Position;

@@ -13,6 +13,7 @@ export function Squad() {
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("squad.edit", team.id);
   const seeAtt = can("attendance.view");
+  const teamName = (id: string) => data.teams.find((t) => t.id === id)?.name ?? "another team";
   const all = squad();
   const cnt: Record<string, number> = { all: all.length, available: 0, injured: 0, unavailable: 0 };
   all.forEach((p) => cnt[p.status]++);
@@ -68,6 +69,11 @@ export function Squad() {
                           </span>
                           <span className={`status s-${p.status}`}>{STATUS[p.status]}</span>
                         </span>
+                        {p.team_id !== team.id ? (
+                          <span className="team-tag">From {teamName(p.team_id)}</span>
+                        ) : p.team_ids.length > 1 ? (
+                          <span className="team-tag">Also {p.team_ids.slice(1).map(teamName).join(", ")}</span>
+                        ) : null}
                       </span>
                       {p.status_note && <span className="note">{p.status_note}</span>}
                       {(seeAtt || data.me.player_ids.includes(p.id)) && (

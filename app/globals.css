@@ -463,3 +463,4 @@ fieldset.plain:disabled .acts,fieldset.plain:disabled .mins input{opacity:.6}
 .autolink:hover{text-decoration-thickness:2px}
 .autolink.addr{white-space:normal}
 .autolink.addr svg.i{width:14px;height:14px;vertical-align:-2px;margin-right:2px}
+.team-tag{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:1px 7px;justify-self:start}

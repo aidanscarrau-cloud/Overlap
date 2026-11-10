@@ -130,7 +130,7 @@ export function Overview() {
       )}
 
       {myPlayers.map((p) => (
-        <TrainingReplies key={p.id} playerId={p.id} teamId={p.team_id} parent={parent} name={kidName(p)} />
+        <TrainingReplies key={p.id} playerId={p.id} teamIds={p.team_ids} parent={parent} name={kidName(p)} />
       ))}
 
       {data.announcements.length > 0 && (
@@ -332,11 +332,15 @@ export function Overview() {
   );
 }
 
-function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string; teamId: string; parent: boolean; name: string }) {
-  const { sessionsOf, data } = useApp();
+function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string; teamIds: string[]; parent: boolean; name: string }) {
+  const { data } = useApp();
   const today = todayIso();
-  const upcoming = sessionsOf(teamId).filter((s) => s.date >= today).slice(0, 4);
-  const teamName = data.teams.find((t) => t.id === teamId)?.name;
+  const upcoming = data.sessions
+    .filter((s) => teamIds.includes(s.team_id) && s.date >= today)
+    .sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time))
+    .slice(0, 6);
+  const tName = (id: string) => data.teams.find((t) => t.id === id)?.name ?? "";
+  const teamName = teamIds.map(tName).join(", ");
   return (
     <section className="card" style={{ marginTop: 16 }}>
       <div className="card-h">
@@ -354,6 +358,7 @@ function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string;
             <span className="rt">
               <b>{s.title || "Training session"}</b>
               <span>
+                {teamIds.length > 1 ? `${tName(s.team_id)} · ` : ""}
                 {whenLabel(s.date)} · {hhmm(s.start_time)}
                 {s.location ? ` · ${s.location}` : ""}
               </span>
