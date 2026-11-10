@@ -4,16 +4,18 @@ A football club hub: squads, session planning, a drill library with a pitch diag
 
 Built with Next.js (App Router) and Supabase (Postgres, Auth and row level security). Deploys to Vercel.
 
-## Roles
+## Roles and permissions
 
-| Role | Can do |
+| Role | Default access |
 | --- | --- |
-| Club admin | Everything: rename the club, manage teams, change member roles, invite anyone |
-| Coach | Manage players, sessions, attendance and drills; invite players and parents |
-| Player | See the club's squads, sessions and drills; update their own availability |
+| Club admin | Everything, in every team |
+| Coach | The teams they're assigned to: squad, sessions, attendance, notes, drills, invites for players and parents |
+| Player | Their own team, read-only; their own availability, note and attendance |
 | Parent | Same as a player, for their linked child |
 
-The rules live in the database (`supabase/migrations/0001_init.sql`), so they hold even if someone calls the API directly.
+Admins assign coaches (and anyone else) to teams on **Club & members → Members**, and can switch each permission on or off per role under **Roles & permissions**. Injury notes, session notes, attendance and the members list are hidden from players and parents by default.
+
+Everything is enforced by the database (see `supabase/migrations/`), so it holds even if someone calls the API directly. Notes columns can't be selected directly; the app reads them through `get_player_notes()` and `get_session_notes()`. If you add columns to `players` or `sessions`, grant `select` on them to `authenticated`.
 
 ## Set up
 

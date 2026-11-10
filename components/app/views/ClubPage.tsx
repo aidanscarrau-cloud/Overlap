@@ -11,9 +11,10 @@ import { removeLogoFile, uploadLogo } from "@/lib/logo";
 import { ROLES, ROLE_HELP } from "@/lib/constants";
 import { errMsg, initials } from "@/lib/format";
 import type { Invite, Member, Role } from "@/lib/types";
+import { CONFIGURABLE_ROLES, PERMS, defaultPerm, type Perm } from "@/lib/permissions";
 
 export function ClubPage() {
-  const { data, isAdmin, canEdit } = useApp();
+  const { data, isAdmin, can } = useApp();
   return (
     <>
       <div className="phead">
@@ -26,8 +27,9 @@ export function ClubPage() {
         {isAdmin && <ClubSettings />}
         {isAdmin && <SampleDataCard />}
         {isAdmin && <TeamsCard />}
-        {canEdit && <InvitesCard />}
-        <MembersCard />
+        {isAdmin && <RolesCard />}
+        {(isAdmin || can("invites.create")) && <InvitesCard />}
+        {(isAdmin || can("members.view")) && <MembersCard />}
         <AccountCard />
       </div>
     </>
@@ -128,7 +130,8 @@ function InvitesCard() {
   const allowed: Role[] = isAdmin ? ["coach", "player", "parent", "admin"] : ["player", "parent"];
   const [invites, setInvites] = useState<Invite[] | null>(null);
   const [role, setRole] = useState<Role>(allowed[0]);
-  const [teamId, setTeamId] = useState(team?.id ?? "");
+  const inviteTeams = isAdmin ? data.teams : data.teams.filter((t) => data.myTeamIds.includes(t.id));
+  const [teamId, setTeamId] = useState((team && inviteTeams.some((t) => t.id === team.id) ? team.id : inviteTeams[0]?.id) ?? "");
   const [playerId, setPlayerId] = useState("");
   const [multi, setMulti] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -211,8 +214,8 @@ function InvitesCard() {
             <label className="field">
               <span>Team</span>
               <select className="input" id="inv-team" value={teamId} onChange={(e) => (setTeamId(e.target.value), setPlayerId(""))}>
-                <option value="">{role === "admin" || role === "coach" ? "All teams" : "No team"}</option>
-                {data.teams.map((t) => (
+                {isAdmin && <option value="">{role === "coach" ? "Assign teams later" : "No team"}</option>}
+                {inviteTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -314,18 +317,27 @@ function MembersCard() {
 function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
   const { data, supabase, refresh, toast } = useApp();
   const [busy, setBusy] = useState(false);
-  const teamName = data.teams.find((t) => t.id === m.team_id)?.name;
+  const teamNames = data.teams.filter((t) => m.team_ids.includes(t.id)).map((t) => t.name);
   const playerName = data.players.find((p) => p.id === m.player_id)?.full_name;
   const isMe = m.user_id === data.userId;
 
-  async function update(patch: Partial<Pick<Member, "role" | "team_id" | "player_id">>) {
+  async function run(fn: () => PromiseLike<{ error: unknown }>, msg: string) {
     setBusy(true);
-    const { error } = await supabase.from("memberships").update(patch).eq("id", m.id);
+    const { error } = await fn();
     setBusy(false);
     if (error) return toast(errMsg(error));
-    toast("Member updated");
+    toast(msg);
     refresh();
   }
+  const setRole = (role: Role) => run(() => supabase.from("memberships").update({ role }).eq("id", m.id), "Role updated");
+  const toggleTeam = (teamId: string, on: boolean) =>
+    run(
+      () =>
+        on
+          ? supabase.from("member_teams").insert({ membership_id: m.id, team_id: teamId })
+          : supabase.from("member_teams").delete().eq("membership_id", m.id).eq("team_id", teamId),
+      on ? "Team added" : "Team removed",
+    );
   async function remove() {
     const { error } = await supabase.from("memberships").delete().eq("id", m.id);
     if (error) return toast(errMsg(error));
@@ -333,43 +345,128 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
     refresh();
   }
 
+  const summary = [
+    !editable && ROLES[m.role],
+    m.role === "admin" ? "All teams" : teamNames.join(", ") || (m.role === "coach" ? "No teams assigned yet" : ""),
+    playerName && (m.role === "parent" ? `Parent of ${playerName}` : `Player: ${playerName}`),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="mrow">
       <span className="av">{initials(m.full_name)}</span>
-      <span style={{ minWidth: 0 }}>
-        <b style={{ display: "block" }}>
-          {m.full_name}
-          {isMe && <span className="muted"> (you)</span>}
-        </b>
-        <span className="muted" style={{ fontSize: 13 }}>
-          {[!editable && ROLES[m.role], teamName, playerName && (m.role === "parent" ? `Parent of ${playerName}` : `Player: ${playerName}`)].filter(Boolean).join(" · ") || ROLES[m.role]}
+      <span style={{ minWidth: 0, display: "grid", gap: 6 }}>
+        <span>
+          <b style={{ display: "block" }}>
+            {m.full_name}
+            {isMe && <span className="muted"> (you)</span>}
+          </b>
+          <span className="muted" style={{ fontSize: 13 }}>
+            {summary || ROLES[m.role]}
+          </span>
         </span>
+        {editable && m.role !== "admin" && data.teams.length > 0 && (
+          <span className="chips" role="group" aria-label={`Teams for ${m.full_name}`}>
+            {data.teams.map((t) => {
+              const on = m.team_ids.includes(t.id);
+              return (
+                <button key={t.id} type="button" className="chip" aria-pressed={on} disabled={busy} onClick={() => toggleTeam(t.id, !on)}>
+                  {t.name}
+                </button>
+              );
+            })}
+          </span>
+        )}
       </span>
       {editable ? (
         <>
-          <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <select className="input" aria-label={`Role for ${m.full_name}`} value={m.role} disabled={busy} onChange={(e) => update({ role: e.target.value as Role })}>
-              {(Object.keys(ROLES) as Role[]).map((r) => (
-                <option key={r} value={r}>
-                  {ROLES[r]}
-                </option>
-              ))}
-            </select>
-            <select className="input" aria-label={`Team for ${m.full_name}`} value={m.team_id ?? ""} disabled={busy} onChange={(e) => update({ team_id: e.target.value || null })}>
-              <option value="">No team</option>
-              {data.teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </span>
+          <select className="input" aria-label={`Role for ${m.full_name}`} value={m.role} disabled={busy} onChange={(e) => setRole(e.target.value as Role)}>
+            {(Object.keys(ROLES) as Role[]).map((r) => (
+              <option key={r} value={r}>
+                {ROLES[r]}
+              </option>
+            ))}
+          </select>
           <ConfirmButton className="btn sm danger" label="Remove" onConfirm={remove} />
         </>
       ) : (
         <span className="role-pill">{ROLES[m.role]}</span>
       )}
     </div>
+  );
+}
+
+function RolesCard() {
+  const { data, supabase, refresh, toast } = useApp();
+  const [busy, setBusy] = useState("");
+  const value = (role: Exclude<Role, "admin">, perm: Perm) => data.rolePerms.find((r) => r.role === role && r.perm === perm)?.allowed ?? defaultPerm(role, perm);
+
+  async function toggle(role: Exclude<Role, "admin">, perm: Perm) {
+    const key = role + perm;
+    setBusy(key);
+    const { error } = await supabase
+      .from("role_permissions")
+      .upsert({ club_id: data.club.id, role, perm, allowed: !value(role, perm) }, { onConflict: "club_id,role,perm" });
+    setBusy("");
+    if (error) return toast(errMsg(error));
+    toast(`${ROLES[role]}s: ${PERMS.find((p) => p.key === perm)!.label.toLowerCase()} ${!value(role, perm) ? "on" : "off"}`);
+    refresh();
+  }
+
+  return (
+    <section className="card">
+      <div className="card-h">
+        <h2>Roles &amp; permissions</h2>
+      </div>
+      <div className="card-b" style={{ display: "grid", gap: 12 }}>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+          Choose what each role can do. Coaches, players and parents only work with the teams they belong to (set below in Members), unless &quot;See all teams&quot; is on. Club admins can always do everything.
+        </p>
+        <div className="perm-wrap">
+          <table className="perm-table">
+            <thead>
+              <tr>
+                <th scope="col">Permission</th>
+                {CONFIGURABLE_ROLES.map((r) => (
+                  <th key={r} scope="col">
+                    {ROLES[r]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {PERMS.map((p) => (
+                <tr key={p.key}>
+                  <th scope="row">
+                    <b>{p.label}</b>
+                    <span>{p.help}</span>
+                  </th>
+                  {CONFIGURABLE_ROLES.map((r) => {
+                    const on = value(r, p.key);
+                    return (
+                      <td key={r}>
+                        <button
+                          type="button"
+                          className="switch"
+                          role="switch"
+                          aria-checked={on}
+                          aria-label={`${ROLES[r]}: ${p.label}`}
+                          disabled={busy === r + p.key}
+                          onClick={() => toggle(r, p.key)}
+                        >
+                          <i />
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -54,7 +54,7 @@ export type Member = {
   id: string;
   user_id: string;
   role: Role;
-  team_id: string | null;
+  team_ids: string[];
   player_id: string | null;
   full_name: string;
 };
@@ -69,6 +69,10 @@ export type Invite = {
 };
 
 export type ClubData = {
+  perms: import("./permissions").Perms;
+  rolePerms: import("./permissions").RolePerm[];
+  /** Teams this person works with (all teams for admins). */
+  myTeamIds: string[];
   userId: string;
   myName: string;
   club: Club;

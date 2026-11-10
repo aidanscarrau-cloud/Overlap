@@ -12,15 +12,19 @@ import type { Category, PlanItem } from "@/lib/types";
 type Draft = { id: string | null; team_id: string; date: string; start_time: string; location: string; title: string; focus: string; notes: string; plan: PlanItem[] };
 
 export function SessionSheet({ id }: { id: string | null }) {
-  const { data, team, drillMap, squad, attendedSet, canEdit, supabase, refresh, close, toast } = useApp();
+  const { data, team, drillMap, squad, attendedSet, can, canDo, supabase, refresh, close, toast } = useApp();
+  const planTeams = data.teams.filter((t) => canDo("sessions.edit", t.id));
   const existing = id ? data.sessions.find((s) => s.id === id) : null;
   const [d, setD] = useState<Draft>(() =>
     existing
       ? { id: existing.id, team_id: existing.team_id, date: existing.date, start_time: hhmm(existing.start_time), location: existing.location, title: existing.title, focus: existing.focus, notes: existing.notes, plan: existing.plan.map((x) => ({ ...x })) }
-      : { id: null, team_id: team?.id ?? "", date: todayIso(), start_time: "18:00", location: "Main Pitch", title: "", focus: "", notes: "", plan: [] },
+      : { id: null, team_id: (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id) ?? "", date: todayIso(), start_time: "18:00", location: "Main Pitch", title: "", focus: "", notes: "", plan: [] },
   );
   const [att, setAtt] = useState<Set<string>>(() => new Set(id ? attendedSet(id) : []));
-  const [tab, setTab] = useState<"plan" | "attendance" | "notes">("plan");
+  const canPlan = canDo("sessions.edit", existing?.team_id ?? (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id));
+  const canAttend = canDo("attendance.edit", existing?.team_id ?? team?.id);
+  const seeNotes = can("sessions.view_notes");
+  const [tab, setTab] = useState<"plan" | "attendance" | "notes">(canPlan ? "plan" : "attendance");
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<Draft>) => setD((x) => ({ ...x, ...patch }));
   const players = squad(d.team_id);
@@ -31,9 +35,13 @@ export function SessionSheet({ id }: { id: string | null }) {
     if (!d.team_id) return toast("Add a team before planning sessions.");
     setBusy(true);
     try {
-      const row = { team_id: d.team_id, date: d.date, start_time: d.start_time, location: d.location.trim(), title: d.title.trim() || "Training session", focus: d.focus.trim(), notes: d.notes, plan: d.plan };
+      const row: Record<string, unknown> = { team_id: d.team_id, date: d.date, start_time: d.start_time, location: d.location.trim(), title: d.title.trim() || "Training session", focus: d.focus.trim(), plan: d.plan };
+      // Only write notes if this person can read them; otherwise they'd wipe notes they can't see.
+      if (seeNotes) row.notes = d.notes;
       let sid = d.id;
-      if (sid) {
+      if (sid && !canPlan) {
+        // Attendance only.
+      } else if (sid) {
         const { error } = await supabase.from("sessions").update(row).eq("id", sid);
         if (error) throw error;
       } else {
@@ -42,8 +50,9 @@ export function SessionSheet({ id }: { id: string | null }) {
         sid = ins.id as string;
       }
       const before = d.id ? attendedSet(d.id) : new Set<string>();
-      const add = [...att].filter((p) => !before.has(p)).map((player_id) => ({ session_id: sid, player_id }));
-      const remove = [...before].filter((p) => !att.has(p));
+      const want = canAttend ? att : before; // without the switch, attendance is left as it was
+      const add = [...want].filter((p) => !before.has(p)).map((player_id) => ({ session_id: sid, player_id }));
+      const remove = [...before].filter((p) => !want.has(p));
       if (add.length) {
         const { error } = await supabase.from("attendance").insert(add);
         if (error) throw error;
@@ -73,7 +82,8 @@ export function SessionSheet({ id }: { id: string | null }) {
     refresh();
   }
 
-  if (!canEdit && existing) return <SessionReadOnly id={existing.id} />;
+  if (existing && !canPlan && !canAttend) return <SessionReadOnly id={existing.id} />;
+  if (!existing && !canPlan) return <SheetFrame title="New session">You can&apos;t plan sessions for any of your teams.</SheetFrame>;
 
   let clock = d.start_time;
   const used = [...new Set(d.plan.map((x) => drillMap.get(x.drill_id)?.category).filter(Boolean))] as Category[];
@@ -83,7 +93,7 @@ export function SessionSheet({ id }: { id: string | null }) {
       title={d.id ? "Session plan" : "New session"}
       foot={
         <>
-          {d.id ? <ConfirmButton label="Delete" onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
+          {d.id && canPlan ? <ConfirmButton label="Delete" onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
           <button className="btn" onClick={close}>
             Cancel
           </button>
@@ -93,6 +103,7 @@ export function SessionSheet({ id }: { id: string | null }) {
         </>
       }
     >
+      <fieldset className="plain" disabled={!canPlan}>
       <input className="title-input" id="s-title" placeholder="Session title" value={d.title} onChange={(e) => set({ title: e.target.value })} aria-label="Session title" maxLength={100} />
       <div className="row2">
         <label className="field">
@@ -111,11 +122,11 @@ export function SessionSheet({ id }: { id: string | null }) {
           <span>Focus</span>
           <input className="input" id="s-focus" value={d.focus} maxLength={60} onChange={(e) => set({ focus: e.target.value })} placeholder="e.g. Build-up" />
         </label>
-        {!d.id && data.teams.length > 1 && (
+        {!d.id && planTeams.length > 1 && (
           <label className="field">
             <span>Team</span>
             <select className="input" id="s-team" value={d.team_id} onChange={(e) => (set({ team_id: e.target.value }), setAtt(new Set()))}>
-              {data.teams.map((t) => (
+              {planTeams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
@@ -124,14 +135,15 @@ export function SessionSheet({ id }: { id: string | null }) {
           </label>
         )}
       </div>
+      </fieldset>
       <div className="subtabs" role="tablist">
         {(
           [
-            ["plan", "Plan"],
-            ["attendance", "Attendance"],
-            ["notes", "Notes"],
+            ["plan", "Plan", true],
+            ["attendance", "Attendance", canAttend],
+            ["notes", "Notes", seeNotes],
           ] as const
-        ).map(([k, l]) => (
+        ).filter(([, , show]) => show).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
             {l}
           </button>
@@ -139,7 +151,7 @@ export function SessionSheet({ id }: { id: string | null }) {
       </div>
 
       {tab === "plan" && (
-        <div style={{ display: "grid", gap: 14 }}>
+        <fieldset className="plain" disabled={!canPlan} style={{ display: "grid", gap: 14 }}>
           <div className="card card-b" style={{ paddingTop: 16 }}>
             <div className="plan-sum">
               <span className="eyebrow">Total time</span>
@@ -223,7 +235,7 @@ export function SessionSheet({ id }: { id: string | null }) {
               toast(`Added ${dr.name}`);
             }}
           />
-        </div>
+        </fieldset>
       )}
 
       {tab === "attendance" && (
@@ -270,8 +282,8 @@ export function SessionSheet({ id }: { id: string | null }) {
 
       {tab === "notes" && (
         <label className="field">
-          <span>Session notes (players and parents can read these)</span>
-          <textarea className="input" id="s-notes" rows={8} maxLength={5000} value={d.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Objectives, equipment, player feedback…" />
+          <span>Session notes</span>
+          <textarea className="input" id="s-notes" readOnly={!canPlan} rows={8} maxLength={5000} value={d.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Objectives, equipment, player feedback…" />
         </label>
       )}
     </SheetFrame>

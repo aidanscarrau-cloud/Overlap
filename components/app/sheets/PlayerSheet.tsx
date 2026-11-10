@@ -9,7 +9,7 @@ import { errMsg } from "@/lib/format";
 import type { Position, Status } from "@/lib/types";
 
 export function PlayerSheet({ id }: { id: string | null }) {
-  const { data, team, squad, canEdit, playerRate, supabase, refresh, close, toast } = useApp();
+  const { data, team, squad, can, canDo, manages, playerRate, supabase, refresh, close, toast } = useApp();
   const p = id ? data.players.find((x) => x.id === id) : null;
   const [d, setD] = useState(() =>
     p
@@ -21,6 +21,9 @@ export function PlayerSheet({ id }: { id: string | null }) {
   const set = (patch: Partial<typeof d>) => setD((x) => ({ ...x, ...patch }));
   const r = p ? playerRate(p) : null;
   const linked = p ? data.members.filter((m) => m.player_id === p.id) : [];
+  const canEdit = canDo("squad.edit", p ? p.team_id : team?.id);
+  const seeNotes = can("squad.view_notes");
+  const myTeams = data.teams.filter((t) => manages(t.id));
 
   if (id && !p) return <SheetFrame title="Player not found">This player has been removed.</SheetFrame>;
 
@@ -38,7 +41,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
           </div>
         </div>
         {r !== null && <AttendanceCard r={r} />}
-        <ReadOnlyNote>Only coaches and club admins can edit player details.</ReadOnlyNote>
+        <ReadOnlyNote>You can view this player but not edit their details.</ReadOnlyNote>
       </SheetFrame>
     );
   }
@@ -48,7 +51,9 @@ export function PlayerSheet({ id }: { id: string | null }) {
     const num = d.shirt_number === "" ? null : Number(d.shirt_number);
     if (num !== null && (num < 1 || num > 99)) return setErr("Shirt numbers go from 1 to 99.");
     setBusy(true);
-    const row = { full_name: d.full_name.trim(), shirt_number: num, position: d.position, status: d.status, status_note: d.status === "available" ? "" : d.status_note.trim(), team_id: d.team_id };
+    const row: Record<string, unknown> = { full_name: d.full_name.trim(), shirt_number: num, position: d.position, status: d.status, team_id: d.team_id };
+    // Only write the note if this person can read notes; otherwise they'd wipe one they can't see.
+    if (!p || seeNotes || d.status === "available") row.status_note = d.status === "available" ? "" : d.status_note.trim();
     const { error } = p ? await supabase.from("players").update(row).eq("id", p.id) : await supabase.from("players").insert(row);
     if (error) {
       setBusy(false);
@@ -106,7 +111,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
         <label className="field">
           <span>Team</span>
           <select className="input" id="p-team" value={d.team_id} onChange={(e) => set({ team_id: e.target.value })}>
-            {data.teams.map((t) => (
+            {myTeams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
@@ -125,7 +130,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
             ))}
           </select>
         </label>
-        {d.status !== "available" && (
+        {d.status !== "available" && (!p || seeNotes) && (
           <label className="field" style={{ gridColumn: "span 2" }}>
             <span>Status note</span>
             <input className="input" id="p-note" maxLength={120} value={d.status_note} onChange={(e) => set({ status_note: e.target.value })} placeholder="e.g. Ankle sprain, 1 wk" />
@@ -133,7 +138,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
         )}
       </div>
       {r !== null && <AttendanceCard r={r} />}
-      {p && (
+      {p && (data.role === "admin" || can("members.view")) && (
         <div className="muted" style={{ fontSize: 13.5 }}>
           {linked.length
             ? `Linked accounts: ${linked.map((m) => `${m.full_name} (${m.role})`).join(", ")}. They can update this player's availability.`

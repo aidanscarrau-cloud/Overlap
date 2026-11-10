@@ -10,7 +10,8 @@ import { errMsg, fmtDay, fmtMon, fmtNum, todayIso } from "@/lib/format";
 import type { Category, Diagram as DiagramT } from "@/lib/types";
 
 export function DrillView({ id }: { id: string }) {
-  const { data, team, drillMap, sessionsOf, canEdit, supabase, refresh, close, open, toast } = useApp();
+  const { data, team, drillMap, sessionsOf, can, canDo, supabase, refresh, close, open, toast } = useApp();
+  const canEdit = can("drills.edit");
   const d = drillMap.get(id);
   const up = sessionsOf().filter((s) => s.date >= todayIso());
   const [target, setTarget] = useState(up[0]?.id ?? "");
@@ -126,7 +127,7 @@ export function DrillView({ id }: { id: string }) {
           </ol>
         </div>
       )}
-      {canEdit && team && (
+      {team && canDo("sessions.edit", team.id) && (
         <div className="card card-b" style={{ display: "grid", gap: 10, paddingTop: 16 }}>
           <span className="eyebrow">Add to a {team.name} session</span>
           {up.length ? (
@@ -152,7 +153,8 @@ export function DrillView({ id }: { id: string }) {
 }
 
 export function DrillEdit({ id }: { id: string | null }) {
-  const { data, drillMap, canEdit, supabase, refresh, open, close, toast } = useApp();
+  const { data, drillMap, can, supabase, refresh, open, close, toast } = useApp();
+  const canEdit = can("drills.edit");
   const ex = id ? drillMap.get(id) : null;
   const [d, setD] = useState({
     name: ex?.name ?? "",

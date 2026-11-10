@@ -12,7 +12,8 @@ export const filterDrills = (drills: Drill[], cat: "all" | Category, q: string) 
 };
 
 export function Drills() {
-  const { data, canEdit, open } = useApp();
+  const { data, can, open } = useApp();
+  const canEdit = can("drills.edit");
   const [cat, setCat] = useState<"all" | Category>("all");
   const [q, setQ] = useState("");
   const ds = filterDrills(data.drills, cat, q);

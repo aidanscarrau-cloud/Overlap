@@ -8,9 +8,11 @@ import { POS, POSNAME, STATUS } from "@/lib/constants";
 import type { Status } from "@/lib/types";
 
 export function Squad() {
-  const { team, squad, playerRate, canEdit, isAdmin, open } = useApp();
+  const { data, team, squad, playerRate, can, canDo, isAdmin, open } = useApp();
   const [filter, setFilter] = useState<"all" | Status>("all");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
+  const canEdit = canDo("squad.edit", team.id);
+  const seeAtt = can("attendance.view");
   const all = squad();
   const cnt: Record<string, number> = { all: all.length, available: 0, injured: 0, unavailable: 0 };
   all.forEach((p) => cnt[p.status]++);
@@ -68,6 +70,7 @@ export function Squad() {
                         </span>
                       </span>
                       {p.status_note && <span className="note">{p.status_note}</span>}
+                      {(seeAtt || p.id === data.me.player_id) && (
                       <span className="att">
                         Attendance
                         <span className="bar">
@@ -75,6 +78,7 @@ export function Squad() {
                         </span>
                         <b>{r === null ? "–" : r + "%"}</b>
                       </span>
+                      )}
                     </button>
                   );
                 })}

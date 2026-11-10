@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import type { ClubData, Drill, Player, Session, Team } from "@/lib/types";
+import type { Perm } from "@/lib/permissions";
 
 export type Sheet =
   | { kind: "session"; id: string | null }
@@ -18,8 +19,13 @@ type Ctx = {
   data: ClubData;
   team: Team | null;
   setTeam: (id: string) => void;
-  canEdit: boolean;
   isAdmin: boolean;
+  /** Does this person's role have the switch on? */
+  can: (perm: Perm) => boolean;
+  /** Is this one of the teams they work with? */
+  manages: (teamId?: string | null) => boolean;
+  /** Switch on AND their own team: what the database requires to change team data. */
+  canDo: (perm: Perm, teamId?: string | null) => boolean;
   drillMap: Map<string, Drill>;
   squad: (teamId?: string) => Player[];
   sessionsOf: (teamId?: string) => Session[];
@@ -43,8 +49,8 @@ export const useApp = () => {
 export function AppProvider({ data, initialTeam, children }: { data: ClubData; initialTeam: string | null; children: React.ReactNode }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const [teamId, setTeamId] = useState<string | null>(initialTeam ?? data.me?.team_id ?? null);
-  const team = data.teams.find((t) => t.id === teamId) ?? data.teams.find((t) => t.id === data.me?.team_id) ?? data.teams[0] ?? null;
+  const [teamId, setTeamId] = useState<string | null>(initialTeam);
+  const team = data.teams.find((t) => t.id === teamId) ?? data.teams.find((t) => data.myTeamIds.includes(t.id)) ?? data.teams[0] ?? null;
 
   const setTeam = useCallback((id: string) => {
     setTeamId(id);
@@ -98,8 +104,10 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     data,
     team,
     setTeam,
-    canEdit: data.role === "admin" || data.role === "coach",
     isAdmin: data.role === "admin",
+    can: (perm) => data.perms[perm],
+    manages: (tid) => !!tid && data.myTeamIds.includes(tid),
+    canDo: (perm, tid) => data.perms[perm] && !!tid && data.myTeamIds.includes(tid),
     drillMap,
     squad,
     sessionsOf,

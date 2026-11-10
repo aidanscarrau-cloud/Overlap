@@ -8,9 +8,10 @@ import { addMins, hhmm, todayIso, weekKey, weekLabel } from "@/lib/format";
 import type { Session } from "@/lib/types";
 
 export function Sessions() {
-  const { team, sessionsOf, squad, attendedSet, drillMap, canEdit, isAdmin, open } = useApp();
+  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open } = useApp();
   const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
+  const canEdit = canDo("sessions.edit", team.id);
   const today = todayIso();
   const ss = sessionsOf();
   const up = ss.filter((s) => s.date >= today);
@@ -90,7 +91,7 @@ export function Sessions() {
                         <b>{s.plan.length}</b> drills · <b>{totalMins(s)}</b> min
                       </span>
                       <span>
-                        {isPast ? (
+                        {isPast && !can("attendance.view") ? null : isPast ? (
                           <>
                             <b>{attendedSet(s.id).size}</b>/{n} attended
                           </>

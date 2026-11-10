@@ -9,8 +9,9 @@ import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, 
 import type { Status } from "@/lib/types";
 
 export function Overview() {
-  const { data, team, squad, sessionsOf, attendedSet, drillMap, canEdit, isAdmin, open, setTeam } = useApp();
+  const { data, team, squad, sessionsOf, attendedSet, drillMap, can, canDo, playerRate, isAdmin, open, setTeam } = useApp();
   if (!team) return <NoTeams isAdmin={isAdmin} />;
+  const canEdit = canDo("sessions.edit", team.id);
 
   const today = todayIso();
   const sq = squad();
@@ -130,6 +131,7 @@ export function Overview() {
             {c.injured} injured · {c.unavailable} away
           </span>
         </div>
+        {can("attendance.view") ? (
         <div className="card stat">
           <span className="eyebrow">Attendance</span>
           <div className="stat-row">
@@ -145,6 +147,19 @@ export function Overview() {
           </div>
           <span className="sub">{past.length ? `Average, last ${past.length} sessions` : "No completed sessions yet"}</span>
         </div>
+        ) : myPlayer && playerRate(myPlayer) !== null ? (
+          <div className="card stat">
+            <span className="eyebrow">Your attendance</span>
+            <div className="v tnum">
+              {playerRate(myPlayer)}
+              <small>%</small>
+            </div>
+            <div className="bar" style={{ flex: "none" }} aria-hidden="true">
+              <i style={{ width: `${playerRate(myPlayer)}%` }} />
+            </div>
+            <span className="sub">of completed sessions{data.role === "parent" ? ` for ${myPlayer.full_name.split(" ")[0]}` : ""}</span>
+          </div>
+        ) : null}
         <div className="card stat">
           <span className="eyebrow">Training load</span>
           <div className="v tnum">
