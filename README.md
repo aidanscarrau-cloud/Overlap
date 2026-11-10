@@ -45,6 +45,14 @@ Open http://localhost:3000, create an account, then **Start a club**. Tick "Add 
 3. Under **Environment Variables**, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 4. Click **Deploy**. When it finishes, copy your `.vercel.app` address into Supabase's **Site URL** (step 1.4).
 
+## Private to one club
+
+After the first club is created, nobody can start another one: new people need an invite code. This is enforced in the database (`0003_private_site.sql`). To open the site to other clubs later, run this in the Supabase SQL Editor:
+
+```sql
+update public.app_settings set allow_new_clubs = true where id = 1;
+```
+
 ## Inviting people
 
 On **Club & members**, create an invite code. Choose the role, the team and, for players and parents, which player it's for. Send the person the code or its link (`/join/CODE`). They create an account and join with that role. Codes last 14 days.

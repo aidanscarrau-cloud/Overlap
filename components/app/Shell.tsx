@@ -64,7 +64,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   {c.name}
                 </option>
               ))}
-              <option value="__new">Join or start another club…</option>
+              <option value="__new">Join another club…</option>
             </select>
           )}
           {data.teams.length > 0 && (
@@ -100,7 +100,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {data.clubs.length === 1 && (
           <Link href="/onboarding" style={{ fontSize: 12.5, color: "var(--on-navy-muted)" }}>
-            Join or start another club
+            Join another club
           </Link>
         )}
       </aside>

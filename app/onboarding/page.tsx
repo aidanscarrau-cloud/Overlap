@@ -13,13 +13,14 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const [{ data: profile }, { count }] = await Promise.all([
+  const [{ data: profile }, { count }, { data: canCreate }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     supabase.from("memberships").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase.rpc("new_clubs_allowed"),
   ]);
   return (
     <AuthShell>
-      <OnboardingForm code={sp.code?.toUpperCase() ?? ""} name={profile?.full_name ?? ""} email={user.email ?? ""} hasClub={(count ?? 0) > 0} />
+      <OnboardingForm code={sp.code?.toUpperCase() ?? ""} name={profile?.full_name ?? ""} email={user.email ?? ""} hasClub={(count ?? 0) > 0} canCreate={canCreate !== false} />
     </AuthShell>
   );
 }

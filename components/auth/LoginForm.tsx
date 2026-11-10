@@ -72,6 +72,11 @@ export function LoginForm({ next, initialError, startMode }: { next: string; ini
           </button>
         </div>
       )}
+      {mode === "signup" && !next.startsWith("/join/") && !next.startsWith("/onboarding?code=") && (
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+          You&apos;ll need an invite code from your club to get in after creating your account.
+        </p>
+      )}
       {error && <div className="notice bad" role="alert">{error}</div>}
       {info && <div className="notice" role="status">{info}</div>}
       <form onSubmit={submit}>

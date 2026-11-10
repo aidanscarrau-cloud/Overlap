@@ -7,9 +7,9 @@ import { addSampleData } from "@/lib/sample";
 import { prepareLogo, uploadLogo } from "@/lib/logo";
 import { errMsg } from "@/lib/format";
 
-export function OnboardingForm({ code: initialCode, name: initialName, email, hasClub }: { code: string; name: string; email: string; hasClub: boolean }) {
+export function OnboardingForm({ code: initialCode, name: initialName, email, hasClub, canCreate }: { code: string; name: string; email: string; hasClub: boolean; canCreate: boolean }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"create" | "join">(initialCode ? "join" : "create");
+  const [mode, setMode] = useState<"create" | "join">(initialCode || !canCreate ? "join" : "create");
   const [name, setName] = useState(initialName);
   const [clubName, setClubName] = useState("");
   const [code, setCode] = useState(initialCode);
@@ -65,8 +65,14 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
     <div className="auth-card">
       <div>
         <div className="eyebrow">Signed in as {email}</div>
-        <h2 style={{ marginTop: 6 }}>{hasClub ? "Add another club" : "Get started"}</h2>
+        <h2 style={{ marginTop: 6 }}>{!canCreate ? "Join your club" : hasClub ? "Add another club" : "Get started"}</h2>
       </div>
+      {!canCreate && (
+        <p className="muted" style={{ margin: 0 }}>
+          Enter the invite code your club admin or coach sent you. If you don&apos;t have one, ask them for an invite.
+        </p>
+      )}
+      {canCreate && (
       <div className="choice">
         <button type="button" aria-pressed={mode === "create"} onClick={() => setMode("create")}>
           <b>Start a club</b>
@@ -77,6 +83,7 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
           <span>Use the invite code your club admin or coach gave you.</span>
         </button>
       </div>
+      )}
       {error && <div className="notice bad" role="alert">{error}</div>}
       <form onSubmit={submit}>
         <label className="field">

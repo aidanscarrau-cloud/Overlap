@@ -417,7 +417,7 @@ function AccountCard() {
             </button>
           </form>
           <a className="btn" href="/onboarding">
-            Join or start another club
+            Join another club
           </a>
           {data.role !== "admin" && <ConfirmButton className="btn danger" label={`Leave ${data.club.name}`} onConfirm={leave} />}
         </div>
