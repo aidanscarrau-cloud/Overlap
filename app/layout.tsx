@@ -3,9 +3,10 @@ import localFont from "next/font/local";
 import { SPRITE } from "@/components/sprite";
 import "./globals.css";
 
-// Funnel Display + Funnel Sans (SIL Open Font License), self-hosted variable fonts, Latin subset.
-const display = localFont({ src: "./fonts/FunnelDisplay-latin.woff2", weight: "300 800", variable: "--font-display", display: "swap" });
-const body = localFont({ src: "./fonts/FunnelSans-latin.woff2", weight: "300 800", variable: "--font-body", display: "swap" });
+// Geist + Geist Mono (coaches' "pro" look) and Onest (families' "calm" look); SIL Open Font License, self-hosted.
+const geist = localFont({ src: "./fonts/Geist-latin.woff2", weight: "100 900", variable: "--font-geist", display: "swap" });
+const mono = localFont({ src: "./fonts/GeistMono-latin.woff2", weight: "100 900", variable: "--font-mono", display: "swap" });
+const onest = localFont({ src: "./fonts/Onest-latin.woff2", weight: "100 900", variable: "--font-onest", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Overlap", template: "%s · Overlap" },
@@ -15,7 +16,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${geist.variable} ${mono.variable} ${onest.variable}`}>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} style={{ display: "contents" }} />
         {children}

@@ -19,16 +19,27 @@ const NAV = [
   { href: "/club", label: "Club & members", short: "Club", icon: "i-people" },
 ];
 
+// Players and parents get a short, plain menu; nothing they don't need.
+const FAMILY_NAV = [
+  { href: "/", label: "Home", short: "Home", icon: "i-home" },
+  { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
+  { href: "/development", label: "My plan", short: "My plan", icon: "i-target" },
+  { href: "/announcements", label: "News", short: "News", icon: "i-megaphone" },
+  { href: "/club", label: "Account", short: "Account", icon: "i-people" },
+];
+
 export function Shell({ children }: { children: React.ReactNode }) {
   const { data, team, setTeam } = useApp();
+  const family = data.role === "player" || data.role === "parent";
+  const nav = family ? FAMILY_NAV : NAV;
   const path = usePathname();
   const router = useRouter();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   const [more, setMore] = useState(false);
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
-  const PHONE = ["/", "/squad", "/sessions", "/development"];
-  const moreItems = NAV.filter((n) => !PHONE.includes(n.href));
+  const PHONE = family ? FAMILY_NAV.map((n) => n.href) : ["/", "/squad", "/sessions", "/development"];
+  const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
     if (id === "__new") return router.push("/onboarding");
@@ -85,8 +96,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </div>
         <nav className="snav" aria-label="Sections">
-          <div className="lbl">Club hub</div>
-          {NAV.map((n) => (
+          {!family && <div className="lbl">Club hub</div>}
+          {nav.map((n) => (
             <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
               <svg className="i">
                 <use href={`#${n.icon}`} />
@@ -142,7 +153,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <nav className="bnav" aria-label="Sections">
-        {NAV.filter((n) => PHONE.includes(n.href)).map((n) => (
+        {nav.filter((n) => PHONE.includes(n.href)).map((n) => (
           <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
             <svg className="i">
               <use href={`#${n.icon}`} />
@@ -150,6 +161,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {n.short}
           </Link>
         ))}
+        {moreItems.length > 0 && (
         <button type="button" aria-expanded={more} aria-haspopup="menu" onClick={() => setMore(!more)} style={moreItems.some((n) => active(n.href)) && !more ? { color: "var(--gold)" } : undefined}>
           <svg className="i" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
@@ -158,6 +170,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </svg>
           More
         </button>
+        )}
       </nav>
       <SheetHost />
     </div>

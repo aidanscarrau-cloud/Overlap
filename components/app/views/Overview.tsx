@@ -341,7 +341,7 @@ export function Overview() {
   );
 }
 
-function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string; teamIds: string[]; parent: boolean; name: string }) {
+export function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string; teamIds: string[]; parent: boolean; name: string }) {
   const { data } = useApp();
   const today = todayIso();
   const upcoming = data.sessions
@@ -383,7 +383,7 @@ function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string
   );
 }
 
-function MyGoals({ playerId, name, parent }: { playerId: string; name: string; parent: boolean }) {
+export function MyGoals({ playerId, name, parent }: { playerId: string; name: string; parent: boolean }) {
   const { goalsOf, evaluationsOf } = useApp();
   const active = goalsOf(playerId).filter((g) => g.status === "active");
   const latest = evaluationsOf(playerId)[0];
@@ -444,7 +444,7 @@ function DevelopmentSummary() {
   );
 }
 
-function MyAvailability({ playerId, status, note, name, parent }: { playerId: string; status: Status; note: string; name: string; parent: boolean }) {
+export function MyAvailability({ playerId, status, note, name, parent }: { playerId: string; status: Status; note: string; name: string; parent: boolean }) {
   const { supabase, refresh, toast, patch } = useApp();
   const [st, setSt] = useState<Status>(status);
   const [nt, setNt] = useState(note);

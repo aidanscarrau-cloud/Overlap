@@ -1,4 +1,4 @@
-import { Overview } from "@/components/app/views/Overview";
+import { Home } from "@/components/app/views/Home";
 export default function Page() {
-  return <Overview />;
+  return <Home />;
 }

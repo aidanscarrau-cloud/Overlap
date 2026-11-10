@@ -166,12 +166,15 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
 
   return (
     <AppCtx.Provider value={value}>
+      {/* Coaches and admins get the dense "pro" look; players and parents the "calm" one. */}
+      <div className="look-root" data-look={data.role === "admin" || data.role === "coach" ? "pro" : "calm"}>
       {children}
       {toastMsg && (
         <div className="toast" role="status">
           {toastMsg}
         </div>
       )}
+      </div>
     </AppCtx.Provider>
   );
 }
