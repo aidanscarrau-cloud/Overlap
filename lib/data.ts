@@ -11,43 +11,51 @@ const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? nu
 /** Everything the signed-in person may see in their current club. The database's rules decide what that is. */
 export async function getClubData(): Promise<ClubData> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: auth } = await supabase.auth.getClaims();
+  const claims = auth?.claims;
+  if (!claims?.sub) redirect("/login");
+  const user = { id: claims.sub as string, email: (claims.email as string | undefined) ?? "" };
 
-  const { data: memsRaw, error } = await supabase
+  const jar = await cookies();
+  const wanted = jar.get("overlap-club")?.value;
+
+  const memsQuery = supabase
     .from("memberships")
     .select("id,club_id,user_id,role,clubs(id,name,logo_url)")
     .eq("user_id", user.id)
     .order("created_at");
-  if (error) throw error;
-  const mems = (memsRaw ?? []) as unknown as MemRow[];
-  if (!mems.length) redirect("/onboarding");
 
-  const jar = await cookies();
-  const wanted = jar.get("overlap-club")?.value;
+  // Everything for one club, fetched in parallel. Row level security limits what comes back.
+  const loadClub = (clubId: string) =>
+    Promise.all([
+      supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
+      supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
+      supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
+      supabase.from("sessions").select("id,club_id,team_id,date,start_time,location,title,focus,plan").eq("club_id", clubId).order("date").order("start_time"),
+      supabase.from("attendance").select("session_id,player_id").eq("club_id", clubId),
+      supabase.from("memberships").select("id,user_id,role,profiles(full_name)").eq("club_id", clubId).order("created_at"),
+      supabase.from("member_teams").select("membership_id,team_id").eq("club_id", clubId),
+      supabase.from("member_players").select("membership_id,player_id").eq("club_id", clubId),
+      supabase.from("player_teams").select("player_id,team_id").eq("club_id", clubId),
+      supabase.from("role_permissions").select("role,perm,allowed").eq("club_id", clubId),
+      supabase.rpc("get_player_notes", { c: clubId }),
+      supabase.rpc("get_session_notes", { c: clubId }),
+      supabase.from("announcements").select("id,team_id,title,body,pinned,author_id,author_name,created_at").eq("club_id", clubId).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100),
+      supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
+      supabase.rpc("get_player_loads", { c: clubId }),
+      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+    ]);
+
+  // If we already know which club to show, load it at the same time as the memberships.
+  const [memsRes, guessed] = await Promise.all([memsQuery, wanted ? loadClub(wanted) : Promise.resolve(null)]);
+  if (memsRes.error) throw memsRes.error;
+  const mems = (memsRes.data ?? []) as unknown as MemRow[];
+  if (!mems.length) redirect("/onboarding");
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, profile] = await Promise.all([
-    supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
-    supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
-    supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
-    supabase.from("sessions").select("id,club_id,team_id,date,start_time,location,title,focus,plan").eq("club_id", clubId).order("date").order("start_time"),
-    supabase.from("attendance").select("session_id,player_id").eq("club_id", clubId),
-    supabase.from("memberships").select("id,user_id,role,profiles(full_name)").eq("club_id", clubId).order("created_at"),
-    supabase.from("member_teams").select("membership_id,team_id").eq("club_id", clubId),
-    supabase.from("member_players").select("membership_id,player_id").eq("club_id", clubId),
-    supabase.from("player_teams").select("player_id,team_id").eq("club_id", clubId),
-    supabase.from("role_permissions").select("role,perm,allowed").eq("club_id", clubId),
-    supabase.rpc("get_player_notes", { c: clubId }),
-    supabase.rpc("get_session_notes", { c: clubId }),
-    supabase.from("announcements").select("id,team_id,title,body,pinned,author_id,author_name,created_at").eq("club_id", clubId).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100),
-    supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
-    supabase.rpc("get_player_loads", { c: clubId }),
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-  ]);
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, profile] =
+    guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads]) if (r.error) throw r.error;
 
   const teamsByMember = new Map<string, string[]>();

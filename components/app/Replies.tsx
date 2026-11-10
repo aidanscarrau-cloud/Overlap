@@ -6,18 +6,24 @@ import { errMsg } from "@/lib/format";
 
 /** "Are you coming?" Yes / No for one player and one session, with an optional reason for No. */
 export function ReplyButtons({ sessionId, playerId, label, who }: { sessionId: string; playerId: string; label?: string; who?: string }) {
-  const { repliesFor, supabase, refresh, toast } = useApp();
+  const { repliesFor, supabase, refresh, toast, patch } = useApp();
   const current = repliesFor(sessionId).get(playerId);
   const [askNote, setAskNote] = useState(false);
   const [note, setNote] = useState(current?.note ?? "");
   const [busy, setBusy] = useState(false);
 
   async function send(going: boolean, n = "") {
+    // Show the answer straight away, then save it.
+    setAskNote(false);
+    const reply = { session_id: sessionId, player_id: playerId, going, note: n.trim(), updated_at: new Date().toISOString() };
+    patch((d) => ({ ...d, replies: [...d.replies.filter((r) => !(r.session_id === sessionId && r.player_id === playerId)), reply] }));
     setBusy(true);
     const { error } = await supabase.rpc("reply_to_session", { p_session: sessionId, p_player: playerId, p_going: going, p_note: n.trim() });
     setBusy(false);
-    if (error) return toast(errMsg(error));
-    setAskNote(false);
+    if (error) {
+      refresh();
+      return toast(errMsg(error));
+    }
     toast(going ? `Thanks, ${who ?? "you're"} down as coming` : `Thanks, your coach knows ${who ?? "you"} can't make it`);
     refresh();
   }

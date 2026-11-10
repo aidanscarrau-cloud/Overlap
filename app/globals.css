@@ -475,3 +475,11 @@ fieldset.plain:disabled .acts,fieldset.plain:disabled .mins input{opacity:.6}
 .load-row b{font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
 .load-line{grid-column:1/-1;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
 .load-line b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Loading placeholder */
+.skel{display:grid;gap:16px}
+.skel-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.skel-row .skel-block{height:110px}
+.skel-block{border-radius:var(--r);background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:skel 1.2s ease-in-out infinite}
+@keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel-block{animation:none}}

@@ -378,17 +378,22 @@ function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string
 }
 
 function MyAvailability({ playerId, status, note, name, parent }: { playerId: string; status: Status; note: string; name: string; parent: boolean }) {
-  const { supabase, refresh, toast } = useApp();
+  const { supabase, refresh, toast, patch } = useApp();
   const [st, setSt] = useState<Status>(status);
   const [nt, setNt] = useState(note);
   const [busy, setBusy] = useState(false);
   const dirty = st !== status || nt !== note;
 
   async function save() {
+    const note = st === "available" ? "" : nt.trim();
+    patch((d) => ({ ...d, players: d.players.map((p) => (p.id === playerId ? { ...p, status: st, status_note: note } : p)) }));
     setBusy(true);
-    const { error } = await supabase.rpc("set_availability", { p_player: playerId, p_status: st, p_note: st === "available" ? "" : nt.trim() });
+    const { error } = await supabase.rpc("set_availability", { p_player: playerId, p_status: st, p_note: note });
     setBusy(false);
-    if (error) return toast(errMsg(error));
+    if (error) {
+      refresh();
+      return toast(errMsg(error));
+    }
     toast("Availability updated");
     refresh();
   }

@@ -44,6 +44,8 @@ type Ctx = {
   close: () => void;
   toast: (msg: string) => void;
   supabase: ReturnType<typeof createClient>;
+  /** Change what's on screen straight away; the next refresh replaces it with the saved data. */
+  patch: (fn: (d: ClubData) => ClubData) => void;
   refresh: () => void;
 };
 
@@ -54,8 +56,11 @@ export const useApp = () => {
   return c;
 };
 
-export function AppProvider({ data, initialTeam, children }: { data: ClubData; initialTeam: string | null; children: React.ReactNode }) {
+export function AppProvider({ data: serverData, initialTeam, children }: { data: ClubData; initialTeam: string | null; children: React.ReactNode }) {
   const router = useRouter();
+  // Local copy so changes show instantly; replaced whenever fresh data arrives from the server.
+  const [data, setData] = useState(serverData);
+  useEffect(() => setData(serverData), [serverData]);
   const supabase = useMemo(() => createClient(), []);
   const [teamId, setTeamId] = useState<string | null>(initialTeam);
   const team = data.teams.find((t) => t.id === teamId) ?? data.teams.find((t) => data.myTeamIds.includes(t.id)) ?? data.teams[0] ?? null;
@@ -145,6 +150,7 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     close: () => setSheet(null),
     toast,
     supabase,
+    patch: (fn) => setData((d) => fn(d)),
     refresh: () => router.refresh(),
   };
 

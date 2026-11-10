@@ -80,7 +80,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <nav className="snav" aria-label="Sections">
           <div className="lbl">Club hub</div>
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}>
+            <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
               <svg className="i">
                 <use href={`#${n.icon}`} />
               </svg>
@@ -124,7 +124,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <nav className="bnav" aria-label="Sections" style={{ gridTemplateColumns: `repeat(${NAV.length},1fr)` }}>
         {NAV.map((n) => (
-          <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}>
+          <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
             <svg className="i">
               <use href={`#${n.icon}`} />
             </svg>

@@ -29,9 +29,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() checks the signed session token locally (no network call on projects using
+  // Supabase's JWT signing keys); it falls back to asking Supabase on older projects.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const path = request.nextUrl.pathname;
   if (!user && !PUBLIC_PATHS.some((p) => path.startsWith(p))) {
