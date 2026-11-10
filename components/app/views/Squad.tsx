@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { Icon, Shirt } from "@/components/ui";
 import { NoTeams } from "./Overview";
+import { LoadLine } from "../Load";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
 import type { Status } from "@/lib/types";
 
@@ -76,6 +77,7 @@ export function Squad() {
                         ) : null}
                       </span>
                       {p.status_note && <span className="note">{p.status_note}</span>}
+                      <LoadLine playerId={p.id} />
                       {(seeAtt || data.me.player_ids.includes(p.id)) && (
                       <span className="att">
                         Attendance

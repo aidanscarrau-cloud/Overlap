@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
-import type { ClubData, Drill, Player, Reply, Session, Team } from "@/lib/types";
+import type { ClubData, Drill, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import type { Perm } from "@/lib/permissions";
 
 export type Sheet =
@@ -34,6 +34,8 @@ type Ctx = {
   repliesFor: (sessionId: string) => Map<string, Reply>;
   /** Players this person answers for (their own record, or their children). */
   myPlayers: Player[];
+  /** Training load across all the player's teams, if this person may see it. */
+  loadOf: (playerId: string) => PlayerLoad | undefined;
   /** First name, or full name if two of this person's players share a first name. */
   kidName: (p: Player) => string;
   playerRate: (p: Player) => number | null;
@@ -83,6 +85,8 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
   }, [data.replies]);
   const myPlayers = useMemo(() => data.players.filter((p) => data.me?.player_ids.includes(p.id)), [data.players, data.me]);
 
+  const loadMap = useMemo(() => new Map(data.loads.map((l) => [l.player_id, l])), [data.loads]);
+
   const squad = useCallback(
     (tid?: string) =>
       data.players.filter((p) => p.team_ids.includes((tid ?? team?.id) as string)).sort((a, b) => (a.shirt_number ?? 999) - (b.shirt_number ?? 999)),
@@ -130,6 +134,7 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     attendedSet,
     repliesFor: (sid) => replyMap.get(sid) ?? new Map(),
     myPlayers,
+    loadOf: (id) => loadMap.get(id),
     kidName: (p) => {
       const f = p.full_name.split(" ")[0];
       return myPlayers.filter((x) => x.full_name.split(" ")[0] === f).length > 1 ? p.full_name : f;

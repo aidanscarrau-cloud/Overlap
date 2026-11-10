@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
 import { Shirt } from "@/components/ui";
+import { LoadCard } from "../Load";
 import { POS, STATUS } from "@/lib/constants";
 import { errMsg } from "@/lib/format";
 import type { Position, Status } from "@/lib/types";
@@ -41,6 +42,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
           </div>
         </div>
         <OtherTeams playerId={p.id} />
+        <LoadCard playerId={p.id} />
         {r !== null && <AttendanceCard r={r} />}
         <ReadOnlyNote>You can view this player but not edit their details.</ReadOnlyNote>
       </SheetFrame>
@@ -139,6 +141,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
         )}
       </div>
       {p && <OtherTeams playerId={p.id} />}
+      {p && <LoadCard playerId={p.id} />}
       {r !== null && <AttendanceCard r={r} />}
       {p && (data.role === "admin" || can("members.view")) && (
         <div className="muted" style={{ fontSize: 13.5 }}>

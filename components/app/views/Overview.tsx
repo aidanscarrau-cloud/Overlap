@@ -6,6 +6,7 @@ import { useApp } from "../AppProvider";
 import { Crest, Icon, PitchLines, Shirt, Timeline, totalMins } from "@/components/ui";
 import { STATUS } from "@/lib/constants";
 import { ReplyButtons } from "../Replies";
+import { LoadWatch, MyLoadLine } from "../Load";
 import { AnnouncementItem } from "./Announcements";
 import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
 import type { Status } from "@/lib/types";
@@ -300,6 +301,8 @@ export function Overview() {
         </section>
       </div>
 
+      {can("attendance.view") && <LoadWatch />}
+
       <section className="card" style={{ marginTop: 16 }}>
         <div className="card-h">
           <h2>Club teams</h2>
@@ -346,6 +349,9 @@ function TrainingReplies({ playerId, teamIds, parent, name }: { playerId: string
       <div className="card-h">
         <h2>{parent ? `Is ${name} coming?` : "Are you coming?"}</h2>
         {teamName && <span className="muted" style={{ fontSize: 13 }}>{teamName}</span>}
+      </div>
+      <div style={{ padding: "6px 18px 0" }}>
+        <MyLoadLine playerId={playerId} />
       </div>
       <div className="card-b train-list">
         {!upcoming.length && <p className="muted" style={{ margin: 0 }}>No upcoming sessions yet. When your coach plans one, you can reply here.</p>}

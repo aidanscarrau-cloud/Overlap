@@ -84,7 +84,19 @@ export type Announcement = {
 };
 export type Reply = { session_id: string; player_id: string; going: boolean; note: string; updated_at: string };
 
+export type PlayerLoad = {
+  player_id: string;
+  mins_7d: number;
+  sessions_7d: number;
+  teams_7d: number;
+  mins_28d: number;
+  sessions_28d: number;
+  planned_mins_7d: number;
+  planned_sessions_7d: number;
+};
+
 export type ClubData = {
+  loads: PlayerLoad[];
   announcements: Announcement[];
   replies: Reply[];
   perms: import("./permissions").Perms;

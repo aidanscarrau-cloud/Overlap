@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
-import type { Announcement, Attendance, Club, ClubData, Drill, Member, Player, Reply, Role, Session, Team } from "@/lib/types";
+import type { Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -30,7 +30,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, profile] = await Promise.all([
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, profile] = await Promise.all([
     supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
     supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
     supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
@@ -45,9 +45,10 @@ export async function getClubData(): Promise<ClubData> {
     supabase.rpc("get_session_notes", { c: clubId }),
     supabase.from("announcements").select("id,team_id,title,body,pinned,author_id,author_name,created_at").eq("club_id", clubId).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(100),
     supabase.from("session_replies").select("session_id,player_id,going,note,updated_at").eq("club_id", clubId),
+    supabase.rpc("get_player_loads", { c: clubId }),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
-  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies]) if (r.error) throw r.error;
+  for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads]) if (r.error) throw r.error;
 
   const teamsByMember = new Map<string, string[]>();
   ((memberTeams.data ?? []) as { membership_id: string; team_id: string }[]).forEach((r) => {
@@ -108,6 +109,7 @@ export async function getClubData(): Promise<ClubData> {
     attendance: (attendance.data ?? []) as Attendance[],
     announcements: (announcements.data ?? []) as Announcement[],
     replies: (replies.data ?? []) as Reply[],
+    loads: (loads.data ?? []) as PlayerLoad[],
     members: memberList,
   };
 }
