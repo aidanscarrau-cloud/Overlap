@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
-import type { ClubData, Drill, Player, Session, Team } from "@/lib/types";
+import type { ClubData, Drill, Player, Reply, Session, Team } from "@/lib/types";
 import type { Perm } from "@/lib/permissions";
 
 export type Sheet =
@@ -30,6 +30,10 @@ type Ctx = {
   squad: (teamId?: string) => Player[];
   sessionsOf: (teamId?: string) => Session[];
   attendedSet: (sessionId: string) => Set<string>;
+  /** Replies for a session, by player id. */
+  repliesFor: (sessionId: string) => Map<string, Reply>;
+  /** The player this person answers for (their own record, or their child). */
+  myPlayer: Player | null;
   playerRate: (p: Player) => number | null;
   sheet: Sheet;
   open: (s: Sheet) => void;
@@ -66,6 +70,16 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     });
     return m;
   }, [data.attendance]);
+
+  const replyMap = useMemo(() => {
+    const m = new Map<string, Map<string, Reply>>();
+    data.replies.forEach((r) => {
+      if (!m.has(r.session_id)) m.set(r.session_id, new Map());
+      m.get(r.session_id)!.set(r.player_id, r);
+    });
+    return m;
+  }, [data.replies]);
+  const myPlayer = data.me?.player_id ? (data.players.find((p) => p.id === data.me.player_id) ?? null) : null;
 
   const squad = useCallback(
     (tid?: string) =>
@@ -112,6 +126,8 @@ export function AppProvider({ data, initialTeam, children }: { data: ClubData; i
     squad,
     sessionsOf,
     attendedSet,
+    repliesFor: (sid) => replyMap.get(sid) ?? new Map(),
+    myPlayer,
     playerRate,
     sheet,
     open: setSheet,

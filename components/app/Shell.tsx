@@ -10,6 +10,7 @@ import { Crest } from "@/components/ui";
 
 const NAV = [
   { href: "/", label: "Overview", short: "Overview", icon: "i-home" },
+  { href: "/announcements", label: "Announcements", short: "News", icon: "i-megaphone" },
   { href: "/squad", label: "Squad", short: "Squad", icon: "i-squad" },
   { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
   { href: "/drills", label: "Drill library", short: "Drills", icon: "i-board" },

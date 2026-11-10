@@ -11,6 +11,7 @@ export const PERMS = [
   { key: "drills.edit", label: "Create and edit drills", help: "The drill library is shared across the club." },
   { key: "members.view", label: "See the members list", help: "Names and roles of everyone in the club." },
   { key: "invites.create", label: "Invite players and parents", help: "Only to teams they belong to." },
+  { key: "announcements.post", label: "Post announcements", help: "To their teams. Only admins post to the whole club." },
 ] as const;
 
 export type Perm = (typeof PERMS)[number]["key"];

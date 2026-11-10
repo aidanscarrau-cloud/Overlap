@@ -6,9 +6,10 @@ import { DateBox, Icon, Timeline, totalMins } from "@/components/ui";
 import { NoTeams } from "./Overview";
 import { addMins, hhmm, todayIso, weekKey, weekLabel } from "@/lib/format";
 import type { Session } from "@/lib/types";
+import { ReplyBadge, ReplyCounts } from "../Replies";
 
 export function Sessions() {
-  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open } = useApp();
+  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayer } = useApp();
   const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("sessions.edit", team.id);
@@ -65,6 +66,11 @@ export function Sessions() {
                       {s.title || "Training session"}
                       {s.date === today && <span className="tag-today">Today</span>}
                     </h3>
+                    {!isPast && myPlayer?.team_id === s.team_id && (
+                      <div style={{ marginTop: 4 }}>
+                        <ReplyBadge sessionId={s.id} playerId={myPlayer.id} />
+                      </div>
+                    )}
                     <div className="smeta">
                       <span>
                         <Icon id="i-clock" />
@@ -91,7 +97,9 @@ export function Sessions() {
                         <b>{s.plan.length}</b> drills · <b>{totalMins(s)}</b> min
                       </span>
                       <span>
-                        {isPast && !can("attendance.view") ? null : isPast ? (
+                        {!isPast && can("attendance.view") ? (
+                          <ReplyCounts sessionId={s.id} playerIds={squad().map((p) => p.id)} />
+                        ) : isPast && !can("attendance.view") ? null : isPast ? (
                           <>
                             <b>{attendedSet(s.id).size}</b>/{n} attended
                           </>

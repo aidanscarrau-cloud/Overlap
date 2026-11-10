@@ -68,7 +68,21 @@ export type Invite = {
   uses: number;
 };
 
+export type Announcement = {
+  id: string;
+  team_id: string | null;
+  title: string;
+  body: string;
+  pinned: boolean;
+  author_id: string | null;
+  author_name: string;
+  created_at: string;
+};
+export type Reply = { session_id: string; player_id: string; going: boolean; note: string; updated_at: string };
+
 export type ClubData = {
+  announcements: Announcement[];
+  replies: Reply[];
   perms: import("./permissions").Perms;
   rolePerms: import("./permissions").RolePerm[];
   /** Teams this person works with (all teams for admins). */

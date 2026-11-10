@@ -8,11 +8,12 @@ import { filterDrills } from "../views/Drills";
 import { CATS, STATUS } from "@/lib/constants";
 import { addMins, errMsg, fmtLongDay, fmtLongMon, fmtNum, hhmm, todayIso } from "@/lib/format";
 import type { Category, PlanItem } from "@/lib/types";
+import { ReplyButtons, ReplyCounts } from "../Replies";
 
 type Draft = { id: string | null; team_id: string; date: string; start_time: string; location: string; title: string; focus: string; notes: string; plan: PlanItem[] };
 
 export function SessionSheet({ id }: { id: string | null }) {
-  const { data, team, drillMap, squad, attendedSet, can, canDo, supabase, refresh, close, toast } = useApp();
+  const { data, team, drillMap, squad, attendedSet, repliesFor, can, canDo, supabase, refresh, close, toast } = useApp();
   const planTeams = data.teams.filter((t) => canDo("sessions.edit", t.id));
   const existing = id ? data.sessions.find((s) => s.id === id) : null;
   const [d, setD] = useState<Draft>(() =>
@@ -241,10 +242,22 @@ export function SessionSheet({ id }: { id: string | null }) {
       {tab === "attendance" && (
         <div style={{ display: "grid", gap: 14 }}>
           <div className="toolbar" style={{ justifyContent: "space-between", margin: 0 }}>
-            <span className="muted">
-              <b style={{ color: "var(--ink)" }}>{att.size}</b> of {players.length} marked present
+            <span className="muted" style={{ display: "grid", gap: 2 }}>
+              <span>
+                <b style={{ color: "var(--ink)" }}>{att.size}</b> of {players.length} marked present
+              </span>
+              {d.id && (
+                <span>
+                  Replies: <ReplyCounts sessionId={d.id} playerIds={players.map((p) => p.id)} />
+                </span>
+              )}
             </span>
             <span className="chips">
+              {d.id && repliesFor(d.id).size > 0 && (
+                <button className="btn sm" onClick={() => setAtt(new Set(players.filter((p) => repliesFor(d.id!).get(p.id)?.going).map((p) => p.id)))}>
+                  Mark everyone going present
+                </button>
+              )}
               <button className="btn sm" onClick={() => setAtt(new Set(players.filter((p) => p.status === "available").map((p) => p.id)))}>
                 Mark available present
               </button>
@@ -272,6 +285,11 @@ export function SessionSheet({ id }: { id: string | null }) {
                   <span className={`status s-${p.status}`} style={{ fontSize: 12 }}>
                     {STATUS[p.status]}
                   </span>
+                  {d.id && repliesFor(d.id).get(p.id) && (
+                    <span className={`att-reply ${repliesFor(d.id).get(p.id)!.going ? "y" : "n"}`} style={{ display: "block" }}>
+                      {repliesFor(d.id).get(p.id)!.going ? "✓ Said they're coming" : `✕ Can't come${repliesFor(d.id).get(p.id)!.note ? `: ${repliesFor(d.id).get(p.id)!.note}` : ""}`}
+                    </span>
+                  )}
                 </span>
               </label>
             ))}
@@ -335,7 +353,7 @@ function DrillPicker({ onAdd }: { onAdd: (id: string) => void }) {
 }
 
 function SessionReadOnly({ id }: { id: string }) {
-  const { data, drillMap, open } = useApp();
+  const { data, drillMap, open, myPlayer } = useApp();
   const s = data.sessions.find((x) => x.id === id)!;
   let clock = hhmm(s.start_time);
   return (
@@ -350,6 +368,17 @@ function SessionReadOnly({ id }: { id: string }) {
         </h2>
         {s.focus && <p className="muted" style={{ margin: "6px 0 0" }}>Focus: {s.focus}</p>}
       </div>
+      {myPlayer && myPlayer.team_id === s.team_id && s.date >= todayIso() && (
+        <div className="card card-b" style={{ paddingTop: 16 }}>
+          <ReplyButtons sessionId={s.id} playerId={myPlayer.id} label={data.role === "parent" ? `Is ${myPlayer.full_name.split(" ")[0]} coming?` : "Are you coming?"} />
+        </div>
+      )}
+      {s.notes && (
+        <div className="card card-b" style={{ paddingTop: 16 }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Session notes</div>
+          <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{s.notes}</p>
+        </div>
+      )}
       <Timeline s={s} drills={drillMap} lg />
       <div style={{ display: "grid", gap: 8 }}>
         {s.plan.map((x, i) => {
@@ -372,7 +401,7 @@ function SessionReadOnly({ id }: { id: string }) {
         })}
         {!s.plan.length && <div className="empty">Your coach hasn't added drills to this session yet.</div>}
       </div>
-      <ReadOnlyNote>Only coaches and club admins can change session plans.</ReadOnlyNote>
+      <ReadOnlyNote>Only your coaches can change this session plan.</ReadOnlyNote>
     </SheetFrame>
   );
 }

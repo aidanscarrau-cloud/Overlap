@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { Crest, Icon, PitchLines, Shirt, Timeline, totalMins } from "@/components/ui";
 import { STATUS } from "@/lib/constants";
+import { ReplyButtons } from "../Replies";
+import { AnnouncementItem } from "./Announcements";
 import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
 import type { Status } from "@/lib/types";
 
@@ -108,6 +110,24 @@ export function Overview() {
                 </button>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {myPlayer && <TrainingReplies playerId={myPlayer.id} teamId={myPlayer.team_id} parent={data.role === "parent"} name={myPlayer.full_name} />}
+
+      {data.announcements.length > 0 && (
+        <section className="card" style={{ marginTop: 16 }}>
+          <div className="card-h">
+            <h2>Announcements</h2>
+            <Link className="btn sm" href="/announcements">
+              All announcements
+            </Link>
+          </div>
+          <div className="card-b">
+            {data.announcements.slice(0, 3).map((a) => (
+              <AnnouncementItem key={a.id} a={a} compact />
+            ))}
           </div>
         </section>
       )}
@@ -271,6 +291,40 @@ export function Overview() {
         </div>
       </section>
     </>
+  );
+}
+
+function TrainingReplies({ playerId, teamId, parent, name }: { playerId: string; teamId: string; parent: boolean; name: string }) {
+  const { sessionsOf, data } = useApp();
+  const today = todayIso();
+  const upcoming = sessionsOf(teamId).filter((s) => s.date >= today).slice(0, 4);
+  if (!upcoming.length) return null;
+  const teamName = data.teams.find((t) => t.id === teamId)?.name;
+  return (
+    <section className="card" style={{ marginTop: 16 }}>
+      <div className="card-h">
+        <h2>{parent ? `Is ${name.split(" ")[0]} coming?` : "Are you coming?"}</h2>
+        {teamName && <span className="muted" style={{ fontSize: 13 }}>{teamName}</span>}
+      </div>
+      <div className="card-b train-list">
+        {upcoming.map((s) => (
+          <div key={s.id} className="train-row">
+            <span className="dchip">
+              <small>{fmtDay(s.date)}</small>
+              <b>{fmtNum(s.date)}</b>
+            </span>
+            <span className="rt">
+              <b>{s.title || "Training session"}</b>
+              <span>
+                {whenLabel(s.date)} · {hhmm(s.start_time)}
+                {s.location ? ` · ${s.location}` : ""}
+              </span>
+            </span>
+            <ReplyButtons sessionId={s.id} playerId={playerId} />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
