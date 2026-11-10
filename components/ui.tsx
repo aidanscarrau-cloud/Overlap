@@ -112,3 +112,15 @@ export function PitchLines({ className = "lines" }: { className?: string }) {
     </svg>
   );
 }
+
+/** Club or team badge: the uploaded logo when there is one, otherwise the default crest. */
+export function Crest({ url, size = 36, className = "crest" }: { url?: string | null; size?: number; className?: string }) {
+  if (url)
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className={`${className} crest-img`} src={url} alt="" width={size} height={size} style={{ width: size, height: size }} />;
+  return (
+    <svg className={className} aria-hidden="true" style={{ width: size, height: size }}>
+      <use href="#crest" />
+    </svg>
+  );
+}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { addSampleData } from "@/lib/sample";
+import { prepareLogo, uploadLogo } from "@/lib/logo";
 import { errMsg } from "@/lib/format";
 
 export function OnboardingForm({ code: initialCode, name: initialName, email, hasClub }: { code: string; name: string; email: string; hasClub: boolean }) {
@@ -13,6 +14,8 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
   const [clubName, setClubName] = useState("");
   const [code, setCode] = useState(initialCode);
   const [sample, setSample] = useState(true);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -32,6 +35,15 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
         setBusy("Creating your club…");
         const { data, error } = await supabase.rpc("create_club", { club_name: clubName.trim(), your_name: name.trim() });
         if (error) throw error;
+        if (logo) {
+          setBusy("Uploading your logo…");
+          try {
+            const url = await uploadLogo(supabase, data as string, "club", logo);
+            await supabase.from("clubs").update({ logo_url: url }).eq("id", data as string);
+          } catch {
+            // The club exists; the logo can be added later on Club & members.
+          }
+        }
         if (sample) {
           setBusy("Adding sample teams, players and drills…");
           await addSampleData(supabase, data as string);
@@ -77,6 +89,40 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
               <span>Club name</span>
               <input className="input" id="club-name" required maxLength={80} value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="e.g. Riverside Athletic FC" />
             </label>
+            <div className="field">
+              <span>Club logo (optional)</span>
+              <label className="logo-pick" style={{ cursor: "pointer" }}>
+                {logoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="crest-img" src={logoPreview} alt="" style={{ width: 56, height: 56 }} />
+                ) : (
+                  <svg aria-hidden="true" style={{ width: 56, height: 56 }}>
+                    <use href="#crest" />
+                  </svg>
+                )}
+                <span className="muted" style={{ fontSize: 13 }}>
+                  {logo ? `${logo.name} · click to change` : "Click to choose an image (PNG, JPG or WebP)"}
+                </span>
+                <input
+                  type="file"
+                  id="club-logo"
+                  hidden
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setError("");
+                    if (!f) return;
+                    try {
+                      await prepareLogo(f);
+                      setLogo(f);
+                      setLogoPreview(URL.createObjectURL(f));
+                    } catch (err) {
+                      setError(errMsg(err));
+                    }
+                  }}
+                />
+              </label>
+            </div>
             <label className="check">
               <input type="checkbox" id="sample" checked={sample} onChange={(e) => setSample(e.target.checked)} />
               <span>

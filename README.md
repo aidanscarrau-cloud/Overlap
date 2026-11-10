@@ -20,7 +20,7 @@ The rules live in the database (`supabase/migrations/0001_init.sql`), so they ho
 ### 1. Create the Supabase project
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine).
-2. Open **SQL Editor**, paste the contents of `supabase/migrations/0001_init.sql`, and click **Run**.
+2. Open **SQL Editor** and run each file in `supabase/migrations/` in order: paste the file's contents (not its name), click **Run**, then do the next one. They're safe to run again.
 3. Open **Project Settings → API** and copy the **Project URL** and the **anon / publishable key**.
 4. Open **Authentication → URL Configuration**:
    - Set **Site URL** to your live address (for example `https://overlap-yourname.vercel.app`, once you have it).

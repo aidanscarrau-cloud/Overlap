@@ -17,7 +17,7 @@ export async function getClubData(): Promise<ClubData> {
 
   const { data: memsRaw, error } = await supabase
     .from("memberships")
-    .select("id,club_id,user_id,role,team_id,player_id,clubs(id,name)")
+    .select("id,club_id,user_id,role,team_id,player_id,clubs(id,name,logo_url)")
     .eq("user_id", user.id)
     .order("created_at");
   if (error) throw error;
@@ -30,7 +30,7 @@ export async function getClubData(): Promise<ClubData> {
   const clubId = mine.club_id;
 
   const [teams, players, drills, sessions, attendance, members, profile] = await Promise.all([
-    supabase.from("teams").select("id,club_id,name,age_group,coach_name").eq("club_id", clubId).order("created_at"),
+    supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
     supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status,status_note").eq("club_id", clubId).order("shirt_number"),
     supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
     supabase.from("sessions").select("id,club_id,team_id,date,start_time,location,title,focus,notes,plan").eq("club_id", clubId).order("date").order("start_time"),
@@ -52,7 +52,7 @@ export async function getClubData(): Promise<ClubData> {
   return {
     userId: user.id,
     myName: profile.data?.full_name || user.email || "You",
-    club: one(mine.clubs) ?? { id: clubId, name: "Your club" },
+    club: one(mine.clubs) ?? { id: clubId, name: "Your club", logo_url: null },
     clubs: mems.map((m) => one(m.clubs)).filter(Boolean) as Club[],
     role: mine.role,
     me: memberList.find((m) => m.user_id === user.id)!,

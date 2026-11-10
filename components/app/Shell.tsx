@@ -6,6 +6,7 @@ import { useApp } from "./AppProvider";
 import { SheetHost } from "./sheets/SheetHost";
 import { ROLES } from "@/lib/constants";
 import { initials } from "@/lib/format";
+import { Crest } from "@/components/ui";
 
 const NAV = [
   { href: "/", label: "Overview", short: "Overview", icon: "i-home" },
@@ -50,9 +51,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="clubbox">
           <div className="clubrow">
-            <svg className="crest" aria-hidden="true">
-              <use href="#crest" />
-            </svg>
+            <Crest url={data.club.logo_url} />
             <div style={{ minWidth: 0 }}>
               <b>{data.club.name}</b>
               <span className="role-pill">{ROLES[data.role]}</span>

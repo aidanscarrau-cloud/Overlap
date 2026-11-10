@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "../AppProvider";
 import { ConfirmButton } from "../sheets/SheetFrame";
-import { Icon } from "@/components/ui";
+import { Crest, Icon } from "@/components/ui";
+import { LogoPicker } from "../LogoPicker";
+import { removeLogoFile, uploadLogo } from "@/lib/logo";
 import { ROLES, ROLE_HELP } from "@/lib/constants";
 import { errMsg, initials } from "@/lib/format";
 import type { Invite, Member, Role } from "@/lib/types";
@@ -60,6 +62,28 @@ function ClubSettings() {
           </button>
         )}
       </form>
+      <div className="card-b" style={{ paddingTop: 0 }}>
+        <LogoPicker
+          url={data.club.logo_url}
+          label="Club logo"
+          help="Shown in the sidebar and on team cards. PNG, JPG or WebP; square with a transparent background looks best. You can also drag an image here."
+          onPick={async (file) => {
+            const url = await uploadLogo(supabase, data.club.id, "club", file);
+            const { error } = await supabase.from("clubs").update({ logo_url: url }).eq("id", data.club.id);
+            if (error) throw error;
+            await removeLogoFile(supabase, data.club.logo_url);
+            toast("Club logo updated");
+            refresh();
+          }}
+          onRemove={async () => {
+            const { error } = await supabase.from("clubs").update({ logo_url: null }).eq("id", data.club.id);
+            if (error) throw error;
+            await removeLogoFile(supabase, data.club.logo_url);
+            toast("Club logo removed");
+            refresh();
+          }}
+        />
+      </div>
     </section>
   );
 }
@@ -79,9 +103,7 @@ function TeamsCard() {
         {data.teams.length ? (
           data.teams.map((t) => (
             <button key={t.id} className="rowi" onClick={() => open({ kind: "team", id: t.id })}>
-              <svg className="crest" aria-hidden="true" style={{ width: 32, height: 32 }}>
-                <use href="#crest" />
-              </svg>
+              <Crest url={t.logo_url ?? data.club.logo_url} size={32} />
               <span className="rt">
                 <b>{t.name}</b>
                 <span>

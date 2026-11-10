@@ -386,3 +386,10 @@ a{color:var(--accent)}
 @media (max-width:640px){.mrow{grid-template-columns:auto 1fr}.mrow>:nth-child(n+3){grid-column:2}.invite{grid-template-columns:1fr}}
 .avail-me{display:grid;gap:10px}
 .avail-me .chips .chip[aria-pressed="true"]{background:var(--sc);border-color:var(--sc);color:#fff}
+
+/* Logos */
+.crest-img{object-fit:contain;border-radius:8px;background:rgba(255,255,255,.92);padding:2px;flex:none}
+.logo-pick{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:14px;border:1.5px dashed var(--line);border-radius:12px;background:var(--surface-2)}
+.logo-pick.over{border-color:var(--accent);background:var(--accent-soft)}
+.logo-pick-img{width:72px;height:72px}
+svg.logo-pick-img{display:block}

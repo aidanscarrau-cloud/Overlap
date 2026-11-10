@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
-import { Icon, PitchLines, Shirt, Timeline, totalMins } from "@/components/ui";
+import { Crest, Icon, PitchLines, Shirt, Timeline, totalMins } from "@/components/ui";
 import { STATUS } from "@/lib/constants";
 import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
 import type { Status } from "@/lib/types";
@@ -242,9 +242,7 @@ export function Overview() {
             const n = sessionsOf(t.id).find((s) => s.date >= today);
             return (
               <button key={t.id} className="tcard" aria-current={t.id === team.id} onClick={() => setTeam(t.id)}>
-                <svg className="crest" aria-hidden="true">
-                  <use href="#crest" />
-                </svg>
+                <Crest url={t.logo_url ?? data.club.logo_url} size={40} />
                 <span style={{ minWidth: 0 }}>
                   <b>{t.name}</b>
                   <span>
