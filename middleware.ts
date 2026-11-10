@@ -7,7 +7,14 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return response; // Setup page explains the missing variables.
+  if (!url || !key) {
+    // Without Supabase settings nothing can work: explain what to add.
+    if (request.nextUrl.pathname === "/setup") return response;
+    const setup = request.nextUrl.clone();
+    setup.pathname = "/setup";
+    setup.search = "";
+    return NextResponse.redirect(setup);
+  }
 
   const supabase = createServerClient(url, key, {
     cookies: {
