@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton } from "../sheets/SheetFrame";
 import { errMsg } from "@/lib/format";
+import { Linkify } from "@/components/Linkify";
 import type { Announcement } from "@/lib/types";
 
 export const timeAgo = (iso: string) => {
@@ -89,8 +90,14 @@ export function AnnouncementItem({ a, compact }: { a: Announcement; compact?: bo
           {a.author_name || "Club"} · {timeAgo(a.created_at)}
         </span>
       </div>
-      <h3>{a.title}</h3>
-      {a.body && <p className={compact ? "clamp" : undefined}>{a.body}</p>}
+      <h3>
+        <Linkify text={a.title} />
+      </h3>
+      {a.body && (
+        <p className={compact ? "clamp" : undefined}>
+          <Linkify text={a.body} />
+        </p>
+      )}
       {!compact && (isAdmin || mine) && (
         <div className="news-acts">
           <button className="btn sm" onClick={() => setPinned(!a.pinned)}>
