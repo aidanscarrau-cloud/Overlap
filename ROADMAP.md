@@ -39,7 +39,7 @@ Where we win: self-serve sign-up and simple public pricing (free tier for small 
 | 5 | **Fixtures, matches & team statistics** | Matches (opponent, home/away, kick-off, venue), squad selection, line-ups, results, goals/assists/minutes/cards, season stats per player and team. |
 | 6 | **Strength & conditioning tests** | Test library (sprint, jumps, 1RM, beep test, custom), results entry, relative strength, progress charts, squad comparisons and benchmarks. |
 | 7 | **Coach development & delivery insights** | Club curriculum (themes per age group), planned vs delivered sessions, minutes per theme per coach and team, coach observations, coach goals and qualifications. |
-| 8 | **Player progression dashboard** | One page per player: training load, tests, IDP ratings, attendance, injuries and match stats as charts over time; printable/exportable report. |
+| 8 ✅ | **Player progression dashboard** | One page per player (Progress report): attendance, typical training week, development rating and goals as tiles; weekly/monthly training minutes, a session-by-session attendance strip, overall and per-area rating trends; 3/6/12 months or all time; print/save as PDF and CSV download. Players and parents see their own. Injuries, tests and match stats join it when Days 4–6 are built. |
 | 9 | **AI assistant** | Generate session plans from the drill library, draft IDP summaries, flag at-risk players from training load and injury history. |
 | 10 | **Calendar & repeating sessions** | Month/week calendar of training and matches, repeating sessions, copy a session or week. |
 | 11 | **Messages / chat** | Team chats and direct messages with role rules, unread counts, notifications. |

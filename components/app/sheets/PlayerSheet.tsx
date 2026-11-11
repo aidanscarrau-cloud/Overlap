@@ -209,13 +209,23 @@ function OtherTeams({ playerId }: { playerId: string }) {
 
 function IdpLink({ playerId }: { playerId: string }) {
   const { can, myPlayers, close, evaluationsOf, goalsOf } = useApp();
-  if (!can("idp.view") && !myPlayers.some((p) => p.id === playerId)) return null;
+  const mine = myPlayers.some((p) => p.id === playerId);
+  const report =
+    can("attendance.view") || can("idp.view") || mine ? (
+      <Link href={`/players/${playerId}`} className="btn" onClick={close} style={{ justifySelf: "start" }}>
+        Progress report →
+      </Link>
+    ) : null;
+  if (!can("idp.view") && !mine) return report;
   const evs = evaluationsOf(playerId).length;
   const goals = goalsOf(playerId).filter((g) => g.status === "active").length;
   return (
+    <>
+    {report}
     <Link href={`/development/${playerId}`} className="btn" onClick={close} style={{ justifySelf: "start" }}>
       Development plan · {evs} evaluation{evs === 1 ? "" : "s"}, {goals} active goal{goals === 1 ? "" : "s"} →
     </Link>
+    </>
   );
 }
 

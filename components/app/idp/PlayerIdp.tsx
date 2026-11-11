@@ -54,8 +54,12 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
             </div>
           </div>
         </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link className="btn" href={`/players/${playerId}`}>
+            Progress report
+          </Link>
         {canEdit && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <>
             <button className="btn" onClick={() => open({ kind: "goal", playerId, id: null })}>
               <Icon id="i-plus" />
               Add goal
@@ -64,8 +68,9 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
               <Icon id="i-plus" />
               New evaluation
             </button>
-          </div>
+          </>
         )}
+        </div>
       </div>
 
       {latest ? (
