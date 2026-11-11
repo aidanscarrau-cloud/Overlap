@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const { data: queued, error } = await db.rpc("queue_reply_reminders");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   try {
-    return NextResponse.json({ queued, ...(await sendPending()) });
+    return NextResponse.json({ queued, ...(await sendPending(request.nextUrl.origin)) });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

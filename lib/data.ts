@@ -7,7 +7,7 @@ import type { AppNotification, NotificationPrefs, Announcement, Attendance, Club
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
-const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true };
+const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true, email: "always" };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
 /** Everything the signed-in person may see in their current club. The database's rules decide what that is. */
@@ -50,7 +50,7 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("goal_updates").select("id,goal_id,note,progress,by_staff,author_id,author_name,created_at").eq("club_id", clubId).order("created_at"),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
       supabase.from("notifications").select("id,club_id,kind,title,body,url,created_at,read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
-      supabase.from("notification_prefs").select("sessions,announcements,reminders,development").eq("user_id", user.id).maybeSingle(),
+      supabase.from("notification_prefs").select("sessions,announcements,reminders,development,email").eq("user_id", user.id).maybeSingle(),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -110,6 +110,7 @@ export async function getClubData(): Promise<ClubData> {
   return {
     userId: user.id,
     myName: profile.data?.full_name || user.email || "You",
+    myEmail: user.email,
     club: one(mine.clubs) ?? { id: clubId, name: "Your club", logo_url: null },
     clubs: mems.map((m) => one(m.clubs)).filter(Boolean) as Club[],
     role: mine.role,

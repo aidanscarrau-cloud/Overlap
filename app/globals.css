@@ -870,3 +870,7 @@ button.pro-li:hover{background:var(--surface)}
 .mtop .tsel{flex:0 1 auto;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .mtop .bell{margin-left:-4px}
 @media (max-width:360px){.mtop .brand b{display:none}}
+.notif-email{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line)}
+.notif-email span{display:grid;gap:2px}
+.notif-email small{color:var(--muted);font-size:13px}
+.notif-email select{width:auto;max-width:100%;font-size:16px}

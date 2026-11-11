@@ -33,7 +33,7 @@ Where we win: self-serve sign-up and simple public pricing (free tier for small 
 | Day | Feature | Scope |
 |---|---|---|
 | 1 ✅ | **IDPs & goals** | Player evaluations (Technical, Tactical, Physical, Psychological, Social) over time, strengths, areas to improve, goals with target dates and status, coach comments, evidence from attendance and training load; player/parent view. |
-| 2 ✅ | **Notifications** | Installable web app (home-screen icon, opens full screen) with push notifications and an in-app inbox: new, moved or cancelled sessions, announcements, new reviews and goals, and an evening-before reminder to anyone who hasn't replied. Per-person settings and per-device on/off. Email notifications still to come. |
+| 2 ✅ | **Notifications** | Installable web app (home-screen icon, opens full screen) with push notifications and an in-app inbox: new, moved or cancelled sessions, announcements, new reviews and goals, and an evening-before reminder to anyone who hasn't replied. Per-person settings and per-device on/off. Email copies (every time, only without phone push, or never). |
 | 3 | **Departments & staff roles** | Medical/Physio, S&C coach, Technical Director roles with their own permission switches; private medical area. |
 | 4 | **Injury management** | Injury records (body area, type, date, severity, expected return, notes), automatic availability, return-to-play stages, history and reports. Medical-only details. |
 | 5 | **Fixtures, matches & team statistics** | Matches (opponent, home/away, kick-off, venue), squad selection, line-ups, results, goals/assists/minutes/cards, season stats per player and team. |

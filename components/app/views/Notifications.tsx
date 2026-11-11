@@ -6,7 +6,7 @@ import { useApp } from "../AppProvider";
 import { timeAgo } from "./Announcements";
 import { errMsg } from "@/lib/format";
 import { isIos, isStandalone, pushState, subscribeDevice, unsubscribeDevice, type PushState } from "@/lib/push-client";
-import type { AppNotification, NotificationKind, NotificationPrefs } from "@/lib/types";
+import type { AppNotification, EmailPref, NotificationKind, NotificationPrefs } from "@/lib/types";
 
 const ICON: Record<NotificationKind, string> = {
   session_new: "i-cal",
@@ -141,7 +141,7 @@ export function PushCard() {
       {state === "off" && (
         <>
           <b>Get a notification when something changes</b>
-          <p>New and cancelled sessions, club news, and a reminder the evening before if you haven&apos;t replied.</p>
+          <p>New and cancelled sessions, club news, and a reminder the evening before if you haven&apos;t replied. You&apos;ll also get these by email unless you change it below.</p>
           <div>
             <button className="btn primary" type="button" disabled={busy} onClick={turnOn}>
               Turn on notifications
@@ -161,7 +161,7 @@ export function PushCard() {
   );
 }
 
-const PREF_ROWS: { key: keyof NotificationPrefs; label: string; hint: string; staff?: boolean; family?: boolean }[] = [
+const PREF_ROWS: { key: Exclude<keyof NotificationPrefs, "email">; label: string; hint: string; staff?: boolean; family?: boolean }[] = [
   { key: "sessions", label: "Sessions", hint: "New, moved or cancelled sessions" },
   { key: "announcements", label: "Club news", hint: "New announcements" },
   { key: "reminders", label: "Reply reminders", hint: "The evening before, if you haven't said if you're coming", family: true },
@@ -174,8 +174,8 @@ function PrefsCard() {
   const prefs = data.notificationPrefs;
   const rows = PREF_ROWS.filter((r) => !r.family || family);
 
-  async function flip(key: keyof NotificationPrefs) {
-    const next = { ...prefs, [key]: !prefs[key] };
+  const flip = (key: Exclude<keyof NotificationPrefs, "email">) => save({ ...prefs, [key]: !prefs[key] });
+  async function save(next: NotificationPrefs) {
     patch((d) => ({ ...d, notificationPrefs: next }));
     const { error } = await supabase.from("notification_prefs").upsert({ user_id: data.userId, ...next, updated_at: new Date().toISOString() });
     if (error) {
@@ -186,8 +186,8 @@ function PrefsCard() {
 
   return (
     <section className="notif-prefs" aria-labelledby="notif-prefs-h">
-      <h2 id="notif-prefs-h">Send to my phone</h2>
-      <p className="notif-muted">Everything still shows up in this list; these only choose what buzzes your phone.</p>
+      <h2 id="notif-prefs-h">What to send me</h2>
+      <p className="notif-muted">Everything still shows up in this list. These choose what reaches your phone and email.</p>
       <ul>
         {rows.map((r) => (
           <li key={r.key}>
@@ -201,6 +201,17 @@ function PrefsCard() {
           </li>
         ))}
       </ul>
+      <label className="notif-email">
+        <span>
+          <b>Email me</b>
+          <small>Sent to {data.myEmail || "your sign-in email"}</small>
+        </span>
+        <select className="input" value={prefs.email} onChange={(e) => save({ ...prefs, email: e.target.value as EmailPref })}>
+          <option value="always">Every time</option>
+          <option value="no_phone">Only if phone notifications are off</option>
+          <option value="never">Never</option>
+        </select>
+      </label>
     </section>
   );
 }

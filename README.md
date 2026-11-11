@@ -61,6 +61,20 @@ Notifications need five more environment variables in Vercel (and in `.env.local
 
 The reminder job (`vercel.json`) runs once a day at 07:00 UTC, which is 6pm in Sydney in summer and 5pm in winter. Without these variables the app still works; the in-app inbox fills up but nothing is pushed to phones.
 
+#### Email notifications
+
+The same notifications can go by email too: one email per person per change, listing everything new for them. Each person chooses on the Notifications page: every time, only if they haven't turned on phone notifications, or never. Emails need an SMTP email service; add these in Vercel:
+
+| Name | What it is |
+|---|---|
+| `SMTP_HOST` | Your email service's SMTP server, e.g. `smtp-relay.brevo.com`. |
+| `SMTP_PORT` | Usually `587` (or `465`). |
+| `SMTP_USER` / `SMTP_PASS` | The SMTP login from your email service. Keep the password secret. |
+| `EMAIL_FROM` | The address emails come from. It must be one your email service lets you send from. |
+| `SITE_URL` | Optional: your site's address for the links in emails, e.g. `https://overlap-yourclub.vercel.app`. |
+
+Run `0013_email_notifications.sql` first. Without these variables, no emails are sent; everything else still works.
+
 On iPhones, push only works after the person adds Overlap to their home screen (Safari → Share → Add to Home Screen) and turns notifications on from the Notifications page.
 
 ## Private to one club

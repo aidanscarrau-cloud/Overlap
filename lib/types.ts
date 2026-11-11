@@ -108,7 +108,8 @@ export type AppNotification = {
   created_at: string;
   read_at: string | null;
 };
-export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean };
+export type EmailPref = "always" | "no_phone" | "never";
+export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; email: EmailPref };
 
 export type ClubData = {
   /** This person's own inbox, newest first (all their clubs). */
@@ -126,6 +127,8 @@ export type ClubData = {
   myTeamIds: string[];
   userId: string;
   myName: string;
+  /** Sign-in email, where notification emails go. */
+  myEmail: string;
   club: Club;
   clubs: Club[];
   role: Role;
