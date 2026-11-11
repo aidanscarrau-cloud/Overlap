@@ -1,6 +1,6 @@
 # Overlap
 
-A football club hub: squads, session planning, a drill library with a pitch diagram designer, and logins with roles for club admins, coaches, players and parents.
+A football club hub: squads, session planning, a drill library with a pitch diagram designer, and logins with roles for club admins, head coaches, assistant coaches, players and parents.
 
 Built with Next.js (App Router) and Supabase (Postgres, Auth and row level security). Deploys to Vercel.
 
@@ -9,7 +9,8 @@ Built with Next.js (App Router) and Supabase (Postgres, Auth and row level secur
 | Role | Default access |
 | --- | --- |
 | Club admin | Everything, in every team |
-| Coach | The teams they're assigned to: squad, sessions, attendance, notes, drills, invites for players and parents |
+| Head coach | The teams they're assigned to: squad, sessions, attendance, notes, drills, development plans, announcements, invites for players, parents and assistant coaches |
+| Assistant coach | The teams they're assigned to: sessions, attendance, drills, notes and development plans (read only) by default |
 | Player | Their own team, read-only; their own availability, note and attendance |
 | Parent | Same as a player, for their linked child |
 
