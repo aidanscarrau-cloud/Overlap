@@ -132,7 +132,9 @@ function InvitesCard() {
   const [role, setRole] = useState<Role>(allowed[0]);
   const inviteTeams = isAdmin ? data.teams : data.teams.filter((t) => data.myTeamIds.includes(t.id));
   const [teamId, setTeamId] = useState((team && inviteTeams.some((t) => t.id === team.id) ? team.id : inviteTeams[0]?.id) ?? "");
-  const [playerId, setPlayerId] = useState("");
+  // "__new" adds a new player to the squad when the person joins (the only choice for a team with no players yet).
+  const [playerId, setPlayerId] = useState("__new");
+  const [childName, setChildName] = useState("");
   const [multi, setMulti] = useState(false);
   const [busy, setBusy] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -142,7 +144,7 @@ function InvitesCard() {
   async function load() {
     const { data: rows, error } = await supabase
       .from("invites")
-      .select("code,role,team_id,player_id,expires_at,max_uses,uses")
+      .select("code,role,team_id,player_id,create_player,new_player_name,expires_at,max_uses,uses")
       .eq("club_id", data.club.id)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
@@ -157,19 +159,25 @@ function InvitesCard() {
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
+    const isNew = linkable && !!teamId && playerId === "__new";
+    if (isNew && role === "parent" && !childName.trim()) return toast("Enter the child's name, so they're added to the squad.");
+    const singleUse = linkable && !!playerId && !(isNew && role === "player");
     setBusy(true);
     const row = {
       club_id: data.club.id,
       role,
       team_id: teamId || null,
-      player_id: linkable && playerId ? playerId : null,
-      max_uses: multi && !(linkable && playerId) ? 50 : 1,
+      player_id: linkable && playerId && !isNew ? playerId : null,
+      create_player: isNew,
+      new_player_name: isNew && role === "parent" ? childName.trim() : null,
+      max_uses: multi && !singleUse ? 50 : 1,
     };
     const { error } = await supabase.from("invites").insert(row);
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast("Invite created");
-    setPlayerId("");
+    setPlayerId("__new");
+    setChildName("");
     load();
   }
   async function remove(code: string) {
@@ -203,7 +211,7 @@ function InvitesCard() {
           <div className="row2">
             <label className="field">
               <span>Role</span>
-              <select className="input" id="inv-role" value={role} onChange={(e) => (setRole(e.target.value as Role), setPlayerId(""))}>
+              <select className="input" id="inv-role" value={role} onChange={(e) => (setRole(e.target.value as Role), setPlayerId("__new"))}>
                 {allowed.map((r) => (
                   <option key={r} value={r}>
                     {ROLES[r]}
@@ -213,7 +221,7 @@ function InvitesCard() {
             </label>
             <label className="field">
               <span>Team</span>
-              <select className="input" id="inv-team" value={teamId} onChange={(e) => (setTeamId(e.target.value), setPlayerId(""))}>
+              <select className="input" id="inv-team" value={teamId} onChange={(e) => (setTeamId(e.target.value), setPlayerId("__new"))}>
                 {isAdmin && <option value="">{role === "coach" ? "Assign teams later" : "No team"}</option>}
                 {inviteTeams.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -226,28 +234,46 @@ function InvitesCard() {
               <label className="field">
                 <span>{role === "parent" ? "Their child" : "Which player"}</span>
                 <select className="input" id="inv-player" value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-                  <option value="">Not linked</option>
+                  <option value="__new">{role === "parent" ? "New player: add their child to the squad" : "New player: add them to the squad"}</option>
                   {teamPlayers.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.full_name}
                     </option>
                   ))}
+                  <option value="">Not linked (link them later)</option>
                 </select>
+              </label>
+            )}
+            {linkable && teamId && playerId === "__new" && role === "parent" && (
+              <label className="field">
+                <span>Child&apos;s name</span>
+                <input className="input" id="inv-child" maxLength={80} value={childName} onChange={(e) => setChildName(e.target.value)} placeholder="e.g. Leo Smith" />
               </label>
             )}
           </div>
           <span className="muted" style={{ fontSize: 13 }}>
             {ROLE_HELP[role]}.{linkable && " Choose the player so they can reply to sessions and update availability."}
           </span>
-          {linkable && !playerId && (
+          {linkable && teamId && playerId === "__new" && (
+            <span className="muted" style={{ fontSize: 13 }}>
+              {role === "parent"
+                ? "When they join, their child is added to the squad and linked to their account."
+                : "When they join, they're added to the squad under their own name and can reply to sessions straight away."}
+            </span>
+          )}
+          {linkable && (!playerId || !teamId) && (
             <div className="notice bad" style={{ fontSize: 13.5 }}>
               No player chosen. They&apos;ll be able to look around but can&apos;t reply to sessions until you link them to a player in the Members list.
             </div>
           )}
-          {!(linkable && playerId) && (
+          {(!linkable || !playerId || !teamId || (playerId === "__new" && role === "player")) && (
             <label className="check">
               <input type="checkbox" id="inv-multi" checked={multi} onChange={(e) => setMulti(e.target.checked)} />
-              <span>Let up to 50 people use this code (for example, share it in a team group chat)</span>
+              <span>
+                {linkable && teamId && playerId === "__new"
+                  ? "Let up to 50 players use this code: each one is added to the squad when they join (good for a team group chat)"
+                  : "Let up to 50 people use this code (for example, share it in a team group chat)"}
+              </span>
             </label>
           )}
           <div>
@@ -273,7 +299,7 @@ function InvitesCard() {
                       <b style={{ display: "block" }}>
                         {ROLES[i.role]}
                         {teamName(i.team_id) ? ` · ${teamName(i.team_id)}` : ""}
-                        {playerName(i.player_id) ? ` · for ${playerName(i.player_id)}` : ""}
+                        {playerName(i.player_id) ? ` · for ${playerName(i.player_id)}` : i.create_player ? (i.new_player_name ? ` · adds ${i.new_player_name} to the squad` : " · adds them to the squad") : ""}
                       </b>
                       <span className="muted" style={{ fontSize: 13, wordBreak: "break-all" }}>
                         {link} · {i.max_uses > 1 ? `${i.uses}/${i.max_uses} used · ` : ""}expires {new Date(i.expires_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}

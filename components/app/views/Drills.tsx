@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "../AppProvider";
+import { useFamilyRedirect } from "../FamilyRedirect";
 import { Diagram, Icon } from "@/components/ui";
 import { CATS } from "@/lib/constants";
 import type { Category, Drill } from "@/lib/types";
@@ -12,6 +13,12 @@ export const filterDrills = (drills: Drill[], cat: "all" | Category, q: string) 
 };
 
 export function Drills() {
+  // Players and parents don't use this page; send them home.
+  const family = useFamilyRedirect();
+  return family ? null : <DrillsPage />;
+}
+
+function DrillsPage() {
   const { data, can, open } = useApp();
   const canEdit = can("drills.edit");
   const [cat, setCat] = useState<"all" | Category>("all");

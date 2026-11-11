@@ -825,3 +825,11 @@ button.pro-li:hover{background:var(--surface)}
 [data-look="calm"] .avail-me .chip,[data-look="calm"] .chip{border-radius:6px}
 .calm-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0;flex-wrap:nowrap}
 .calm-badges{justify-content:flex-end}
+.calm-session{border-bottom:1px solid var(--line);padding:4px 0 20px;display:grid;gap:12px}
+.calm-session-head{display:flex;gap:14px;align-items:flex-start}
+.calm-session h2{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
+.calm-session p{margin:2px 0 0}
+.calm-date{flex:none;width:48px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:4px 0;display:grid;line-height:1.1}
+.calm-date small{font-size:13px;color:var(--muted)}
+.calm-date b{font-size:20px;font-weight:600}
+[data-look="calm"] .subtabs{background:var(--surface-2);border-color:var(--line)}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "../AppProvider";
+import { useFamilyRedirect } from "../FamilyRedirect";
 import { Icon, Shirt } from "@/components/ui";
 import { NoTeams } from "./Overview";
 import { LoadLine } from "../Load";
@@ -9,6 +10,12 @@ import { POS, POSNAME, STATUS } from "@/lib/constants";
 import type { Status } from "@/lib/types";
 
 export function Squad() {
+  // Players and parents don't use this page; send them home.
+  const family = useFamilyRedirect();
+  return family ? null : <SquadPage />;
+}
+
+function SquadPage() {
   const { data, team, squad, playerRate, can, canDo, isAdmin, open } = useApp();
   const [filter, setFilter] = useState<"all" | Status>("all");
   if (!team) return <NoTeams isAdmin={isAdmin} />;

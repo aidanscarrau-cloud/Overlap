@@ -67,6 +67,8 @@ export type Invite = {
   role: Role;
   team_id: string | null;
   player_id: string | null;
+  create_player: boolean;
+  new_player_name: string | null;
   expires_at: string;
   max_uses: number;
   uses: number;

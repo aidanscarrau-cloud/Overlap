@@ -7,8 +7,15 @@ import { NoTeams } from "./Overview";
 import { addMins, hhmm, todayIso, weekKey, weekLabel } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import { ReplyBadge, ReplyCounts } from "../Replies";
+import { FamilySessions } from "./FamilySessions";
 
 export function Sessions() {
+  const { data } = useApp();
+  if (data.role === "player" || data.role === "parent") return <FamilySessions />;
+  return <TeamSessions />;
+}
+
+function TeamSessions() {
   const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayers, kidName } = useApp();
   const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
