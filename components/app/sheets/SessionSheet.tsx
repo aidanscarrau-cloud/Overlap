@@ -1,5 +1,6 @@
 "use client";
 
+import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
@@ -50,6 +51,7 @@ export function SessionSheet({ id }: { id: string | null }) {
         if (error) throw error;
         sid = ins.id as string;
       }
+      if (canPlan || !d.id) pingPush();
       const before = d.id ? attendedSet(d.id) : new Set<string>();
       const want = canAttend ? att : before; // without the switch, attendance is left as it was
       const add = [...want].filter((p) => !before.has(p)).map((player_id) => ({ session_id: sid, player_id }));
@@ -78,6 +80,7 @@ export function SessionSheet({ id }: { id: string | null }) {
       setBusy(false);
       return toast(errMsg(error));
     }
+    pingPush();
     toast("Session deleted");
     close();
     refresh();

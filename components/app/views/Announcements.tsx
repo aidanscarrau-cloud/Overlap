@@ -1,5 +1,6 @@
 "use client";
 
+import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton } from "../sheets/SheetFrame";
@@ -127,6 +128,7 @@ function Composer({ defaultTeam }: { defaultTeam: string | null }) {
     const { error } = await supabase.from("announcements").insert({ club_id: data.club.id, team_id: to === "club" ? null : to, title: title.trim(), body: body.trim(), pinned });
     setBusy(false);
     if (error) return toast(errMsg(error));
+    pingPush();
     setTitle("");
     setBody("");
     setPinned(false);

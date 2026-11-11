@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
+import type { AppNotification, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
+const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
 /** Everything the signed-in person may see in their current club. The database's rules decide what that is. */
@@ -48,6 +49,8 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("player_goals").select("id,player_id,area,title,detail,target_date,status,progress,achieved_on,author_name,created_at,updated_at").eq("club_id", clubId).order("created_at"),
       supabase.from("goal_updates").select("id,goal_id,note,progress,by_staff,author_id,author_name,created_at").eq("club_id", clubId).order("created_at"),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+      supabase.from("notifications").select("id,club_id,kind,title,body,url,created_at,read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
+      supabase.from("notification_prefs").select("sessions,announcements,reminders,development").eq("user_id", user.id).maybeSingle(),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -58,7 +61,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -126,5 +129,8 @@ export async function getClubData(): Promise<ClubData> {
     goals: (goals.data ?? []) as Goal[],
     goalUpdates: (goalUpdates.data ?? []) as GoalUpdate[],
     members: memberList,
+    // If the notifications tables aren't there yet, the rest of the app still works.
+    notifications: inbox.error ? [] : ((inbox.data ?? []) as AppNotification[]),
+    notificationPrefs: (prefs.data as NotificationPrefs | null) ?? DEFAULT_PREFS,
   };
 }

@@ -29,7 +29,7 @@ const FAMILY_NAV = [
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { data, team, setTeam } = useApp();
+  const { data, team, setTeam, unread } = useApp();
   const family = data.role === "player" || data.role === "parent";
   const nav = family ? FAMILY_NAV : NAV;
   const path = usePathname();
@@ -96,6 +96,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </div>
         <nav className="snav" aria-label="Sections">
+          <Link href="/notifications" prefetch aria-current={active("/notifications") ? "page" : undefined}>
+            <svg className="i">
+              <use href="#i-bell" />
+            </svg>
+            Notifications
+            {unread > 0 && <span className="nbadge">{unread > 99 ? "99+" : unread}</span>}
+          </Link>
           {!family && <div className="lbl">Club hub</div>}
           {nav.map((n) => (
             <Link key={n.href} href={n.href} prefetch aria-current={active(n.href) ? "page" : undefined}>
@@ -133,6 +140,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <b style={{ fontSize: 22 }}>Overlap</b>
           </div>
           {teamSelect("team-select-m")}
+          <Bell unread={unread} />
           <Link className="av" href="/club#account" aria-label={`Your account: ${data.myName}`} style={{ textDecoration: "none" }}>
             {initials(data.myName)}
           </Link>
@@ -174,5 +182,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </nav>
       <SheetHost />
     </div>
+  );
+}
+
+function Bell({ unread }: { unread: number }) {
+  return (
+    <Link className="bell" href="/notifications" prefetch aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}>
+      <svg className="i" aria-hidden="true">
+        <use href="#i-bell" />
+      </svg>
+      {unread > 0 && <span className="nbadge">{unread > 9 ? "9+" : unread}</span>}
+    </Link>
   );
 }

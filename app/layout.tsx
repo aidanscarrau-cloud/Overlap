@@ -11,6 +11,9 @@ const onest = localFont({ src: "./fonts/Onest-latin.woff2", weight: "100 900", v
 export const metadata: Metadata = {
   title: { default: "Overlap", template: "%s · Overlap" },
   description: "Plan training, manage squads and run your football club.",
+  // Home-screen icon and name on iPhones (Android reads the manifest).
+  appleWebApp: { capable: true, title: "Overlap", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 

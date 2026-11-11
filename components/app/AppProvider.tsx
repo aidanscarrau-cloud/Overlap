@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
+import { registerWorker } from "@/lib/push-client";
 import type { ClubData, Drill, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import type { Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
@@ -54,6 +55,8 @@ type Ctx = {
   /** Change what's on screen straight away; the next refresh replaces it with the saved data. */
   patch: (fn: (d: ClubData) => ClubData) => void;
   refresh: () => void;
+  /** Unread notifications in the inbox. */
+  unread: number;
 };
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -128,6 +131,11 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     timer.current = setTimeout(() => setToastMsg(""), 2400);
   }, []);
 
+  // The background worker is what shows notifications on this device.
+  useEffect(() => {
+    registerWorker();
+  }, []);
+
   useEffect(() => {
     document.body.style.overflow = sheet ? "hidden" : "";
   }, [sheet]);
@@ -162,6 +170,7 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     supabase,
     patch: (fn) => setData((d) => fn(d)),
     refresh: () => router.refresh(),
+    unread: data.notifications.filter((n) => !n.read_at).length,
   };
 
   return (

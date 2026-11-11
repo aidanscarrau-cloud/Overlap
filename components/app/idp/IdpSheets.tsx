@@ -1,5 +1,6 @@
 "use client";
 
+import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton, SheetFrame } from "../sheets/SheetFrame";
@@ -36,6 +37,7 @@ export function EvaluationSheet({ playerId, id }: { playerId: string; id: string
     const { error } = existing ? await supabase.from("player_evaluations").update(row).eq("id", existing.id) : await supabase.from("player_evaluations").insert(row);
     setBusy(false);
     if (error) return setErr(errMsg(error));
+    pingPush();
     toast(existing ? "Evaluation saved" : d.shared ? "Evaluation saved and shared" : "Evaluation saved as private");
     close();
     refresh();
@@ -167,6 +169,7 @@ export function GoalSheet({ playerId, id }: { playerId: string; id: string | nul
     const { error } = existing ? await supabase.from("player_goals").update(row).eq("id", existing.id) : await supabase.from("player_goals").insert(row);
     setBusy(false);
     if (error) return setErr(errMsg(error));
+    pingPush();
     toast(existing ? "Goal saved" : "Goal added");
     close();
     refresh();

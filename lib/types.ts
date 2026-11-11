@@ -97,7 +97,23 @@ export type PlayerLoad = {
   planned_sessions_7d: number;
 };
 
+export type NotificationKind = "session_new" | "session_changed" | "session_cancelled" | "announcement" | "reply_reminder" | "evaluation" | "goal";
+export type AppNotification = {
+  id: string;
+  club_id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  url: string;
+  created_at: string;
+  read_at: string | null;
+};
+export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean };
+
 export type ClubData = {
+  /** This person's own inbox, newest first (all their clubs). */
+  notifications: AppNotification[];
+  notificationPrefs: NotificationPrefs;
   evaluations: import("./idp").Evaluation[];
   goals: import("./idp").Goal[];
   goalUpdates: import("./idp").GoalUpdate[];

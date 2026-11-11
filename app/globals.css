@@ -833,3 +833,40 @@ button.pro-li:hover{background:var(--surface)}
 .calm-date small{font-size:13px;color:var(--muted)}
 .calm-date b{font-size:20px;font-weight:600}
 [data-look="calm"] .subtabs{background:var(--surface-2);border-color:var(--line)}
+
+/* ---------- Notifications ---------- */
+.bell{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:inherit;flex:none}
+.bell .i{width:22px;height:22px}
+.nbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--bad);color:#fff;font-size:11px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.bell .nbadge{position:absolute;top:2px;right:0}
+.snav .nbadge{margin-left:auto}
+.notif-page{display:grid;gap:24px;max-width:680px}
+.notif-card{display:grid;gap:8px;padding:16px 18px;border-radius:10px;background:var(--surface-2);font-size:15px;line-height:1.5}
+.notif-card p{margin:0;color:var(--muted)}
+.notif-card p b{color:var(--ink)}
+.notif-on{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.install-hint{margin-bottom:20px}
+.notif-empty,.notif-muted{margin:0;color:var(--muted);font-size:15px}
+.notif-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.notif-list li{border-bottom:1px solid var(--line)}
+.notif-item{display:grid;grid-template-columns:22px minmax(0,1fr) 10px;gap:12px;align-items:start;width:100%;padding:14px 6px;border:0;background:none;color:var(--ink);text-align:left;font:inherit;cursor:pointer}
+.notif-item:hover{background:var(--surface)}
+.notif-item[data-new]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.notif-item .i{width:20px;height:20px;margin-top:2px;color:var(--muted)}
+.notif-text{display:grid;gap:2px;min-width:0;font-size:15px}
+.notif-text b{font-weight:600}
+.notif-text span{color:var(--muted);overflow-wrap:anywhere}
+.notif-text small{font-size:13px;color:var(--muted)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:8px}
+.notif-prefs{display:grid;gap:8px}
+.notif-prefs h2{margin:0;font-size:17px;font-weight:600}
+.notif-prefs ul{list-style:none;margin:4px 0 0;padding:0}
+.notif-prefs li{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;border-bottom:1px solid var(--line)}
+.notif-prefs li:last-child{border-bottom:0}
+.notif-prefs li span{display:grid;gap:2px}
+.notif-prefs small{color:var(--muted);font-size:13px}
+.notif-prefs .switch{flex:none}
+/* Phone header: the team picker gives way so the bell and account always fit. */
+.mtop .tsel{flex:0 1 auto;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.mtop .bell{margin-left:-4px}
+@media (max-width:360px){.mtop .brand b{display:none}}

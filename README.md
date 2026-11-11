@@ -44,8 +44,24 @@ Open http://localhost:3000, create an account, then **Start a club**. Tick "Add 
 
 1. Push this folder to a GitHub repository.
 2. At [vercel.com/new](https://vercel.com/new), import the repository. Vercel detects Next.js automatically.
-3. Under **Environment Variables**, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Under **Environment Variables**, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, plus the notification settings below.
 4. Click **Deploy**. When it finishes, copy your `.vercel.app` address into Supabase's **Site URL** (step 1.4).
+
+### 4. Phone notifications
+
+Notifications need five more environment variables in Vercel (and in `.env.local` to test on your computer):
+
+| Name | What it is |
+|---|---|
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Public half of the push key pair. Make a pair with `npx web-push generate-vapid-keys`. |
+| `VAPID_PRIVATE_KEY` | Private half of the pair. Keep it secret. |
+| `VAPID_SUBJECT` | `mailto:` plus an email address push services can contact, e.g. `mailto:you@yourclub.com`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase **Project Settings → API → service_role / secret key**. Server only: never put it in a `NEXT_PUBLIC_` variable. |
+| `CRON_SECRET` | Any long random text. Vercel sends it with the daily reminder job so nobody else can trigger it. |
+
+The reminder job (`vercel.json`) runs once a day at 07:00 UTC, which is 6pm in Sydney in summer and 5pm in winter. Without these variables the app still works; the in-app inbox fills up but nothing is pushed to phones.
+
+On iPhones, push only works after the person adds Overlap to their home screen (Safari → Share → Add to Home Screen) and turns notifications on from the Notifications page.
 
 ## Private to one club
 

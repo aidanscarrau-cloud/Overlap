@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "../AppProvider";
@@ -591,6 +592,9 @@ function AccountCard() {
           <a className="btn" href="/onboarding">
             Enter an invite code
           </a>
+          <Link className="btn" href="/notifications">
+            Notification settings
+          </Link>
           {data.role !== "admin" && <ConfirmButton className="btn danger" label={`Leave ${data.club.name}`} onConfirm={leave} />}
         </div>
       </div>

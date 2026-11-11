@@ -11,11 +11,17 @@ import { fmtMins, isHighLoad } from "@/lib/load";
 import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
 import { timeAgo } from "./Announcements";
 import { STATUS } from "@/lib/constants";
+import { InstallHint } from "./Notifications";
 
 /** Coaches and admins get the pro home; players and parents the calm one. */
 export function Home() {
   const { data } = useApp();
-  return data.role === "admin" || data.role === "coach" ? <CoachHome /> : <FamilyHome />;
+  return (
+    <>
+      <InstallHint />
+      {data.role === "admin" || data.role === "coach" ? <CoachHome /> : <FamilyHome />}
+    </>
+  );
 }
 
 /* ---------------------------------------------------------------- Coaches */
