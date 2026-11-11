@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import { registerWorker } from "@/lib/push-client";
 import type { ClubData, Drill, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
-import type { Perm } from "@/lib/permissions";
+import { isStaffRole, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 
 export type Sheet =
@@ -176,7 +176,7 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
   return (
     <AppCtx.Provider value={value}>
       {/* Coaches and admins get the dense "pro" look; players and parents the "calm" one. */}
-      <div className="look-root" data-look={data.role === "admin" || data.role === "coach" ? "pro" : "calm"}>
+      <div className="look-root" data-look={isStaffRole(data.role) ? "pro" : "calm"}>
       {children}
       {toastMsg && (
         <div className="toast" role="status">

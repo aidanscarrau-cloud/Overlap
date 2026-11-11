@@ -9,7 +9,7 @@ import { Crest, Icon } from "@/components/ui";
 import { LogoPicker } from "../LogoPicker";
 import { SampleDataCard } from "../SampleDataCard";
 import { removeLogoFile, uploadLogo } from "@/lib/logo";
-import { ROLES, ROLE_HELP } from "@/lib/constants";
+import { ROLES, ROLES_PLURAL, ROLE_HELP } from "@/lib/constants";
 import { errMsg, initials } from "@/lib/format";
 import type { Invite, Member, Role } from "@/lib/types";
 import { CONFIGURABLE_ROLES, PERMS, defaultPerm, type Perm } from "@/lib/permissions";
@@ -128,7 +128,8 @@ function TeamsCard() {
 
 function InvitesCard() {
   const { data, isAdmin, team, supabase, toast } = useApp();
-  const allowed: Role[] = isAdmin ? ["coach", "player", "parent", "admin"] : ["player", "parent"];
+  // Admins invite anyone; head coaches can also bring in assistant coaches for their teams.
+  const allowed: Role[] = isAdmin ? ["coach", "assistant", "player", "parent", "admin"] : data.role === "coach" ? ["player", "parent", "assistant"] : ["player", "parent"];
   const [invites, setInvites] = useState<Invite[] | null>(null);
   const [role, setRole] = useState<Role>(allowed[0]);
   const inviteTeams = isAdmin ? data.teams : data.teams.filter((t) => data.myTeamIds.includes(t.id));
@@ -223,7 +224,7 @@ function InvitesCard() {
             <label className="field">
               <span>Team</span>
               <select className="input" id="inv-team" value={teamId} onChange={(e) => (setTeamId(e.target.value), setPlayerId("__new"))}>
-                {isAdmin && <option value="">{role === "coach" ? "Assign teams later" : "No team"}</option>}
+                {isAdmin && <option value="">{role === "coach" || role === "assistant" ? "Assign teams later" : "No team"}</option>}
                 {inviteTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -327,7 +328,7 @@ function InvitesCard() {
 
 function MembersCard() {
   const { data, isAdmin } = useApp();
-  const order: Role[] = ["admin", "coach", "player", "parent"];
+  const order: Role[] = ["admin", "coach", "assistant", "player", "parent"];
   const members = [...data.members].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || a.full_name.localeCompare(b.full_name));
   return (
     <section className="card">
@@ -389,7 +390,7 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
 
   const summary = [
     !editable && ROLES[m.role],
-    m.role === "admin" ? "All teams" : teamNames.join(", ") || (m.role === "coach" ? "No teams assigned yet" : ""),
+    m.role === "admin" ? "All teams" : teamNames.join(", ") || (m.role === "coach" || m.role === "assistant" ? "No teams assigned yet" : ""),
     linkedNames && (m.role === "parent" ? `Parent of ${linkedNames}` : `Player: ${linkedNames}`),
   ]
     .filter(Boolean)
@@ -484,7 +485,7 @@ function RolesCard() {
       .upsert({ club_id: data.club.id, role, perm, allowed: !value(role, perm) }, { onConflict: "club_id,role,perm" });
     setBusy("");
     if (error) return toast(errMsg(error));
-    toast(`${ROLES[role]}s: ${PERMS.find((p) => p.key === perm)!.label.toLowerCase()} ${!value(role, perm) ? "on" : "off"}`);
+    toast(`${ROLES_PLURAL[role]}: ${PERMS.find((p) => p.key === perm)!.label.toLowerCase()} ${!value(role, perm) ? "on" : "off"}`);
     refresh();
   }
 

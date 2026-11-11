@@ -1,4 +1,5 @@
-export type Role = "admin" | "coach" | "player" | "parent";
+/** "coach" is the head coach; "assistant" an assistant coach. */
+export type Role = "admin" | "coach" | "assistant" | "player" | "parent";
 export type Status = "available" | "injured" | "unavailable";
 export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";

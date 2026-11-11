@@ -12,6 +12,7 @@ import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, tod
 import { timeAgo } from "./Announcements";
 import { STATUS } from "@/lib/constants";
 import { InstallHint } from "./Notifications";
+import { isStaffRole } from "@/lib/permissions";
 
 /** Coaches and admins get the pro home; players and parents the calm one. */
 export function Home() {
@@ -19,7 +20,7 @@ export function Home() {
   return (
     <>
       <InstallHint />
-      {data.role === "admin" || data.role === "coach" ? <CoachHome /> : <FamilyHome />}
+      {isStaffRole(data.role) ? <CoachHome /> : <FamilyHome />}
     </>
   );
 }
