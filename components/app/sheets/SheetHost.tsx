@@ -3,6 +3,7 @@
 import { MatchSheet } from "../matches/MatchSheet";
 import { ImportDraw } from "../matches/ImportDraw";
 import { LibraryDrillSheet } from "../views/DrillLibrary";
+import { RequestSelfReviewSheet, SelfReviewSheet } from "../idp/SelfReview";
 import { useApp } from "../AppProvider";
 import { SessionSheet } from "./SessionSheet";
 import { PlayerSheet } from "./PlayerSheet";
@@ -21,6 +22,10 @@ export function SheetHost() {
       return <MatchSheet key={"m" + sheet.id + (sheet.date ?? "")} id={sheet.id} date={sheet.date} />;
     case "import-draw":
       return <ImportDraw />;
+    case "self-review":
+      return <SelfReviewSheet key={"sr" + sheet.id} id={sheet.id} />;
+    case "self-review-request":
+      return <RequestSelfReviewSheet key={"srq" + sheet.playerIds.join()} playerIds={sheet.playerIds} />;
     case "library-drill":
       return <LibraryDrillSheet key={"l" + sheet.key} drillKey={sheet.key} />;
     case "player":

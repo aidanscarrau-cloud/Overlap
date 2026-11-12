@@ -151,7 +151,26 @@ export type NotificationKind =
   | "match_changed"
   | "match_cancelled"
   | "squad"
-  | "result";
+  | "result"
+  | "self_review"
+  | "self_review_done";
+export type SelfReview = {
+  id: string;
+  player_id: string;
+  author_id: string | null;
+  author_name: string;
+  message: string;
+  due_date: string | null;
+  created_at: string;
+  ratings: import("./idp").Ratings;
+  going_well: string;
+  improve: string;
+  goal_idea: string;
+  submitted_at: string | null;
+  submitted_by_name: string;
+  coach_reply: string;
+  replied_at: string | null;
+};
 export type AppNotification = {
   id: string;
   club_id: string;
@@ -166,6 +185,7 @@ export type EmailPref = "always" | "no_phone" | "never";
 export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; email: EmailPref };
 
 export type ClubData = {
+  selfReviews: SelfReview[];
   matches: Match[];
   matchPlayers: MatchPlayer[];
   matchReplies: MatchReply[];

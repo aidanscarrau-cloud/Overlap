@@ -21,6 +21,8 @@ const ICON: Record<NotificationKind, string> = {
   match_cancelled: "i-ball",
   squad: "i-ball",
   result: "i-ball",
+  self_review: "i-target",
+  self_review_done: "i-target",
 };
 
 export function Notifications() {
@@ -170,7 +172,7 @@ const PREF_ROWS: { key: Exclude<keyof NotificationPrefs, "email">; label: string
   { key: "sessions", label: "Sessions and matches", hint: "New, moved or cancelled sessions and matches, and squads" },
   { key: "announcements", label: "Club news and results", hint: "New announcements and match results" },
   { key: "reminders", label: "Reply reminders", hint: "The evening before, if you haven't said if you're coming", family: true },
-  { key: "development", label: "Development", hint: "New reviews and goals", family: true },
+  { key: "development", label: "Development", hint: "New reviews, goals and self-review requests" },
 ];
 
 function PrefsCard() {

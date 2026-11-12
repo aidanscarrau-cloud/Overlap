@@ -43,7 +43,7 @@ export function DevelopmentHome() {
 }
 
 function TeamDevelopment() {
-  const { team, squad, evaluationsOf, goalsOf, canDo } = useApp();
+  const { team, squad, evaluationsOf, goalsOf, canDo, open } = useApp();
   const [filter, setFilter] = useState<"all" | "due" | "goals">("all");
   const players = squad();
   const rows = players.map((p) => {
@@ -69,6 +69,11 @@ function TeamDevelopment() {
           <div className="eyebrow">{team!.name}</div>
           <h1>Development</h1>
         </div>
+        {canEdit && players.length > 0 && (
+          <button className="btn" onClick={() => open({ kind: "self-review-request", playerIds: players.map((p) => p.id) })}>
+            Ask team for self-reviews
+          </button>
+        )}
       </div>
       <div className="stats" style={{ marginTop: 0 }}>
         <div className="card stat">

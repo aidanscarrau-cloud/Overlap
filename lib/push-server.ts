@@ -38,6 +38,8 @@ const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" |
   match_cancelled: "sessions",
   squad: "sessions",
   result: "announcements",
+  self_review: "development",
+  self_review_done: "development",
 };
 
 type Pending = { id: string; user_id: string; club_id: string; kind: string; title: string; body: string; url: string };

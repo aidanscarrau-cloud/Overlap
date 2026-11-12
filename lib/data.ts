@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { AppNotification, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
+import type { AppNotification, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -68,6 +68,11 @@ export async function getClubData(): Promise<ClubData> {
         .order("kickoff"),
       supabase.from("match_players").select("match_id,player_id,role,slot,minutes,goals,assists,yellow,red").eq("club_id", clubId),
       supabase.from("match_replies").select("match_id,player_id,going,note,updated_at").eq("club_id", clubId),
+      supabase
+        .from("self_reviews")
+        .select("id,player_id,author_id,author_name,message,due_date,created_at,ratings,going_well,improve,goal_idea,submitted_at,submitted_by_name,coach_reply,replied_at")
+        .eq("club_id", clubId)
+        .order("created_at", { ascending: false }),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -78,7 +83,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -154,5 +159,6 @@ export async function getClubData(): Promise<ClubData> {
     matches: matches.error ? [] : ((matches.data ?? []) as Match[]),
     matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),
     matchReplies: matchReplies.error ? [] : ((matchReplies.data ?? []) as MatchReply[]),
+    selfReviews: selfReviews.error ? [] : ((selfReviews.data ?? []) as SelfReview[]),
   };
 }

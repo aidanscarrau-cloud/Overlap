@@ -12,6 +12,7 @@ import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, par
 import { timeAgo } from "./Announcements";
 import { STATUS } from "@/lib/constants";
 import { InstallHint } from "./Notifications";
+import { SelfReviewPrompts } from "../idp/SelfReview";
 import { isStaffRole } from "@/lib/permissions";
 
 /** Coaches and admins get the pro home; players and parents the calm one. */
@@ -311,6 +312,8 @@ function FamilyHome() {
           <Link href="/matches">All matches →</Link>
         </section>
       )}
+
+      <SelfReviewPrompts />
 
       {week.length > 0 && (
         <section className="calm-sec">

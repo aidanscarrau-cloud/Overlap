@@ -1115,3 +1115,36 @@ button.pl-slot{cursor:pointer}
 .lib-desc{margin:0;white-space:pre-wrap;line-height:1.55;font-size:15px;max-width:65ch}
 .lib-sheet h3{margin:0 0 6px;font-size:15px;font-weight:600}
 .lib-sheet ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
+
+/* ---------- Self-reviews ---------- */
+.sr-form{display:grid;gap:16px}
+.sr-msg{margin:0;padding:12px 14px;border-radius:10px;background:var(--surface-2);font-size:15px;line-height:1.5}
+.sr-area{display:grid;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.sr-area>div:first-child{display:grid;gap:2px}
+.sr-area small{color:var(--muted);font-size:13px}
+.rate-row{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;max-width:480px}
+.rate-btn{min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
+.rate-btn[aria-checked="true"]{background:var(--viz-1);border-color:var(--viz-1);color:#fff}
+.sr-view{display:grid;gap:14px}
+.sr-compare{width:100%;border-collapse:collapse;font-size:14.5px}
+.sr-compare th,.sr-compare td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.sr-compare thead th{font-size:13px;color:var(--muted);font-weight:500}
+.sr-compare th[scope="row"]{font-weight:500;width:34%}
+.sr-compare td{white-space:nowrap}
+.sr-bar{display:inline-block;width:70px;height:6px;border-radius:3px;background:var(--surface-2);margin-right:8px;vertical-align:middle;overflow:hidden}
+.sr-bar i{display:block;height:100%;background:var(--viz-1)}
+.sr-gap{display:block;font-size:12px;color:var(--warn)}
+.sr-total th,.sr-total td{border-bottom:0;font-weight:600}
+.sr-answer h3{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--muted)}
+.sr-answer p{margin:0;white-space:pre-wrap;font-size:15px;line-height:1.5}
+.sr-reply{padding:12px 14px;border-radius:10px;background:var(--surface-2)}
+.sr-list{list-style:none;margin:0;padding:0}
+.sr-list li+li{border-top:1px solid var(--line)}
+.sr-list button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.sr-pick{display:grid;gap:6px}
+.sr-pick legend{font-size:14px;font-weight:600;margin-bottom:4px}
+.sr-pick-actions{display:flex;gap:14px;font-size:13.5px}
+.sr-pick-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14.5px;min-height:32px}
+.sr-pick-row small{font-size:12.5px}
+.sr-prompt h2{font-size:18px}
+.sr-prompts{display:grid;gap:12px;margin-bottom:16px}

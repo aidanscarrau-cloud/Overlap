@@ -20,6 +20,8 @@ export type Sheet =
   | { kind: "match"; id: string | null; date?: string }
   | { kind: "import-draw" }
   | { kind: "library-drill"; key: string }
+  | { kind: "self-review"; id: string }
+  | { kind: "self-review-request"; playerIds: string[] }
   | null;
 
 type Ctx = {

@@ -1,5 +1,6 @@
 "use client";
 
+import { SelfReviewPrompts, SelfReviewSection, useOpenSelfFromUrl } from "./SelfReview";
 import Link from "next/link";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
@@ -16,6 +17,7 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
   const { data, can, canDo, evaluationsOf, goalsOf, loadOf, playerRate, open, myPlayers, kidName } = useApp();
   const player = data.players.find((p) => p.id === playerId);
   const mine = myPlayers.some((p) => p.id === playerId);
+  useOpenSelfFromUrl();
   if (!player || (!can("idp.view") && !mine))
     return (
       <div className="empty">
@@ -73,6 +75,11 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
         </div>
       </div>
 
+      {mine && (
+        <div className="sr-prompts">
+          <SelfReviewPrompts />
+        </div>
+      )}
       {latest ? (
         <>
           <div className="idp-grid">
@@ -168,6 +175,8 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
           )}
         </div>
       )}
+
+      <SelfReviewSection playerId={playerId} canAsk={canEdit} />
 
       <section style={{ marginTop: 20 }}>
         <div className="phead" style={{ marginBottom: 12 }}>
