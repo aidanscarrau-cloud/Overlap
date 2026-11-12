@@ -159,7 +159,7 @@ export type NotificationKind =
   | "message";
 export type ChatSummary = {
   id: string;
-  kind: "team" | "staff" | "direct";
+  kind: "team" | "staff" | "direct" | "group";
   team_id: string | null;
   posting: "all" | "staff";
   name: string;
