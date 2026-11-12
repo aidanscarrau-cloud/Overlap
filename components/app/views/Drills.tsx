@@ -6,6 +6,8 @@ import { useFamilyRedirect } from "../FamilyRedirect";
 import { Diagram, Icon } from "@/components/ui";
 import { CATS } from "@/lib/constants";
 import type { Category, Drill } from "@/lib/types";
+import { LibraryBrowser } from "./DrillLibrary";
+import { LIBRARY } from "@/lib/library-drills";
 
 export const filterDrills = (drills: Drill[], cat: "all" | Category, q: string) => {
   const s = q.trim().toLowerCase();
@@ -23,6 +25,7 @@ function DrillsPage() {
   const canEdit = can("drills.edit");
   const [cat, setCat] = useState<"all" | Category>("all");
   const [q, setQ] = useState("");
+  const [view, setView] = useState<"club" | "library">("club");
   const ds = filterDrills(data.drills, cat, q);
   return (
     <>
@@ -38,6 +41,18 @@ function DrillsPage() {
           </button>
         )}
       </div>
+      <div className="subtabs" role="tablist" style={{ marginBottom: 14 }}>
+        <button role="tab" aria-selected={view === "club"} onClick={() => setView("club")}>
+          Our drills ({data.drills.length})
+        </button>
+        <button role="tab" aria-selected={view === "library"} onClick={() => setView("library")}>
+          Overlap library ({LIBRARY.length})
+        </button>
+      </div>
+      {view === "library" ? (
+        <LibraryBrowser />
+      ) : (
+      <>
       <div className="toolbar">
         <label className="search">
           <Icon id="i-search" />
@@ -79,9 +94,13 @@ function DrillsPage() {
             </button>
           ))
         ) : (
-          <div className="empty">{data.drills.length ? "No drills match." : canEdit ? "Your library is empty. Create your first drill." : "No drills yet."}</div>
+          <div className="empty">
+            {data.drills.length ? "No drills match." : canEdit ? "Your library is empty. Create your first drill, or add some from the Overlap library." : "No drills yet."}
+          </div>
         )}
       </div>
+      </>
+      )}
     </>
   );
 }

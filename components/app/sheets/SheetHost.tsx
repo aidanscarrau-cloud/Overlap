@@ -2,6 +2,7 @@
 
 import { MatchSheet } from "../matches/MatchSheet";
 import { ImportDraw } from "../matches/ImportDraw";
+import { LibraryDrillSheet } from "../views/DrillLibrary";
 import { useApp } from "../AppProvider";
 import { SessionSheet } from "./SessionSheet";
 import { PlayerSheet } from "./PlayerSheet";
@@ -20,6 +21,8 @@ export function SheetHost() {
       return <MatchSheet key={"m" + sheet.id + (sheet.date ?? "")} id={sheet.id} date={sheet.date} />;
     case "import-draw":
       return <ImportDraw />;
+    case "library-drill":
+      return <LibraryDrillSheet key={"l" + sheet.key} drillKey={sheet.key} />;
     case "player":
       return <PlayerSheet key={"p" + sheet.id} id={sheet.id} />;
     case "drill":

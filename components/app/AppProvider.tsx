@@ -19,6 +19,7 @@ export type Sheet =
   | { kind: "goal"; playerId: string; id: string | null }
   | { kind: "match"; id: string | null; date?: string }
   | { kind: "import-draw" }
+  | { kind: "library-drill"; key: string }
   | null;
 
 type Ctx = {
