@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient as createSupabase } from "@supabase/supabase-js";
 import { serviceClient } from "@/lib/push-server";
 
 // A private calendar feed (iCalendar) for phone and Google calendars. The long random token in the
@@ -25,7 +26,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { token: raw } = await params;
   const token = raw.replace(/\.ics$/i, "");
   if (!/^[a-f0-9]{32,80}$/.test(token)) return new NextResponse("Not found", { status: 404 });
-  const db = serviceClient();
+  // The server key if the site has one, otherwise the public key: the code in the link is checked
+  // by the database either way (update 0016 lets the public key ask).
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const db = serviceClient() ?? (url && anon ? createSupabase(url, anon, { auth: { persistSession: false, autoRefreshToken: false } }) : null);
   if (!db) return new NextResponse("Calendar links aren't set up on this site yet.", { status: 503 });
   const { data, error } = await db.rpc("calendar_feed", { p_token: token });
   if (error) return new NextResponse("Something went wrong.", { status: 500 });
