@@ -51,6 +51,8 @@ export type Session = {
   focus: string;
   notes: string;
   plan: PlanItem[];
+  /** Sessions created together as a repeating series share this id. */
+  series_id: string | null;
 };
 export type Attendance = { session_id: string; player_id: string };
 

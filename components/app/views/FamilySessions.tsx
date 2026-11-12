@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarSync } from "../CalendarSync";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ReplyButtons } from "../Replies";
@@ -29,6 +30,9 @@ export function FamilySessions() {
   return (
     <div className="calm-home">
       <h1>Sessions</h1>
+      <div className="phead-actions">
+        <CalendarSync />
+      </div>
       <div className="subtabs" role="tablist">
         <button role="tab" aria-selected={tab === "upcoming"} onClick={() => setTab("upcoming")}>
           Coming up

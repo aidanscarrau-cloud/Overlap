@@ -13,7 +13,7 @@ export function SheetHost() {
   // key forces a fresh draft each time a different item opens
   switch (sheet.kind) {
     case "session":
-      return <SessionSheet key={"s" + sheet.id} id={sheet.id} />;
+      return <SessionSheet key={"s" + sheet.id + (sheet.date ?? "") + (sheet.copyFrom ?? "")} id={sheet.id} date={sheet.date} copyFrom={sheet.copyFrom} />;
     case "player":
       return <PlayerSheet key={"p" + sheet.id} id={sheet.id} />;
     case "drill":

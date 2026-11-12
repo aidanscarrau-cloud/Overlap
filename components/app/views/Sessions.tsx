@@ -8,6 +8,8 @@ import { addMins, hhmm, todayIso, weekKey, weekLabel } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import { ReplyBadge, ReplyCounts } from "../Replies";
 import { FamilySessions } from "./FamilySessions";
+import { MonthCalendar } from "./Calendar";
+import { CalendarSync } from "../CalendarSync";
 
 export function Sessions() {
   const { data } = useApp();
@@ -17,7 +19,7 @@ export function Sessions() {
 
 function TeamSessions() {
   const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayers, kidName } = useApp();
-  const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
+  const [filter, setFilter] = useState<"upcoming" | "past" | "calendar">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("sessions.edit", team.id);
   const today = todayIso();
@@ -42,12 +44,15 @@ function TeamSessions() {
           <div className="eyebrow">{team.name}</div>
           <h1>Sessions</h1>
         </div>
-        {canEdit && (
-          <button className="btn primary" onClick={() => open({ kind: "session", id: null })}>
-            <Icon id="i-plus" />
-            Plan a session
-          </button>
-        )}
+        <div className="phead-actions">
+          <CalendarSync />
+          {canEdit && (
+            <button className="btn primary" onClick={() => open({ kind: "session", id: null })}>
+              <Icon id="i-plus" />
+              Plan a session
+            </button>
+          )}
+        </div>
       </div>
       <div className="toolbar">
         <div className="chips">
@@ -57,9 +62,14 @@ function TeamSessions() {
           <button className="chip" aria-pressed={filter === "past"} onClick={() => setFilter("past")}>
             Completed<span className="n">{past.length}</span>
           </button>
+          <button className="chip" aria-pressed={filter === "calendar"} onClick={() => setFilter("calendar")}>
+            Calendar
+          </button>
         </div>
       </div>
-      {groups.length ? (
+      {filter === "calendar" ? (
+        <MonthCalendar sessions={ss} canEdit={canEdit} />
+      ) : groups.length ? (
         groups.map((g) => (
           <section key={g.k} className="wk">
             <h2>{weekLabel(g.k)}</h2>

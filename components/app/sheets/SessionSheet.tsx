@@ -7,21 +7,55 @@ import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
 import { Diagram, Icon, Shirt, Timeline, totalMins } from "@/components/ui";
 import { filterDrills } from "../views/Drills";
 import { CATS, STATUS } from "@/lib/constants";
-import { addMins, errMsg, fmtLongDay, fmtLongMon, fmtNum, hhmm, todayIso } from "@/lib/format";
+import { addMins, errMsg, fmtLongDay, fmtLongMon, fmtNum, hhmm, iso, parseD, todayIso } from "@/lib/format";
 import type { Category, PlanItem } from "@/lib/types";
 import { ReplyButtons, ReplyCounts } from "../Replies";
 
 type Draft = { id: string | null; team_id: string; date: string; start_time: string; location: string; title: string; focus: string; notes: string; plan: PlanItem[] };
 
-export function SessionSheet({ id }: { id: string | null }) {
-  const { data, team, drillMap, squad, attendedSet, repliesFor, can, canDo, supabase, refresh, close, toast } = useApp();
+const addDays = (d: string, n: number) => {
+  const x = parseD(d);
+  x.setDate(x.getDate() + n);
+  return iso(x);
+};
+const shortDate = (d: string) => parseD(d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const dayName = (d: string) => parseD(d).toLocaleDateString("en-AU", { weekday: "long" });
+type Repeat = "none" | "weekly" | "fortnightly";
+/** The dates a repeating session falls on, from the first date up to and including `until`. */
+export function seriesDates(first: string, repeat: Repeat, until: string) {
+  if (repeat === "none" || !until || until < first) return [first];
+  const out: string[] = [];
+  for (let d = first; d <= until && out.length < 104; d = addDays(d, repeat === "weekly" ? 7 : 14)) out.push(d);
+  return out;
+}
+
+export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?: string; copyFrom?: string }) {
+  const { data, team, drillMap, squad, attendedSet, repliesFor, can, canDo, supabase, refresh, close, toast, open } = useApp();
   const planTeams = data.teams.filter((t) => canDo("sessions.edit", t.id));
   const existing = id ? data.sessions.find((s) => s.id === id) : null;
+  const source = existing ?? (copyFrom ? data.sessions.find((s) => s.id === copyFrom) : null);
   const [d, setD] = useState<Draft>(() =>
-    existing
-      ? { id: existing.id, team_id: existing.team_id, date: existing.date, start_time: hhmm(existing.start_time), location: existing.location, title: existing.title, focus: existing.focus, notes: existing.notes, plan: existing.plan.map((x) => ({ ...x })) }
-      : { id: null, team_id: (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id) ?? "", date: todayIso(), start_time: "18:00", location: "Main Pitch", title: "", focus: "", notes: "", plan: [] },
+    source
+      ? {
+          id: existing ? existing.id : null,
+          team_id: source.team_id,
+          // A copy goes a week later unless a date was chosen.
+          date: existing ? existing.date : (date ?? addDays(source.date < todayIso() ? todayIso() : source.date, 7)),
+          start_time: hhmm(source.start_time),
+          location: source.location,
+          title: source.title,
+          focus: source.focus,
+          notes: existing ? existing.notes : "",
+          plan: source.plan.map((x) => ({ ...x })),
+        }
+      : { id: null, team_id: (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id) ?? "", date: date ?? todayIso(), start_time: "18:00", location: "Main Pitch", title: "", focus: "", notes: "", plan: [] },
   );
+  const [repeat, setRepeat] = useState<Repeat>("none");
+  const [until, setUntil] = useState(() => addDays(d.date, 7 * 9));
+  const series = existing?.series_id ? data.sessions.filter((s) => s.series_id === existing.series_id).sort((a, b) => a.date.localeCompare(b.date)) : [];
+  const laterInSeries = existing ? series.filter((s) => s.date >= existing.date) : [];
+  const [scope, setScope] = useState<"one" | "following">("one");
+  const dates = !d.id ? seriesDates(d.date, repeat, until) : [d.date];
   const [att, setAtt] = useState<Set<string>>(() => new Set(id ? attendedSet(id) : []));
   const canPlan = canDo("sessions.edit", existing?.team_id ?? (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id));
   const canAttend = canDo("attendance.edit", existing?.team_id ?? team?.id);
@@ -43,9 +77,41 @@ export function SessionSheet({ id }: { id: string | null }) {
       let sid = d.id;
       if (sid && !canPlan) {
         // Attendance only.
+      } else if (sid && scope === "following" && laterInSeries.length > 1) {
+        // This session's own date and notes, then the shared details for it and every later one.
+        const own: Record<string, unknown> = { date: d.date };
+        if (seeNotes) own.notes = d.notes;
+        const { error: e1 } = await supabase.from("sessions").update(own).eq("id", sid);
+        if (e1) throw e1;
+        const { error } = await supabase.rpc("update_session_series", {
+          p_session: sid,
+          p_start: d.start_time,
+          p_location: d.location.trim(),
+          p_title: d.title.trim() || "Training session",
+          p_focus: d.focus.trim(),
+          p_plan: d.plan,
+        });
+        if (error) throw error;
       } else if (sid) {
         const { error } = await supabase.from("sessions").update(row).eq("id", sid);
         if (error) throw error;
+      } else if (dates.length > 1) {
+        const { error } = await supabase.rpc("create_session_series", {
+          p_team: d.team_id,
+          p_dates: dates,
+          p_start: d.start_time,
+          p_location: d.location.trim(),
+          p_title: d.title.trim() || "Training session",
+          p_focus: d.focus.trim(),
+          p_plan: d.plan,
+          p_notes: seeNotes ? d.notes : "",
+        });
+        if (error) throw error;
+        pingPush();
+        toast(`${dates.length} sessions created`);
+        close();
+        refresh();
+        return;
       } else {
         const { data: ins, error } = await supabase.from("sessions").insert(row).select("id").single();
         if (error) throw error;
@@ -64,7 +130,7 @@ export function SessionSheet({ id }: { id: string | null }) {
         const { error } = await supabase.from("attendance").delete().eq("session_id", sid).in("player_id", remove);
         if (error) throw error;
       }
-      toast(d.id ? "Session saved" : "Session created");
+      toast(d.id ? (scope === "following" && laterInSeries.length > 1 ? `${laterInSeries.length} sessions saved` : "Session saved") : "Session created");
       close();
       refresh();
     } catch (e) {
@@ -86,6 +152,19 @@ export function SessionSheet({ id }: { id: string | null }) {
     refresh();
   }
 
+  async function removeFollowing() {
+    setBusy(true);
+    const { data: n, error } = await supabase.rpc("delete_session_series", { p_session: d.id! });
+    if (error) {
+      setBusy(false);
+      return toast(errMsg(error));
+    }
+    pingPush();
+    toast(`${n} sessions deleted`);
+    close();
+    refresh();
+  }
+
   if (existing && !canPlan && !canAttend) return <SessionReadOnly id={existing.id} />;
   if (!existing && !canPlan) return <SheetFrame title="New session">You can&apos;t plan sessions for any of your teams.</SheetFrame>;
 
@@ -97,12 +176,12 @@ export function SessionSheet({ id }: { id: string | null }) {
       title={d.id ? "Session plan" : "New session"}
       foot={
         <>
-          {d.id && canPlan ? <ConfirmButton label="Delete" onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
+          {d.id && canPlan ? <ConfirmButton label={laterInSeries.length > 1 ? "Delete this one" : "Delete"} onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
           <button className="btn" onClick={close}>
             Cancel
           </button>
           <button className="btn primary" onClick={save} disabled={busy}>
-            {busy ? "Saving…" : "Save session"}
+            {busy ? "Saving…" : dates.length > 1 ? `Create ${dates.length} sessions` : "Save session"}
           </button>
         </>
       }
@@ -139,7 +218,60 @@ export function SessionSheet({ id }: { id: string | null }) {
           </label>
         )}
       </div>
+      {!d.id && (
+        <div className="row2">
+          <label className="field">
+            <span>Repeat</span>
+            <select className="input" id="s-repeat" value={repeat} onChange={(e) => setRepeat(e.target.value as Repeat)}>
+              <option value="none">Doesn&apos;t repeat</option>
+              <option value="weekly">Every week</option>
+              <option value="fortnightly">Every 2 weeks</option>
+            </select>
+          </label>
+          {repeat !== "none" && (
+            <label className="field">
+              <span>Until</span>
+              <input className="input" type="date" id="s-until" value={until} min={d.date} onChange={(e) => setUntil(e.target.value)} />
+            </label>
+          )}
+        </div>
+      )}
+      {!d.id && repeat !== "none" && (
+        <p className="series-note">
+          {dates.length > 1
+            ? `${dates.length} sessions, ${repeat === "weekly" ? "every" : "every second"} ${dayName(d.date)} at ${d.start_time} from ${shortDate(dates[0])} to ${shortDate(dates[dates.length - 1])}. Everyone gets one notification, not ${dates.length}.`
+            : "Choose an end date after the first session."}
+        </p>
+      )}
       </fieldset>
+      {existing && canPlan && (
+        <div className="series-box">
+          {series.length > 1 && (
+            <>
+              <span>
+                Part of a repeating series: {series.length} sessions, {shortDate(series[0].date)} to {shortDate(series[series.length - 1].date)}.
+              </span>
+              {laterInSeries.length > 1 && (
+                <label className="field">
+                  <span>Save changes to</span>
+                  <select className="input" id="s-scope" value={scope} onChange={(e) => setScope(e.target.value as "one" | "following")}>
+                    <option value="one">This session only</option>
+                    <option value="following">This and later sessions ({laterInSeries.length})</option>
+                  </select>
+                </label>
+              )}
+            </>
+          )}
+          <div className="series-actions">
+            <button type="button" className="btn sm" onClick={() => open({ kind: "session", id: null, copyFrom: existing.id })}>
+              Duplicate
+            </button>
+            {laterInSeries.length > 1 && (
+              <ConfirmButton className="btn sm danger" label={`Delete this and later (${laterInSeries.length})`} onConfirm={removeFollowing} disabled={busy} />
+            )}
+          </div>
+        </div>
+      )}
       <div className="subtabs" role="tablist">
         {(
           [

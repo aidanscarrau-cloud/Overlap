@@ -7,6 +7,15 @@ import type { AppNotification, NotificationPrefs, Announcement, Attendance, Club
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
+type DB = Awaited<ReturnType<typeof createClient>>;
+/** Sessions, with their series id once update 0015 is in (works without it too). */
+async function loadSessions(supabase: DB, clubId: string) {
+  const cols = "id,club_id,team_id,date,start_time,location,title,focus,plan";
+  const res = await supabase.from("sessions").select(cols + ",series_id").eq("club_id", clubId).order("date").order("start_time");
+  if (!res.error || !/series_id/.test(res.error.message)) return res;
+  return supabase.from("sessions").select(cols).eq("club_id", clubId).order("date").order("start_time");
+}
+
 const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true, email: "always" };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
@@ -33,7 +42,7 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
       supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
       supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
-      supabase.from("sessions").select("id,club_id,team_id,date,start_time,location,title,focus,plan").eq("club_id", clubId).order("date").order("start_time"),
+      loadSessions(supabase, clubId),
       supabase.from("attendance").select("session_id,player_id").eq("club_id", clubId),
       supabase.from("memberships").select("id,user_id,role,profiles(full_name)").eq("club_id", clubId).order("created_at"),
       supabase.from("member_teams").select("membership_id,team_id").eq("club_id", clubId),
@@ -121,7 +130,7 @@ export async function getClubData(): Promise<ClubData> {
     teams: teamList,
     players: playerList,
     drills: (drills.data ?? []) as Drill[],
-    sessions: ((sessions.data ?? []) as Omit<Session, "notes">[]).map((s) => ({ ...s, notes: sNotes.get(s.id) ?? "", plan: Array.isArray(s.plan) ? s.plan : [] })),
+    sessions: ((sessions.data ?? []) as Omit<Session, "notes">[]).map((s) => ({ ...s, series_id: s.series_id ?? null, notes: sNotes.get(s.id) ?? "", plan: Array.isArray(s.plan) ? s.plan : [] })),
     attendance: (attendance.data ?? []) as Attendance[],
     announcements: (announcements.data ?? []) as Announcement[],
     replies: (replies.data ?? []) as Reply[],

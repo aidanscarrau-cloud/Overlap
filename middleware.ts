@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages and files that work without signing in. The daily job checks its own secret.
-const PUBLIC_PATHS = ["/login", "/auth", "/api/cron"];
+const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/api/calendar"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
