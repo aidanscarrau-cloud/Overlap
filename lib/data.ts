@@ -24,6 +24,15 @@ async function loadPlayers(supabase: DB, clubId: string) {
   return supabase.from("players").select(cols).eq("club_id", clubId).order("shirt_number");
 }
 
+/** What this person can do in chat: from update 0020, or the older yes/no check before it. */
+async function loadChatAccess(supabase: DB, clubId: string): Promise<{ access: "none" | "read" | "write"; minAge: number }> {
+  const res = await supabase.rpc("chat_access", { p_club: clubId });
+  const row = (res.data as { access: "none" | "read" | "write"; min_age: number }[] | null)?.[0];
+  if (!res.error && row) return { access: row.access, minAge: row.min_age };
+  const old = await supabase.rpc("chat_allowed", { p_club: clubId });
+  return { access: !old.error && old.data === true ? "write" : "none", minAge: 14 };
+}
+
 const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true, messages: true, email: "always" };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
@@ -81,7 +90,7 @@ export async function getClubData(): Promise<ClubData> {
         .select("id,player_id,author_id,author_name,message,due_date,created_at,ratings,going_well,improve,goal_idea,submitted_at,submitted_by_name,coach_reply,replied_at")
         .eq("club_id", clubId)
         .order("created_at", { ascending: false }),
-      supabase.rpc("chat_allowed", { p_club: clubId }),
+      loadChatAccess(supabase, clubId),
       supabase.rpc("chat_overview", { p_club: clubId }),
     ]);
 
@@ -170,7 +179,9 @@ export async function getClubData(): Promise<ClubData> {
     matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),
     matchReplies: matchReplies.error ? [] : ((matchReplies.data ?? []) as MatchReply[]),
     selfReviews: selfReviews.error ? [] : ((selfReviews.data ?? []) as SelfReview[]),
-    chatAllowed: !chatAllowed.error && chatAllowed.data === true,
+    chatAllowed: chatAllowed.access !== "none",
+    chatCanSend: chatAllowed.access === "write",
+    chatMinAge: chatAllowed.minAge,
     chats: chats.error ? [] : ((chats.data ?? []) as ChatSummary[]),
   };
 }

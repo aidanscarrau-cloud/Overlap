@@ -201,8 +201,12 @@ export type EmailPref = "always" | "no_phone" | "never";
 export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; messages: boolean; email: EmailPref };
 
 export type ClubData = {
-  /** Can this person use chat (player accounts under the club's chat age can't). */
+  /** Can this person see chat (player accounts under the club's chat age may not). */
   chatAllowed: boolean;
+  /** Can they send in team chats (younger players may be read-only). */
+  chatCanSend: boolean;
+  /** The club's chat age limit. */
+  chatMinAge: number;
   chats: ChatSummary[];
   selfReviews: SelfReview[];
   matches: Match[];

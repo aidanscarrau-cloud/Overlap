@@ -61,7 +61,10 @@ export function Chat() {
     return (
       <div className="calm-home">
         <h1>Chat</h1>
-        <p>Team chat is for players aged {data.role === "player" ? "14 and over" : "over the club's age limit"}. Your parents can see the team chat and will pass on anything you need to know.</p>
+        <p>
+          {data.chatMinAge > 0 ? `Team chat is for players aged ${data.chatMinAge} and over.` : "Chat isn't available on your account yet: ask your club to link it to your player profile."} Your parents can
+          see the team chat and will pass on anything you need to know.
+        </p>
       </div>
     );
 
@@ -176,7 +179,7 @@ function Conversation({ chat, onBack, onChanged }: { chat: ChatSummary; onBack: 
   const nearBottom = useRef(true);
   const staffRole = data.role === "admin" || data.role === "coach" || data.role === "assistant";
   const moderator = isAdmin || (chat.kind === "team" && staffRole && manages(chat.team_id)) || (chat.kind === "staff" && staffRole);
-  const canPost = posting === "all" || moderator;
+  const canPost = data.chatCanSend && (posting === "all" || moderator);
   const roleOf = useMemo(() => new Map(data.members.map((m) => [m.user_id, m.role])), [data.members]);
 
   const load = useCallback(async () => {
@@ -362,7 +365,7 @@ function Conversation({ chat, onBack, onChanged }: { chat: ChatSummary; onBack: 
           </button>
         </form>
       ) : (
-        <p className="chat-readonly">Only coaches can post in this chat.</p>
+        <p className="chat-readonly">{data.chatCanSend ? "Only coaches can post in this chat." : "You can read the team chat. Coaches and parents send the messages."}</p>
       )}
     </>
   );

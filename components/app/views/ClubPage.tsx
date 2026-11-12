@@ -627,6 +627,7 @@ function AccountCard() {
 function ChatAgeSetting() {
   const { data, supabase, refresh, toast } = useApp();
   const [age, setAge] = useState<number | null>(null);
+  const [young, setYoung] = useState<"none" | "read" | "write" | null>(null);
   useEffect(() => {
     supabase
       .from("clubs")
@@ -634,8 +635,26 @@ function ChatAgeSetting() {
       .eq("id", data.club.id)
       .maybeSingle()
       .then(({ data: row }) => setAge((row as { chat_min_age?: number } | null)?.chat_min_age ?? null));
+    // Separate request: works before update 0020 is in (the setting just doesn't show).
+    supabase
+      .from("clubs")
+      .select("chat_young_access")
+      .eq("id", data.club.id)
+      .maybeSingle()
+      .then(({ data: row, error }) => !error && setYoung((row as { chat_young_access?: "none" | "read" | "write" } | null)?.chat_young_access ?? null));
   }, [supabase, data.club.id]);
   if (age === null) return null;
+  async function changeYoung(v: "none" | "read" | "write") {
+    const prev = young;
+    setYoung(v);
+    const { error } = await supabase.from("clubs").update({ chat_young_access: v }).eq("id", data.club.id);
+    if (error) {
+      setYoung(prev);
+      return toast(errMsg(error));
+    }
+    toast(v === "none" ? `Players under ${age} can't see chat` : v === "read" ? `Players under ${age} can read team chats` : `Players under ${age} can read and send in team chats`);
+    refresh();
+  }
   async function change(v: number) {
     const prev = age;
     setAge(v);
@@ -659,8 +678,19 @@ function ChatAgeSetting() {
           ))}
         </select>
       </label>
+      {age > 0 && young !== null && (
+        <label className="field" style={{ maxWidth: 320 }}>
+          <span>Players under {age}</span>
+          <select className="input" id="club-chat-young" value={young} onChange={(e) => changeYoung(e.target.value as "none" | "read" | "write")}>
+            <option value="none">Can&apos;t see chat</option>
+            <option value="read">Can read team chats only</option>
+            <option value="write">Can read and send in team chats</option>
+          </select>
+        </label>
+      )}
       <small className="muted" style={{ fontSize: 13 }}>
-        Uses each player&apos;s birth year if set, otherwise their team&apos;s age group (U14 players count as under 14). Private messages are never open to players.
+        Uses each player&apos;s birth year if set, otherwise their team&apos;s age group (U{age || 14} players count as under {age || 14}). Private messages are never open to
+        any player, whatever these settings say.
       </small>
     </div>
   );
