@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { AppNotification, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
+import type { AppNotification, ChatSummary, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -16,7 +16,15 @@ async function loadSessions(supabase: DB, clubId: string) {
   return supabase.from("sessions").select(cols).eq("club_id", clubId).order("date").order("start_time");
 }
 
-const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true, email: "always" };
+/** Players, with birth year once update 0019 is in. */
+async function loadPlayers(supabase: DB, clubId: string) {
+  const cols = "id,club_id,team_id,full_name,shirt_number,position,status";
+  const res = await supabase.from("players").select(cols + ",birth_year").eq("club_id", clubId).order("shirt_number");
+  if (!res.error || !/birth_year/.test(res.error.message)) return res;
+  return supabase.from("players").select(cols).eq("club_id", clubId).order("shirt_number");
+}
+
+const DEFAULT_PREFS: NotificationPrefs = { sessions: true, announcements: true, reminders: true, development: true, messages: true, email: "always" };
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? (x[0] ?? null) : x);
 
 /** Everything the signed-in person may see in their current club. The database's rules decide what that is. */
@@ -40,7 +48,7 @@ export async function getClubData(): Promise<ClubData> {
   const loadClub = (clubId: string) =>
     Promise.all([
       supabase.from("teams").select("id,club_id,name,age_group,coach_name,logo_url").eq("club_id", clubId).order("created_at"),
-      supabase.from("players").select("id,club_id,team_id,full_name,shirt_number,position,status").eq("club_id", clubId).order("shirt_number"),
+      loadPlayers(supabase, clubId),
       supabase.from("drills").select("id,club_id,name,category,minutes,player_count,area,description,points,diagram").eq("club_id", clubId).order("created_at"),
       loadSessions(supabase, clubId),
       supabase.from("attendance").select("session_id,player_id").eq("club_id", clubId),
@@ -59,7 +67,7 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("goal_updates").select("id,goal_id,note,progress,by_staff,author_id,author_name,created_at").eq("club_id", clubId).order("created_at"),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
       supabase.from("notifications").select("id,club_id,kind,title,body,url,created_at,read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
-      supabase.from("notification_prefs").select("sessions,announcements,reminders,development,email").eq("user_id", user.id).maybeSingle(),
+      supabase.from("notification_prefs").select("sessions,announcements,reminders,development,messages,email").eq("user_id", user.id).maybeSingle(),
       supabase
         .from("matches")
         .select("id,club_id,team_id,date,kickoff,meet_time,opponent,home_away,venue,competition,round,format,length_mins,status,our_score,their_score,formation,squad_published,report,external_ref,updated_at")
@@ -73,6 +81,8 @@ export async function getClubData(): Promise<ClubData> {
         .select("id,player_id,author_id,author_name,message,due_date,created_at,ratings,going_well,improve,goal_idea,submitted_at,submitted_by_name,coach_reply,replied_at")
         .eq("club_id", clubId)
         .order("created_at", { ascending: false }),
+      supabase.rpc("chat_allowed", { p_club: clubId }),
+      supabase.rpc("chat_overview", { p_club: clubId }),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -83,7 +93,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -160,5 +170,7 @@ export async function getClubData(): Promise<ClubData> {
     matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),
     matchReplies: matchReplies.error ? [] : ((matchReplies.data ?? []) as MatchReply[]),
     selfReviews: selfReviews.error ? [] : ((selfReviews.data ?? []) as SelfReview[]),
+    chatAllowed: !chatAllowed.error && chatAllowed.data === true,
+    chats: chats.error ? [] : ((chats.data ?? []) as ChatSummary[]),
   };
 }

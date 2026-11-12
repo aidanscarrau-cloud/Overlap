@@ -12,6 +12,7 @@ import { Crest } from "@/components/ui";
 const NAV = [
   { href: "/", label: "Overview", short: "Home", icon: "i-home" },
   { href: "/announcements", label: "Announcements", short: "News", icon: "i-megaphone" },
+  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
   { href: "/squad", label: "Squad", short: "Squad", icon: "i-squad" },
   { href: "/development", label: "Development", short: "IDPs", icon: "i-target" },
   { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
@@ -25,6 +26,7 @@ const FAMILY_NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
   { href: "/sessions", label: "Training", short: "Training", icon: "i-cal" },
   { href: "/matches", label: "Matches", short: "Matches", icon: "i-ball" },
+  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
   { href: "/development", label: "My plan", short: "My plan", icon: "i-target" },
   { href: "/announcements", label: "News", short: "News", icon: "i-megaphone" },
   { href: "/club", label: "Account", short: "Account", icon: "i-people" },
@@ -33,7 +35,9 @@ const FAMILY_NAV = [
 export function Shell({ children }: { children: React.ReactNode }) {
   const { data, team, setTeam, unread } = useApp();
   const family = data.role === "player" || data.role === "parent";
-  const nav = family ? FAMILY_NAV : NAV;
+  // Player accounts under the club's chat age don't get chat at all.
+  const nav = (family ? FAMILY_NAV : NAV).filter((n) => n.href !== "/chat" || data.chatAllowed);
+  const chatUnread = data.chats.filter((c) => !c.muted).reduce((s, c) => s + c.unread, 0);
   const path = usePathname();
   const router = useRouter();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
@@ -41,7 +45,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
   // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
-  const PHONE = family ? ["/", "/sessions", "/matches", "/development", "/announcements"] : ["/", "/sessions", "/matches", "/squad"];
+  const PHONE = data.chatAllowed
+    ? ["/", "/sessions", "/matches", "/chat"]
+    : family
+      ? ["/", "/sessions", "/matches", "/development"]
+      : ["/", "/sessions", "/matches", "/squad"];
   const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
@@ -113,6 +121,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <use href={`#${n.icon}`} />
               </svg>
               {n.label}
+              {n.href === "/chat" && chatUnread > 0 && <span className="nbadge">{chatUnread > 99 ? "99+" : chatUnread}</span>}
             </Link>
           ))}
         </nav>
@@ -170,6 +179,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <use href={`#${n.icon}`} />
             </svg>
             {n.short}
+            {n.href === "/chat" && chatUnread > 0 && <span className="nbadge bnav-badge">{chatUnread > 9 ? "9+" : chatUnread}</span>}
           </Link>
         ))}
         {moreItems.length > 0 && (

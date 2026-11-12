@@ -15,8 +15,8 @@ export function PlayerSheet({ id }: { id: string | null }) {
   const p = id ? data.players.find((x) => x.id === id) : null;
   const [d, setD] = useState(() =>
     p
-      ? { full_name: p.full_name, shirt_number: p.shirt_number ?? "", position: p.position, status: p.status, status_note: p.status_note, team_id: p.team_id }
-      : { full_name: "", shirt_number: Math.max(0, ...squad().map((x) => x.shirt_number ?? 0)) + 1, position: "MID" as Position, status: "available" as Status, status_note: "", team_id: team?.id ?? "" },
+      ? { full_name: p.full_name, shirt_number: p.shirt_number ?? "", position: p.position, status: p.status, status_note: p.status_note, team_id: p.team_id, birth_year: (p.birth_year ?? "") as number | "" }
+      : { full_name: "", shirt_number: Math.max(0, ...squad().map((x) => x.shirt_number ?? 0)) + 1, position: "MID" as Position, status: "available" as Status, status_note: "", team_id: team?.id ?? "", birth_year: "" as number | "" },
   );
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,8 +55,11 @@ export function PlayerSheet({ id }: { id: string | null }) {
     if (!d.full_name.trim()) return setErr("Enter the player's name.");
     const num = d.shirt_number === "" ? null : Number(d.shirt_number);
     if (num !== null && (num < 1 || num > 99)) return setErr("Shirt numbers go from 1 to 99.");
+    const by = d.birth_year === "" ? null : Number(d.birth_year);
+    if (by !== null && (by < 1940 || by > new Date().getFullYear())) return setErr("Check the birth year.");
     setBusy(true);
     const row: Record<string, unknown> = { full_name: d.full_name.trim(), shirt_number: num, position: d.position, status: d.status, team_id: d.team_id };
+    if (by !== (p?.birth_year ?? null)) row.birth_year = by;
     // Only write the note if this person can read notes; otherwise they'd wipe one they can't see.
     if (!p || seeNotes || d.status === "available") row.status_note = d.status === "available" ? "" : d.status_note.trim();
     const { error } = p ? await supabase.from("players").update(row).eq("id", p.id) : await supabase.from("players").insert(row);
@@ -104,6 +107,20 @@ export function PlayerSheet({ id }: { id: string | null }) {
         <label className="field">
           <span>Shirt number</span>
           <input className="input" type="number" min={1} max={99} id="p-num" value={d.shirt_number} onChange={(e) => set({ shirt_number: e.target.value === "" ? "" : +e.target.value })} />
+        </label>
+        <label className="field">
+          <span>Birth year (optional)</span>
+          <input
+            className="input"
+            type="number"
+            inputMode="numeric"
+            min={1940}
+            max={new Date().getFullYear()}
+            id="p-birth"
+            placeholder="e.g. 2012"
+            value={d.birth_year}
+            onChange={(e) => set({ birth_year: e.target.value === "" ? "" : +e.target.value })}
+          />
         </label>
         <label className="field">
           <span>Position</span>

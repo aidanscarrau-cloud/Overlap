@@ -67,6 +67,7 @@ function ClubSettings() {
           </button>
         )}
       </form>
+      <ChatAgeSetting />
       <div className="card-b" style={{ paddingTop: 0 }}>
         <LogoPicker
           url={data.club.logo_url}
@@ -619,5 +620,48 @@ function AccountCard() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Admins choose the youngest age a player account can use chat at (14 unless changed). */
+function ChatAgeSetting() {
+  const { data, supabase, refresh, toast } = useApp();
+  const [age, setAge] = useState<number | null>(null);
+  useEffect(() => {
+    supabase
+      .from("clubs")
+      .select("chat_min_age")
+      .eq("id", data.club.id)
+      .maybeSingle()
+      .then(({ data: row }) => setAge((row as { chat_min_age?: number } | null)?.chat_min_age ?? null));
+  }, [supabase, data.club.id]);
+  if (age === null) return null;
+  async function change(v: number) {
+    const prev = age;
+    setAge(v);
+    const { error } = await supabase.from("clubs").update({ chat_min_age: v }).eq("id", data.club.id);
+    if (error) {
+      setAge(prev);
+      return toast(errMsg(error));
+    }
+    toast(v === 0 ? "All players can use team chat" : `Players ${v} and over can use team chat`);
+    refresh();
+  }
+  return (
+    <div className="card-b" style={{ paddingTop: 0, display: "grid", gap: 6 }}>
+      <label className="field" style={{ maxWidth: 320 }}>
+        <span>Players can use team chat from age</span>
+        <select className="input" id="club-chat-age" value={age} onChange={(e) => change(+e.target.value)}>
+          {[0, 12, 13, 14, 15, 16, 17, 18].map((a) => (
+            <option key={a} value={a}>
+              {a === 0 ? "Any age" : `${a} and over`}
+            </option>
+          ))}
+        </select>
+      </label>
+      <small className="muted" style={{ fontSize: 13 }}>
+        Uses each player&apos;s birth year if set, otherwise their team&apos;s age group (U14 players count as under 14). Private messages are never open to players.
+      </small>
+    </div>
   );
 }

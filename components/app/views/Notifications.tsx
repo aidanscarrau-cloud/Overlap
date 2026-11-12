@@ -23,6 +23,7 @@ const ICON: Record<NotificationKind, string> = {
   result: "i-ball",
   self_review: "i-target",
   self_review_done: "i-target",
+  message: "i-chat",
 };
 
 export function Notifications() {
@@ -173,6 +174,7 @@ const PREF_ROWS: { key: Exclude<keyof NotificationPrefs, "email">; label: string
   { key: "announcements", label: "Club news and results", hint: "New announcements and match results" },
   { key: "reminders", label: "Reply reminders", hint: "The evening before, if you haven't said if you're coming", family: true },
   { key: "development", label: "Development", hint: "New reviews, goals and self-review requests" },
+  { key: "messages", label: "Chat messages", hint: "New messages in your chats (at most one buzz every few minutes per chat; never by email)" },
 ];
 
 function PrefsCard() {

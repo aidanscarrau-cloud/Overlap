@@ -25,7 +25,7 @@ function setupVapid() {
   return true;
 }
 
-const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" | "development"> = {
+const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" | "development" | "messages"> = {
   session_new: "sessions",
   session_changed: "sessions",
   session_cancelled: "sessions",
@@ -40,11 +40,12 @@ const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" |
   result: "announcements",
   self_review: "development",
   self_review_done: "development",
+  message: "messages",
 };
 
 type Pending = { id: string; user_id: string; club_id: string; kind: string; title: string; body: string; url: string };
 type Sub = { endpoint: string; user_id: string; p256dh: string; auth: string };
-type Prefs = { user_id: string; sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; email?: "always" | "no_phone" | "never" };
+type Prefs = { user_id: string; sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; messages?: boolean; email?: "always" | "no_phone" | "never" };
 type Result = { sent: number; emailed: number; skipped: number; removed: number; configured: boolean };
 
 /** siteUrl is the address links in emails point to, e.g. https://overlap.vercel.app */
@@ -71,7 +72,7 @@ export async function sendPending(siteUrl: string): Promise<Result> {
   const users = [...new Set(pending.map((p) => p.user_id))];
   const [{ data: subs }, { data: prefs }] = await Promise.all([
     db.from("push_subscriptions").select("endpoint,user_id,p256dh,auth").in("user_id", users),
-    db.from("notification_prefs").select("user_id,sessions,announcements,reminders,development,email").in("user_id", users),
+    db.from("notification_prefs").select("user_id,sessions,announcements,reminders,development,messages,email").in("user_id", users),
   ]);
   const subsBy = new Map<string, Sub[]>();
   (subs as Sub[] | null)?.forEach((s) => subsBy.set(s.user_id, [...(subsBy.get(s.user_id) ?? []), s]));
@@ -105,7 +106,7 @@ export async function sendPending(siteUrl: string): Promise<Result> {
     for (const n of pending as Pending[]) {
       const pref = prefsBy.get(n.user_id);
       const how = pref?.email ?? "always";
-      if (how === "never" || (pref && pref[PREF_FOR_KIND[n.kind] ?? "announcements"] === false)) continue;
+      if (how === "never" || n.kind === "message" || (pref && pref[PREF_FOR_KIND[n.kind] ?? "announcements"] === false)) continue; // chat never goes by email
       if (how === "no_phone" && (subsBy.get(n.user_id) ?? []).some((s) => !dead.has(s.endpoint))) continue;
       inbox.set(n.user_id, [...(inbox.get(n.user_id) ?? []), n]);
     }

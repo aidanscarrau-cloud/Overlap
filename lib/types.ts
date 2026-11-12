@@ -18,6 +18,8 @@ export type Player = {
   position: Position;
   status: Status;
   status_note: string;
+  /** Optional; used for age rules such as chat (staff can see and set it). */
+  birth_year?: number | null;
 };
 
 /** Diagram item: [type, x, y, label?]. Types: p (your player), o (opponent), n (neutral), c (cone), b (ball), g (goal; label "L" = faces left). */
@@ -153,7 +155,21 @@ export type NotificationKind =
   | "squad"
   | "result"
   | "self_review"
-  | "self_review_done";
+  | "self_review_done"
+  | "message";
+export type ChatSummary = {
+  id: string;
+  kind: "team" | "staff" | "direct";
+  team_id: string | null;
+  posting: "all" | "staff";
+  name: string;
+  last_at: string | null;
+  last_body: string | null;
+  last_author: string | null;
+  unread: number;
+  muted: boolean;
+  other_user: string | null;
+};
 export type SelfReview = {
   id: string;
   player_id: string;
@@ -182,9 +198,12 @@ export type AppNotification = {
   read_at: string | null;
 };
 export type EmailPref = "always" | "no_phone" | "never";
-export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; email: EmailPref };
+export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; messages: boolean; email: EmailPref };
 
 export type ClubData = {
+  /** Can this person use chat (player accounts under the club's chat age can't). */
+  chatAllowed: boolean;
+  chats: ChatSummary[];
   selfReviews: SelfReview[];
   matches: Match[];
   matchPlayers: MatchPlayer[];
