@@ -20,7 +20,13 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   ]);
   return (
     <AuthShell>
-      <OnboardingForm code={sp.code?.toUpperCase() ?? ""} name={profile?.full_name ?? ""} email={user.email ?? ""} hasClub={(count ?? 0) > 0} canCreate={canCreate !== false} />
+      <OnboardingForm code={(sp.code ?? (!count ? savedInvite(user.user_metadata) : "") ?? "").toUpperCase()} name={profile?.full_name ?? ""} email={user.email ?? ""} hasClub={(count ?? 0) > 0} canCreate={canCreate !== false} />
     </AuthShell>
   );
+}
+
+/** The invite code saved on the account at sign-up (see LoginForm), so people don't have to find it again. */
+function savedInvite(meta: Record<string, unknown> | undefined) {
+  const c = meta?.invite_code;
+  return typeof c === "string" && /^[A-Za-z0-9]{4,20}$/.test(c) ? c : "";
 }

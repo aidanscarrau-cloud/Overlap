@@ -14,7 +14,9 @@ export function LoginForm({ next, initialError, startMode }: { next: string; ini
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(initialError === "link" ? "That sign-in link is invalid or has expired. Try again." : "");
+  const [error, setError] = useState(
+    initialError === "link" ? "If you just confirmed your email, it's done: sign in below to carry on. Otherwise the link has expired, so try again." : "",
+  );
   const [info, setInfo] = useState("");
 
   async function submit(e: React.FormEvent) {
@@ -34,10 +36,16 @@ export function LoginForm({ next, initialError, startMode }: { next: string; ini
       }
       if (mode === "signup") {
         if (password.length < 8) throw new Error("Use at least 8 characters for your password.");
+        // Remember the invite code on the account itself, so it survives the email confirmation
+        // even if the link is opened on another phone or in another browser.
+        const invite = (next.match(/^\/join\/([A-Za-z0-9]+)/) ?? next.match(/[?&]code=([A-Za-z0-9]+)/))?.[1]?.toUpperCase();
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name.trim() }, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
+          options: {
+            data: { full_name: name.trim(), ...(invite ? { invite_code: invite } : {}) },
+            emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          },
         });
         if (error) throw error;
         if (data.session) {

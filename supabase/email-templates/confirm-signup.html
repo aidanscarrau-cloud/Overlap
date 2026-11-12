@@ -10,11 +10,11 @@
       <tr><td style="padding:30px 28px 8px">
         <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;color:#0d1630;text-transform:uppercase;letter-spacing:.5px">Confirm your email</h1>
         <p style="margin:0 0 22px;font-size:15px;line-height:1.55;color:#3b465f">Thanks for signing up to Overlap. Confirm your email address to finish creating your account and join your club.</p>
-        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#2d5bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:10px">Confirm my email</a>
+        <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#2d5bff;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:10px">Confirm my email</a>
         <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#5d6984">If you didn't create an Overlap account, you can ignore this email.</p>
       </td></tr>
       <tr><td style="padding:20px 28px 26px">
-        <p style="margin:0;font-size:12px;line-height:1.5;color:#8a94ab;border-top:1px solid #e1e6ef;padding-top:16px">If the button doesn&#39;t work, copy this link into your browser:<br><span style="word-break:break-all;color:#5d6984">{{ .ConfirmationURL }}</span></p>
+        <p style="margin:0;font-size:12px;line-height:1.5;color:#8a94ab;border-top:1px solid #e1e6ef;padding-top:16px">If the button doesn&#39;t work, copy this link into your browser:<br><span style="word-break:break-all;color:#5d6984">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email</span></p>
       </td></tr>
     </table>
   </td></tr>
