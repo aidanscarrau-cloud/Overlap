@@ -16,6 +16,11 @@ const ICON: Record<NotificationKind, string> = {
   announcement: "i-megaphone",
   evaluation: "i-target",
   goal: "i-target",
+  match_new: "i-ball",
+  match_changed: "i-ball",
+  match_cancelled: "i-ball",
+  squad: "i-ball",
+  result: "i-ball",
 };
 
 export function Notifications() {
@@ -162,8 +167,8 @@ export function PushCard() {
 }
 
 const PREF_ROWS: { key: Exclude<keyof NotificationPrefs, "email">; label: string; hint: string; staff?: boolean; family?: boolean }[] = [
-  { key: "sessions", label: "Sessions", hint: "New, moved or cancelled sessions" },
-  { key: "announcements", label: "Club news", hint: "New announcements" },
+  { key: "sessions", label: "Sessions and matches", hint: "New, moved or cancelled sessions and matches, and squads" },
+  { key: "announcements", label: "Club news and results", hint: "New announcements and match results" },
   { key: "reminders", label: "Reply reminders", hint: "The evening before, if you haven't said if you're coming", family: true },
   { key: "development", label: "Development", hint: "New reviews and goals", family: true },
 ];

@@ -54,6 +54,45 @@ export type Session = {
   /** Sessions created together as a repeating series share this id. */
   series_id: string | null;
 };
+export type HomeAway = "home" | "away" | "neutral";
+export type MatchStatus = "scheduled" | "postponed" | "cancelled" | "played";
+export type MatchFormat = "5" | "7" | "9" | "11";
+export type Match = {
+  id: string;
+  club_id: string;
+  team_id: string;
+  date: string;
+  kickoff: string;
+  meet_time: string | null;
+  opponent: string;
+  home_away: HomeAway;
+  venue: string;
+  competition: string;
+  round: string;
+  format: MatchFormat;
+  length_mins: number;
+  status: MatchStatus;
+  our_score: number | null;
+  their_score: number | null;
+  formation: string;
+  squad_published: boolean;
+  report: string;
+  external_ref: string | null;
+  updated_at: string;
+};
+/** A player in a match squad: line-up position and stats. */
+export type MatchPlayer = {
+  match_id: string;
+  player_id: string;
+  role: "start" | "bench";
+  slot: number | null;
+  minutes: number | null;
+  goals: number;
+  assists: number;
+  yellow: number;
+  red: number;
+};
+export type MatchReply = { match_id: string; player_id: string; going: boolean; note: string; updated_at: string };
 export type Attendance = { session_id: string; player_id: string };
 
 export type Member = {
@@ -100,7 +139,19 @@ export type PlayerLoad = {
   planned_sessions_7d: number;
 };
 
-export type NotificationKind = "session_new" | "session_changed" | "session_cancelled" | "announcement" | "reply_reminder" | "evaluation" | "goal";
+export type NotificationKind =
+  | "session_new"
+  | "session_changed"
+  | "session_cancelled"
+  | "announcement"
+  | "reply_reminder"
+  | "evaluation"
+  | "goal"
+  | "match_new"
+  | "match_changed"
+  | "match_cancelled"
+  | "squad"
+  | "result";
 export type AppNotification = {
   id: string;
   club_id: string;
@@ -115,6 +166,9 @@ export type EmailPref = "always" | "no_phone" | "never";
 export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; email: EmailPref };
 
 export type ClubData = {
+  matches: Match[];
+  matchPlayers: MatchPlayer[];
+  matchReplies: MatchReply[];
   /** This person's own inbox, newest first (all their clubs). */
   notifications: AppNotification[];
   notificationPrefs: NotificationPrefs;

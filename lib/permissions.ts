@@ -14,6 +14,7 @@ export const PERMS = [
   { key: "announcements.post", label: "Post announcements", help: "To their teams. Only admins post to the whole club." },
   { key: "idp.view", label: "See development plans", help: "Evaluations and goals for players in their teams. Players and parents always see their own shared ones." },
   { key: "idp.edit", label: "Write evaluations and goals", help: "For players in their teams." },
+  { key: "matches.edit", label: "Manage matches", help: "Add matches and import draws, pick squads and line-ups, and enter results and stats for their teams." },
 ] as const;
 
 export type Perm = (typeof PERMS)[number]["key"];

@@ -6,6 +6,7 @@ import { useApp } from "../AppProvider";
 import { Shirt, totalMins } from "@/components/ui";
 import { AREAS, areaLabel, overall, type Evaluation } from "@/lib/idp";
 import { fmtMins } from "@/lib/load";
+import { playerTotals, resultOf } from "@/lib/matches";
 import { iso, parseD, todayIso, weekKey } from "@/lib/format";
 import type { Session } from "@/lib/types";
 
@@ -86,6 +87,16 @@ export function Progress({ playerId }: { playerId: string }) {
   const ovNow = overall(latest?.ratings);
   const ovStart = startEv && startEv !== latest ? overall(startEv.ratings) : null;
   const goals = goalsOf(player.id);
+  // Matches this player was in the squad for, in the chosen period.
+  const playedIn = data.matchPlayers
+    .filter((r) => r.player_id === player.id)
+    .map((r) => ({ r, m: data.matches.find((m) => m.id === r.match_id) }))
+    .filter((x): x is { r: (typeof data.matchPlayers)[number]; m: (typeof data.matches)[number] } => !!x.m && x.m.status === "played" && x.m.date >= from)
+    .sort((a, b) => b.m.date.localeCompare(a.m.date));
+  const mt = playerTotals(
+    playedIn.map((x) => x.m),
+    playedIn.map((x) => x.r),
+  ).get(player.id);
   const achievedIn = goals.filter((g) => g.status === "achieved" && (g.achieved_on ?? g.updated_at.slice(0, 10)) >= from).length;
   const active = goals.filter((g) => g.status === "active");
 
@@ -212,6 +223,51 @@ export function Progress({ playerId }: { playerId: string }) {
             <p>Every session {periodText}, oldest first.</p>
           </div>
           <AttendanceStrip rows={rows} teamName={(id) => (player.team_ids.length > 1 ? data.teams.find((t) => t.id === id)?.name : undefined)} />
+        </section>
+      )}
+
+      {playedIn.length > 0 && (
+        <section className="prog-sec">
+          <div className="prog-sec-h">
+            <h2>Matches</h2>
+            <p>Games {periodText} where {you ? "you were" : `${name} was`} in the squad.</p>
+          </div>
+          <div className="prog-tiles">
+            <div className="prog-tile">
+              <span>Appearances</span>
+              <b className="tnum">{mt?.apps ?? 0}</b>
+              <small>{mt?.starts ?? 0} starts</small>
+            </div>
+            <div className="prog-tile">
+              <span>Minutes</span>
+              <b className="tnum">{mt?.minutes ?? 0}</b>
+              <small>{mt?.apps ? `${Math.round(mt.minutes / mt.apps)} a game` : "–"}</small>
+            </div>
+            <div className="prog-tile">
+              <span>Goals</span>
+              <b className="tnum">{mt?.goals ?? 0}</b>
+              <small>{mt?.assists ?? 0} assists</small>
+            </div>
+          </div>
+          <ul className="prog-goals">
+            {playedIn.slice(0, 8).map(({ r, m }) => (
+              <li key={m.id}>
+                <span>
+                  <b>
+                    vs {m.opponent} {m.our_score}–{m.their_score}
+                  </b>
+                  <small>
+                    {day(m.date)} · {r.role === "start" ? "Started" : "Bench"}
+                    {r.minutes ? ` · ${r.minutes} min` : ""}
+                  </small>
+                </span>
+                <span className="muted" style={{ fontSize: 13 }}>
+                  {[r.goals && `${r.goals} goal${r.goals > 1 ? "s" : ""}`, r.assists && `${r.assists} assist${r.assists > 1 ? "s" : ""}`].filter(Boolean).join(", ")}
+                </span>
+                <span className="tnum prog-goal-pct">{resultOf(m) ?? ""}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

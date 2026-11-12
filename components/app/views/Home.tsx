@@ -8,7 +8,7 @@ import { Linkify } from "@/components/Linkify";
 import { totalMins } from "@/components/ui";
 import { overall } from "@/lib/idp";
 import { fmtMins, isHighLoad } from "@/lib/load";
-import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
+import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, parseD, todayIso, whenLabel } from "@/lib/format";
 import { timeAgo } from "./Announcements";
 import { STATUS } from "@/lib/constants";
 import { InstallHint } from "./Notifications";
@@ -236,6 +236,9 @@ function FamilyHome() {
   const upcoming = data.sessions.filter((s) => teamIds.includes(s.team_id) && s.date >= today).sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
   const week = upcoming.filter((s) => s.date <= weekEnd);
   const tName = (id: string) => data.teams.find((t) => t.id === id)?.name ?? "";
+  const nextMatch = data.matches
+    .filter((m) => teamIds.includes(m.team_id) && m.date >= today && m.status !== "played")
+    .sort((a, b) => (a.date + a.kickoff).localeCompare(b.date + b.kickoff))[0];
 
   // Things that need doing or knowing, as plain sentences.
   const attention: string[] = [];
@@ -287,6 +290,27 @@ function FamilyHome() {
           </section>
         );
       })}
+
+      {nextMatch && (
+        <section className="calm-callout">
+          <span className="calm-meta">
+            Next match · {fmtLongDay(nextMatch.date)} {parseD(nextMatch.date).getDate()} {fmtLongMon(nextMatch.date)}
+          </span>
+          <h2>
+            {tName(nextMatch.team_id)} vs {nextMatch.opponent}
+          </h2>
+          <p>
+            {nextMatch.status === "scheduled" ? `Kick-off ${hhmm(nextMatch.kickoff)}` : nextMatch.status === "postponed" ? "Postponed" : "Cancelled"}
+            {nextMatch.meet_time && nextMatch.status === "scheduled" ? `, arrive by ${hhmm(nextMatch.meet_time)}` : ""}
+            {nextMatch.venue && ` at ${nextMatch.venue}`}
+          </p>
+          {nextMatch.status === "scheduled" &&
+            myPlayers
+              .filter((p) => p.team_ids.includes(nextMatch.team_id))
+              .map((p) => <ReplyButtons key={p.id} matchId={nextMatch.id} playerId={p.id} label={parent ? `Can ${kidName(p)} play?` : "Can you play?"} who={parent ? kidName(p) : undefined} />)}
+          <Link href="/matches">All matches →</Link>
+        </section>
+      )}
 
       {week.length > 0 && (
         <section className="calm-sec">

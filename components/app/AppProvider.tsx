@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import { registerWorker } from "@/lib/push-client";
-import type { ClubData, Drill, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
+import type { ClubData, Drill, Match, MatchPlayer, MatchReply, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import { isStaffRole, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 
@@ -17,6 +17,8 @@ export type Sheet =
   | { kind: "team"; id: string | null }
   | { kind: "evaluation"; playerId: string; id: string | null }
   | { kind: "goal"; playerId: string; id: string | null }
+  | { kind: "match"; id: string | null; date?: string }
+  | { kind: "import-draw" }
   | null;
 
 type Ctx = {
@@ -55,6 +57,12 @@ type Ctx = {
   /** Change what's on screen straight away; the next refresh replaces it with the saved data. */
   patch: (fn: (d: ClubData) => ClubData) => void;
   refresh: () => void;
+  /** A team's matches, oldest first (current team if none given). */
+  matchesOf: (teamId?: string) => Match[];
+  /** Squad, line-up and stats rows for a match. */
+  squadOf: (matchId: string) => MatchPlayer[];
+  /** Availability replies for a match, by player id. */
+  matchRepliesFor: (matchId: string) => Map<string, MatchReply>;
   /** Unread notifications in the inbox. */
   unread: number;
 };
@@ -99,6 +107,20 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     return m;
   }, [data.replies]);
   const myPlayers = useMemo(() => data.players.filter((p) => data.me?.player_ids.includes(p.id)), [data.players, data.me]);
+
+  const squadMap = useMemo(() => {
+    const m = new Map<string, MatchPlayer[]>();
+    data.matchPlayers.forEach((r) => m.set(r.match_id, [...(m.get(r.match_id) ?? []), r]));
+    return m;
+  }, [data.matchPlayers]);
+  const matchReplyMap = useMemo(() => {
+    const m = new Map<string, Map<string, MatchReply>>();
+    data.matchReplies.forEach((r) => {
+      if (!m.has(r.match_id)) m.set(r.match_id, new Map());
+      m.get(r.match_id)!.set(r.player_id, r);
+    });
+    return m;
+  }, [data.matchReplies]);
 
   const loadMap = useMemo(() => new Map(data.loads.map((l) => [l.player_id, l])), [data.loads]);
 
@@ -171,6 +193,9 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     patch: (fn) => setData((d) => fn(d)),
     refresh: () => router.refresh(),
     unread: data.notifications.filter((n) => !n.read_at).length,
+    matchesOf: (tid) => data.matches.filter((m) => m.team_id === (tid ?? team?.id)).sort((a, b) => (a.date + a.kickoff).localeCompare(b.date + b.kickoff)),
+    squadOf: (mid) => squadMap.get(mid) ?? [],
+    matchRepliesFor: (mid) => matchReplyMap.get(mid) ?? new Map(),
   };
 
   return (

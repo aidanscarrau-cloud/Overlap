@@ -18,7 +18,7 @@ export function Sessions() {
 }
 
 function TeamSessions() {
-  const { team, sessionsOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayers, kidName } = useApp();
+  const { team, sessionsOf, matchesOf, squad, attendedSet, drillMap, can, canDo, isAdmin, open, myPlayers, kidName } = useApp();
   const [filter, setFilter] = useState<"upcoming" | "past" | "calendar">("upcoming");
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("sessions.edit", team.id);
@@ -68,7 +68,7 @@ function TeamSessions() {
         </div>
       </div>
       {filter === "calendar" ? (
-        <MonthCalendar sessions={ss} canEdit={canEdit} />
+        <MonthCalendar sessions={ss} matches={matchesOf()} canEdit={canEdit} />
       ) : groups.length ? (
         groups.map((g) => (
           <section key={g.k} className="wk">

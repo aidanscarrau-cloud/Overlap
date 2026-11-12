@@ -1,5 +1,7 @@
 "use client";
 
+import { MatchSheet } from "../matches/MatchSheet";
+import { ImportDraw } from "../matches/ImportDraw";
 import { useApp } from "../AppProvider";
 import { SessionSheet } from "./SessionSheet";
 import { PlayerSheet } from "./PlayerSheet";
@@ -14,6 +16,10 @@ export function SheetHost() {
   switch (sheet.kind) {
     case "session":
       return <SessionSheet key={"s" + sheet.id + (sheet.date ?? "") + (sheet.copyFrom ?? "")} id={sheet.id} date={sheet.date} copyFrom={sheet.copyFrom} />;
+    case "match":
+      return <MatchSheet key={"m" + sheet.id + (sheet.date ?? "")} id={sheet.id} date={sheet.date} />;
+    case "import-draw":
+      return <ImportDraw />;
     case "player":
       return <PlayerSheet key={"p" + sheet.id} id={sheet.id} />;
     case "drill":

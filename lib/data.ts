@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { AppNotification, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
+import type { AppNotification, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -60,6 +60,14 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
       supabase.from("notifications").select("id,club_id,kind,title,body,url,created_at,read_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(40),
       supabase.from("notification_prefs").select("sessions,announcements,reminders,development,email").eq("user_id", user.id).maybeSingle(),
+      supabase
+        .from("matches")
+        .select("id,club_id,team_id,date,kickoff,meet_time,opponent,home_away,venue,competition,round,format,length_mins,status,our_score,their_score,formation,squad_published,report,external_ref,updated_at")
+        .eq("club_id", clubId)
+        .order("date")
+        .order("kickoff"),
+      supabase.from("match_players").select("match_id,player_id,role,slot,minutes,goals,assists,yellow,red").eq("club_id", clubId),
+      supabase.from("match_replies").select("match_id,player_id,going,note,updated_at").eq("club_id", clubId),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -70,7 +78,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -142,5 +150,9 @@ export async function getClubData(): Promise<ClubData> {
     // If the notifications tables aren't there yet, the rest of the app still works.
     notifications: inbox.error ? [] : ((inbox.data ?? []) as AppNotification[]),
     notificationPrefs: (prefs.data as NotificationPrefs | null) ?? DEFAULT_PREFS,
+    // Before update 0017 these tables don't exist; the rest of the app keeps working.
+    matches: matches.error ? [] : ((matches.data ?? []) as Match[]),
+    matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),
+    matchReplies: matchReplies.error ? [] : ((matchReplies.data ?? []) as MatchReply[]),
   };
 }

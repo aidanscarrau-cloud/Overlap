@@ -33,6 +33,11 @@ const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" |
   reply_reminder: "reminders",
   evaluation: "development",
   goal: "development",
+  match_new: "sessions",
+  match_changed: "sessions",
+  match_cancelled: "sessions",
+  squad: "sessions",
+  result: "announcements",
 };
 
 type Pending = { id: string; user_id: string; club_id: string; kind: string; title: string; body: string; url: string };

@@ -5,9 +5,9 @@ import { useApp } from "./AppProvider";
 import { errMsg } from "@/lib/format";
 
 /** "Are you coming?" Yes / No for one player and one session, with an optional reason for No. */
-export function ReplyButtons({ sessionId, playerId, label, who }: { sessionId: string; playerId: string; label?: string; who?: string }) {
-  const { repliesFor, supabase, refresh, toast, patch } = useApp();
-  const current = repliesFor(sessionId).get(playerId);
+export function ReplyButtons({ sessionId, matchId, playerId, label, who }: { sessionId?: string; matchId?: string; playerId: string; label?: string; who?: string }) {
+  const { repliesFor, matchRepliesFor, supabase, refresh, toast, patch } = useApp();
+  const current = matchId ? matchRepliesFor(matchId).get(playerId) : repliesFor(sessionId!).get(playerId);
   const [askNote, setAskNote] = useState(false);
   const [note, setNote] = useState(current?.note ?? "");
   const [busy, setBusy] = useState(false);
@@ -15,23 +15,35 @@ export function ReplyButtons({ sessionId, playerId, label, who }: { sessionId: s
   async function send(going: boolean, n = "") {
     // Show the answer straight away, then save it.
     setAskNote(false);
-    const reply = { session_id: sessionId, player_id: playerId, going, note: n.trim(), updated_at: new Date().toISOString() };
-    patch((d) => ({ ...d, replies: [...d.replies.filter((r) => !(r.session_id === sessionId && r.player_id === playerId)), reply] }));
+    const at = new Date().toISOString();
+    if (matchId) {
+      const reply = { match_id: matchId, player_id: playerId, going, note: n.trim(), updated_at: at };
+      patch((d) => ({ ...d, matchReplies: [...d.matchReplies.filter((r) => !(r.match_id === matchId && r.player_id === playerId)), reply] }));
+    } else {
+      const reply = { session_id: sessionId!, player_id: playerId, going, note: n.trim(), updated_at: at };
+      patch((d) => ({ ...d, replies: [...d.replies.filter((r) => !(r.session_id === sessionId && r.player_id === playerId)), reply] }));
+    }
     setBusy(true);
-    const { error } = await supabase.rpc("reply_to_session", { p_session: sessionId, p_player: playerId, p_going: going, p_note: n.trim() });
+    const { error } = matchId
+      ? await supabase.rpc("reply_to_match", { p_match: matchId, p_player: playerId, p_going: going, p_note: n.trim() })
+      : await supabase.rpc("reply_to_session", { p_session: sessionId, p_player: playerId, p_going: going, p_note: n.trim() });
     setBusy(false);
     if (error) {
       refresh();
       return toast(errMsg(error));
     }
-    toast(going ? `Thanks, ${who ?? "you're"} down as coming` : `Thanks, your coach knows ${who ?? "you"} can't make it`);
+    toast(
+      going
+        ? `Thanks, ${who ?? "you're"} down as ${matchId ? "available" : "coming"}`
+        : `Thanks, your coach knows ${who ?? "you"} can't ${matchId ? "play" : "make it"}`,
+    );
     refresh();
   }
 
   return (
     <div className="reply">
       {label && <span className="reply-q">{label}</span>}
-      <div className="reply-btns" role="group" aria-label="Are you coming?">
+      <div className="reply-btns" role="group" aria-label={matchId ? "Can you play?" : "Are you coming?"}>
         <button type="button" className="rbtn yes" aria-pressed={current?.going === true} disabled={busy} onClick={() => send(true)}>
           ✓ Yes
         </button>
@@ -41,7 +53,13 @@ export function ReplyButtons({ sessionId, playerId, label, who }: { sessionId: s
       </div>
       {current && !askNote && (
         <span className="reply-state">
-          {current.going ? (who ? "Going" : "You're going") : `Not going${current.note ? `: ${current.note}` : ""}`}
+          {matchId
+            ? current.going
+              ? who ? "Available" : "You're available"
+              : `Can't play${current.note ? `: ${current.note}` : ""}`
+            : current.going
+              ? who ? "Going" : "You're going"
+              : `Not going${current.note ? `: ${current.note}` : ""}`}
         </span>
       )}
       {askNote && (

@@ -15,6 +15,7 @@ const NAV = [
   { href: "/squad", label: "Squad", short: "Squad", icon: "i-squad" },
   { href: "/development", label: "Development", short: "IDPs", icon: "i-target" },
   { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
+  { href: "/matches", label: "Matches", short: "Matches", icon: "i-ball" },
   { href: "/drills", label: "Drill library", short: "Drills", icon: "i-board" },
   { href: "/club", label: "Club & members", short: "Club", icon: "i-people" },
 ];
@@ -22,7 +23,8 @@ const NAV = [
 // Players and parents get a short, plain menu; nothing they don't need.
 const FAMILY_NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
-  { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
+  { href: "/sessions", label: "Training", short: "Training", icon: "i-cal" },
+  { href: "/matches", label: "Matches", short: "Matches", icon: "i-ball" },
   { href: "/development", label: "My plan", short: "My plan", icon: "i-target" },
   { href: "/announcements", label: "News", short: "News", icon: "i-megaphone" },
   { href: "/club", label: "Account", short: "Account", icon: "i-people" },
@@ -38,7 +40,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [more, setMore] = useState(false);
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
-  const PHONE = family ? FAMILY_NAV.map((n) => n.href) : ["/", "/squad", "/sessions", "/development"];
+  // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
+  const PHONE = family ? ["/", "/sessions", "/matches", "/development", "/announcements"] : ["/", "/sessions", "/matches", "/squad"];
   const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
