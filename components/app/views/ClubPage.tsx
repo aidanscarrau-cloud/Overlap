@@ -140,6 +140,7 @@ function InvitesCard() {
   const [multi, setMulti] = useState(false);
   const [busy, setBusy] = useState(false);
   const [origin, setOrigin] = useState("");
+  const [loadError, setLoadError] = useState("");
   const linkable = role === "player" || role === "parent";
   const teamPlayers = data.players.filter((p) => p.team_id === teamId).sort((a, b) => a.full_name.localeCompare(b.full_name));
 
@@ -149,8 +150,16 @@ function InvitesCard() {
       .select("code,role,team_id,player_id,create_player,new_player_name,expires_at,max_uses,uses")
       .eq("club_id", data.club.id)
       .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
-    if (error) return toast(errMsg(error));
+      .order("created_at", { ascending: false })
+      .abortSignal(AbortSignal.timeout(15000));
+    if (error) {
+      // Show the reason on the card, not just in a toast, so it can be reported.
+      const msg = errMsg(error);
+      setLoadError(/abort|timed? ?out/i.test(msg) ? "the server took too long to answer" : msg);
+      setInvites([]);
+      return;
+    }
+    setLoadError("");
     setInvites(((rows ?? []) as Invite[]).filter((i) => i.uses < i.max_uses));
   }
   useEffect(() => {
@@ -176,7 +185,10 @@ function InvitesCard() {
     };
     const { error } = await supabase.from("invites").insert(row);
     setBusy(false);
-    if (error) return toast(errMsg(error));
+    if (error) {
+      setLoadError(errMsg(error));
+      return toast(errMsg(error));
+    }
     toast("Invite created");
     setPlayerId("__new");
     setChildName("");
@@ -288,7 +300,14 @@ function InvitesCard() {
           <div className="eyebrow" style={{ marginBottom: 6 }}>
             Active invites
           </div>
-          {invites === null ? (
+          {loadError ? (
+            <div className="notice bad" role="alert" style={{ display: "grid", gap: 8, justifyItems: "start" }}>
+              <span>Couldn&apos;t load invites: {loadError}</span>
+              <button type="button" className="btn sm" onClick={() => (setInvites(null), load())}>
+                Try again
+              </button>
+            </div>
+          ) : invites === null ? (
             <p className="muted">Loading…</p>
           ) : invites.length ? (
             <div className="rows">
