@@ -1,0 +1,180 @@
+/* ==========================================================================
+   Overlap "club" look: one light, sporty look for everyone, in the club's colours.
+   The club's colours arrive as CSS variables on .look-root (see lib/brand.ts):
+   --brand / --brand-2 / --brand-ink   main colour (headers, the "next up" ticket, the sidebar)
+   --accent / --accent-ink             key buttons and highlights
+   --accent-text                       the accent darkened for small text on white
+   --accent-soft                       a pale wash of the accent
+   ========================================================================== */
+
+[data-look="club"] {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #f2f3f5;
+  --ink: #15171a;
+  --muted: #667085;
+  --line: #e6e8ec;
+  --good: #15803d;
+  --warn: #b45309;
+  --bad: #dc2626;
+  --gold: var(--accent);
+  --navy: var(--brand);
+  --navy-2: var(--brand-2);
+  --on-navy: var(--brand-ink);
+  --on-navy-muted: color-mix(in srgb, var(--brand-ink) 62%, transparent);
+  --viz-1: var(--accent-text);
+  --display: var(--font-barlow-cond), "Arial Narrow", system-ui, sans-serif;
+  --body: var(--font-barlow), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 16px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 10px rgba(16, 24, 40, 0.05);
+  --shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+body:has(.look-root[data-look="club"]) { background: #f3f4f6; }
+body:has(.look-root[data-look="club"])::before { background: #fff; }
+
+/* ---------- Type ---------- */
+[data-look="club"] h1,
+[data-look="club"] h2,
+[data-look="club"] h3 { font-family: var(--display); font-weight: 700; letter-spacing: 0.005em; }
+[data-look="club"] .phead { margin-bottom: 18px; align-items: center; }
+[data-look="club"] .phead h1 { font-family: var(--display); font-weight: 700; font-size: clamp(32px, 4vw, 42px); line-height: 1; letter-spacing: 0.005em; }
+[data-look="club"] .eyebrow { font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-text); }
+[data-look="club"] .card-h h2,
+[data-look="club"] .sec-title,
+[data-look="club"] .wk h2 { font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: 0.01em; }
+[data-look="club"] .muted { color: var(--muted); }
+[data-look="club"] .mono { font-family: var(--body); }
+
+/* ---------- Buttons ---------- */
+[data-look="club"] .btn {
+  min-height: 44px; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font-family: var(--body); font-weight: 600; font-size: 15px; box-shadow: none;
+  transition: transform 0.12s var(--ease), background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+[data-look="club"] .btn:hover { border-color: #cfd4dc; background: #fafafb; }
+[data-look="club"] .btn:active { transform: scale(0.97); }
+[data-look="club"] .btn.primary,
+[data-look="club"] .btn.gold { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+[data-look="club"] .btn.primary:hover,
+[data-look="club"] .btn.gold:hover { background: var(--accent); filter: brightness(1.05); }
+[data-look="club"] .btn.dark { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+[data-look="club"] .btn.danger { color: var(--bad); }
+[data-look="club"] .btn.danger.armed { background: var(--bad); border-color: var(--bad); color: #fff; }
+[data-look="club"] .btn.sm { min-height: 36px; padding: 6px 12px; font-size: 14px; border-radius: 10px; }
+[data-look="club"] .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+[data-look="club"] .icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); transition: transform 0.12s var(--ease); }
+[data-look="club"] .icon-btn:active { transform: scale(0.94); }
+[data-look="club"] .linklike { color: var(--accent-text); font-weight: 600; text-decoration: none; }
+
+/* ---------- Cards and lists ---------- */
+[data-look="club"] .card { background: var(--surface); border: 0; border-radius: var(--r); box-shadow: var(--shadow-sm); }
+[data-look="club"] button.card,
+[data-look="club"] a.card { transition: transform 0.12s var(--ease), box-shadow 0.15s; }
+[data-look="club"] button.card:hover,
+[data-look="club"] a.card:hover { box-shadow: 0 4px 18px rgba(16, 24, 40, 0.08); transform: none; }
+[data-look="club"] button.card:active,
+[data-look="club"] a.card:active { transform: scale(0.99); }
+[data-look="club"] .empty { border: 0; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-sm); color: var(--muted); }
+[data-look="club"] .notice { border-radius: 12px; background: var(--accent-soft); }
+
+/* ---------- Chips, segmented tabs ---------- */
+[data-look="club"] .chip { min-height: 36px; padding: 7px 14px; border: 0; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: #475467; font-weight: 600; font-size: 14px; transition: background-color 0.15s, color 0.15s; }
+[data-look="club"] .chip:hover { color: var(--ink); }
+[data-look="club"] .chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); box-shadow: none; }
+[data-look="club"] .chip .n { opacity: 0.65; }
+[data-look="club"] .subtabs { background: #e9ebef; border: 0; border-radius: 12px; padding: 3px; gap: 2px; }
+[data-look="club"] .subtabs button { border-radius: 10px; padding: 8px 14px; font-weight: 600; font-size: 15px; color: #475467; transition: background-color 0.15s, color 0.15s; }
+[data-look="club"] .subtabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+
+/* ---------- Fields ---------- */
+[data-look="club"] .field > span { font-size: 14px; font-weight: 600; color: #344054; letter-spacing: 0; text-transform: none; }
+[data-look="club"] .input { min-height: 44px; border-radius: 12px; border: 1px solid #d5d9e0; background: var(--surface); font-size: 16px; padding: 10px 12px; }
+[data-look="club"] textarea.input { min-height: 88px; }
+[data-look="club"] .input:focus { border-color: var(--accent-text); box-shadow: 0 0 0 3px var(--accent-soft); }
+[data-look="club"] :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+[data-look="club"] input[type="checkbox"],
+[data-look="club"] input[type="radio"] { accent-color: var(--accent-text); }
+[data-look="club"] .switch[aria-checked="true"] { background: var(--accent); }
+
+/* ---------- Badges ---------- */
+[data-look="club"] .nbadge { background: var(--bad); }
+[data-look="club"] .rbadge { border-radius: 999px; font-weight: 600; }
+[data-look="club"] .tag-today { background: var(--accent); color: var(--accent-ink); font-family: var(--body); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ---------- Phone header and tab bar ---------- */
+[data-look="club"] .mtop { background: rgba(255, 255, 255, 0.92); color: var(--ink); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--line); padding-block: 8px; }
+[data-look="club"] .mtop .brand b { color: var(--ink); }
+[data-look="club"] .mtop .tsel { background-color: var(--surface-2); border: 0; color: var(--ink); font-weight: 600; }
+[data-look="club"] .mtop .av { background: var(--brand); color: var(--brand-ink); }
+[data-look="club"] .bell { color: var(--ink); }
+[data-look="club"] .bnav { background: rgba(255, 255, 255, 0.95); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); border-top: 1px solid var(--line); }
+[data-look="club"] .bnav a,
+[data-look="club"] .bnav button { color: #98a2b3; font-family: var(--body); font-weight: 600; font-size: 12px; letter-spacing: 0; background: none; border: 0; transition: color 0.15s; }
+[data-look="club"] .bnav a[aria-current="page"],
+[data-look="club"] .bnav button[aria-expanded="true"] { color: var(--accent-text); }
+[data-look="club"] .bnav svg.i { width: 24px; height: 24px; stroke-width: 1.7; }
+[data-look="club"] .bnav a:active svg.i,
+[data-look="club"] .bnav button:active svg.i { transform: scale(0.9); }
+
+/* ---------- Desktop sidebar: the club's main colour ---------- */
+@media (min-width: 960px) {
+  [data-look="club"] .side { background: var(--brand); background-image: none; color: var(--brand-ink); border-right: 0; }
+}
+[data-look="club"] .side .brand b { color: var(--brand-ink); font-family: var(--display); font-weight: 700; }
+[data-look="club"] .clubbox { background: color-mix(in srgb, var(--brand-ink) 6%, transparent); border: 0; border-radius: 14px; }
+[data-look="club"] .side .tsel { background-color: color-mix(in srgb, var(--brand-ink) 10%, transparent); border: 0; color: var(--brand-ink); }
+[data-look="club"] .side .tsel option { color: #15171a; background: #fff; }
+[data-look="club"] .snav a { color: var(--on-navy-muted); font-weight: 600; font-size: 15px; border-radius: 10px; transition: background-color 0.15s, color 0.15s; }
+[data-look="club"] .snav a:hover { background: color-mix(in srgb, var(--brand-ink) 7%, transparent); color: var(--brand-ink); }
+[data-look="club"] .snav a[aria-current="page"] { background: color-mix(in srgb, var(--brand-ink) 11%, transparent); color: var(--brand-ink); box-shadow: inset 3px 0 0 var(--accent-on-brand); }
+[data-look="club"] .snav a[aria-current="page"] svg { color: var(--accent-on-brand); }
+[data-look="club"] .snav .lbl { color: var(--on-navy-muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
+[data-look="club"] .coach { background: color-mix(in srgb, var(--brand-ink) 6%, transparent); border: 0; }
+[data-look="club"] .coach .av { background: var(--accent); color: var(--accent-ink); }
+[data-look="club"] .side .role-pill { background: color-mix(in srgb, var(--brand-ink) 12%, transparent); color: var(--brand-ink); }
+[data-look="club"] .side a,
+[data-look="club"] .side .signout { color: var(--on-navy-muted); }
+
+/* ---------- Sheets ---------- */
+[data-look="club"] .sheet-head { background: var(--surface); border-bottom: 1px solid var(--line); }
+[data-look="club"] .sheet-head h2 { font-family: var(--display); font-weight: 700; font-size: 24px; }
+[data-look="club"] .sheet { background: var(--bg); }
+[data-look="club"] .sheet-body { background: var(--bg); }
+[data-look="club"] .sheet-foot { background: var(--surface); border-top: 1px solid var(--line); }
+
+/* ---------- Motion: everything eases in, never jumps ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-look="club"] main#main > * { animation: club-in 0.22s var(--ease) both; }
+  @keyframes club-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+/* ---------- Club colours picker ---------- */
+.brand-pick { display: grid; gap: 12px; }
+.field-label { font-size: 14px; font-weight: 600; color: #344054; }
+.brand-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.brand-swatch { display: flex; width: 52px; height: 36px; padding: 3px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); overflow: hidden; gap: 2px; transition: transform 0.12s; }
+.brand-swatch i { flex: 1; border-radius: 8px; }
+.brand-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.brand-swatch:active { transform: scale(0.94); }
+.brand-custom { display: flex; gap: 18px; flex-wrap: wrap; font-size: 15px; }
+.brand-custom label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.brand-custom input[type="color"] { width: 40px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+.brand-preview { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.bp-ticket { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: var(--brand-ink); min-width: 170px; }
+.bp-ticket small { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-on-brand); }
+.bp-ticket b { font-family: var(--display); font-size: 30px; line-height: 1; }
+.bp-btn { justify-self: start; margin-top: 6px; padding: 6px 16px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14px; }
+.bp-text { color: var(--accent-text); font-weight: 600; font-size: 14px; }
+
+/* Date blocks: light tile, dark day, accent month */
+[data-look="club"] .sdate{background:var(--surface-2,#f3f4f6);border:0;color:var(--ink)}
+[data-look="club"] .sdate small{color:var(--muted)}
+[data-look="club"] .sdate em{color:var(--accent-text);text-transform:uppercase;font-size:11px;letter-spacing:.06em}

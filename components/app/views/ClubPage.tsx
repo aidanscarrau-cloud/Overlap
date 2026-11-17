@@ -10,6 +10,7 @@ import { LogoPicker } from "../LogoPicker";
 import { SampleDataCard } from "../SampleDataCard";
 import { removeLogoFile, uploadLogo } from "@/lib/logo";
 import { ROLES, ROLES_PLURAL, ROLE_HELP } from "@/lib/constants";
+import { BRAND_PRESETS, DEFAULT_BRAND, brandVars } from "@/lib/brand";
 import { errMsg, initials } from "@/lib/format";
 import type { Invite, Member, Role } from "@/lib/types";
 import { CONFIGURABLE_ROLES, PERMS, defaultPerm, type Perm } from "@/lib/permissions";
@@ -67,6 +68,7 @@ function ClubSettings() {
           </button>
         )}
       </form>
+      <BrandColours />
       <ChatAgeSetting />
       <div className="card-b" style={{ paddingTop: 0 }}>
         <LogoPicker
@@ -692,6 +694,74 @@ function ChatAgeSetting() {
         Uses each player&apos;s birth year if set, otherwise their team&apos;s age group (U{age || 14} players count as under {age || 14}). Private messages are never open to
         any player, whatever these settings say.
       </small>
+    </div>
+  );
+}
+
+/** Club colours: presets or custom, with a live preview of a button and the "next up" ticket. */
+function BrandColours() {
+  const { data, supabase, refresh, toast } = useApp();
+  const [primary, setPrimary] = useState(data.club.brand_primary ?? DEFAULT_BRAND.primary);
+  const [accent, setAccent] = useState(data.club.brand_accent ?? DEFAULT_BRAND.accent);
+  const [busy, setBusy] = useState(false);
+  const changed = primary !== (data.club.brand_primary ?? DEFAULT_BRAND.primary) || accent !== (data.club.brand_accent ?? DEFAULT_BRAND.accent);
+  const vars = brandVars(primary, accent) as React.CSSProperties;
+  async function save() {
+    setBusy(true);
+    const { error } = await supabase.from("clubs").update({ brand_primary: primary, brand_accent: accent }).eq("id", data.club.id);
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    toast("Club colours saved");
+    refresh();
+  }
+  return (
+    <div className="card-b brand-pick" style={{ paddingTop: 0 }}>
+      <span className="field-label">Club colours</span>
+      <div className="brand-presets" role="list">
+        {BRAND_PRESETS.map((b) => (
+          <button
+            key={b.name}
+            type="button"
+            role="listitem"
+            className="brand-swatch"
+            aria-pressed={primary === b.primary && accent === b.accent}
+            title={b.name}
+            aria-label={b.name}
+            onClick={() => (setPrimary(b.primary), setAccent(b.accent))}
+          >
+            <i style={{ background: b.primary }} />
+            <i style={{ background: b.accent }} />
+          </button>
+        ))}
+      </div>
+      <div className="brand-custom">
+        <label>
+          <input type="color" value={primary} onChange={(e) => setPrimary(e.target.value)} aria-label="Main colour" />
+          Main colour
+        </label>
+        <label>
+          <input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} aria-label="Accent colour" />
+          Accent (buttons)
+        </label>
+      </div>
+      <div className="brand-preview" style={vars}>
+        <div className="bp-ticket">
+          <small>Tonight · Training</small>
+          <b>6:00 pm</b>
+          <span className="bp-btn">Yes</span>
+        </div>
+        <span className="bp-text">Small text in your accent stays readable</span>
+      </div>
+      {changed && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn primary" type="button" disabled={busy} onClick={save}>
+            Save colours
+          </button>
+          <button className="btn" type="button" onClick={() => (setPrimary(data.club.brand_primary ?? DEFAULT_BRAND.primary), setAccent(data.club.brand_accent ?? DEFAULT_BRAND.accent))}>
+            Undo
+          </button>
+        </div>
+      )}
     </div>
   );
 }

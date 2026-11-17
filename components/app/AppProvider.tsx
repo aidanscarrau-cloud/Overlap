@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import { registerWorker } from "@/lib/push-client";
+import { brandVars } from "@/lib/brand";
 import type { ClubData, Drill, Match, MatchPlayer, MatchReply, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import { isStaffRole, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
@@ -204,7 +205,7 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
   return (
     <AppCtx.Provider value={value}>
       {/* Coaches and admins get the dense "pro" look; players and parents the "calm" one. */}
-      <div className="look-root" data-look={isStaffRole(data.role) ? "pro" : "calm"}>
+      <div className="look-root" data-look="club" data-role={isStaffRole(data.role) ? "staff" : "family"} style={brandVars(data.club.brand_primary, data.club.brand_accent) as React.CSSProperties}>
       {children}
       {toastMsg && (
         <div className="toast" role="status">

@@ -2,8 +2,28 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SPRITE } from "@/components/sprite";
 import "./globals.css";
+import "./club-theme.css";
 
-// Geist + Geist Mono (coaches' "pro" look) and Onest (families' "calm" look); SIL Open Font License, self-hosted.
+// Barlow (reading text) and Barlow Condensed (sporty headings); SIL Open Font License, self-hosted.
+const barlow = localFont({
+  src: [
+    { path: "./fonts/barlow-latin-400-normal.woff2", weight: "400" },
+    { path: "./fonts/barlow-latin-500-normal.woff2", weight: "500" },
+    { path: "./fonts/barlow-latin-600-normal.woff2", weight: "600" },
+    { path: "./fonts/barlow-latin-700-normal.woff2", weight: "700" },
+  ],
+  variable: "--font-barlow",
+  display: "swap",
+});
+const barlowCond = localFont({
+  src: [
+    { path: "./fonts/barlow-condensed-latin-600-normal.woff2", weight: "600" },
+    { path: "./fonts/barlow-condensed-latin-700-normal.woff2", weight: "700" },
+  ],
+  variable: "--font-barlow-cond",
+  display: "swap",
+});
+// Geist + Geist Mono and Onest stay available for older styles while pages move over.
 const geist = localFont({ src: "./fonts/Geist-latin.woff2", weight: "100 900", variable: "--font-geist", display: "swap" });
 const mono = localFont({ src: "./fonts/GeistMono-latin.woff2", weight: "100 900", variable: "--font-mono", display: "swap" });
 const onest = localFont({ src: "./fonts/Onest-latin.woff2", weight: "100 900", variable: "--font-onest", display: "swap" });
@@ -19,7 +39,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} ${mono.variable} ${onest.variable}`}>
+    <html lang="en" className={`${geist.variable} ${mono.variable} ${onest.variable} ${barlow.variable} ${barlowCond.variable}`}>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} style={{ display: "contents" }} />
         {children}
