@@ -20,6 +20,7 @@ type Msg = {
   image_path?: string | null;
   image_w?: number | null;
   image_h?: number | null;
+  reply_to?: string | null;
 };
 type Pending = { blob: Blob; preview: string; w: number; h: number; ext: string; type: string };
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -79,6 +80,8 @@ export function Chat() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [grouping, setGrouping] = useState(false);
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "unread" | "teams" | "people">("all");
   const staff = data.role === "admin" || data.role === "coach" || data.role === "assistant";
 
   // Open a chat from a notification link (?c=<id>), or the first chat on wide screens.
@@ -116,24 +119,59 @@ export function Chat() {
 
   const current = chats.find((c) => c.id === openId) ?? null;
   const canDM = data.role !== "player";
+  const ql = q.trim().toLowerCase();
+  const shown = chats.filter(
+    (c) =>
+      (filter === "all" || (filter === "unread" ? c.unread > 0 : filter === "teams" ? c.kind === "team" || c.kind === "staff" : c.kind === "group" || c.kind === "direct")) &&
+      (!ql || c.name.toLowerCase().includes(ql) || (c.last_body ?? "").toLowerCase().includes(ql)),
+  );
+  const unreadChats = chats.filter((c) => c.unread > 0 && !c.muted).length;
 
   return (
     <div className="chat" data-open={openId ? "conv" : "list"}>
       <aside className="chat-list" aria-label="Chats">
         <div className="chat-list-head">
-          <h1>Chat</h1>
+          <h1>Chats</h1>
           <div className="chat-list-actions">
             {staff && (
-              <button className="btn sm" onClick={() => (setGrouping(!grouping), setPicking(false))} aria-expanded={grouping}>
-                New group
+              <button className="round-btn" onClick={() => (setGrouping(!grouping), setPicking(false))} aria-expanded={grouping} aria-label="New group" title="New group">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="9" cy="8" r="3.2" />
+                  <path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+                  <path d="M18 8v6M15 11h6" />
+                </svg>
               </button>
             )}
             {canDM && (
-              <button className="btn sm" onClick={() => (setPicking(!picking), setGrouping(false))} aria-expanded={picking}>
-                New message
+              <button className="round-btn accent" onClick={() => (setPicking(!picking), setGrouping(false))} aria-expanded={picking} aria-label="New message" title="New message">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 20l1.2-4.2L15.8 5.2a2 2 0 0 1 2.9 0l.1.1a2 2 0 0 1 0 2.9L8.2 18.8z" />
+                  <path d="M13.5 7.5l3 3" />
+                </svg>
               </button>
             )}
           </div>
+        </div>
+        <div className="chat-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="M16 16l4 4" />
+          </svg>
+          <input placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search chats" />
+        </div>
+        <div className="chat-filters" role="tablist" aria-label="Show">
+          {(
+            [
+              ["all", "All"],
+              ["unread", unreadChats ? `Unread ${unreadChats}` : "Unread"],
+              ["teams", "Teams"],
+              ["people", "Groups & people"],
+            ] as const
+          ).map(([k, l]) => (
+            <button key={k} role="tab" aria-selected={filter === k} onClick={() => setFilter(k)}>
+              {l}
+            </button>
+          ))}
         </div>
         {grouping && (
           <GroupCreator
@@ -155,27 +193,35 @@ export function Chat() {
           />
         )}
         <ul>
-          {chats.map((c) => (
-            <li key={c.id}>
-              <button type="button" aria-current={c.id === openId || undefined} onClick={() => setOpenId(c.id)}>
-                <span className={`chat-av ${c.kind}`} aria-hidden="true">
-                  {c.kind === "direct" || c.kind === "group" ? initials(c.name) : c.kind === "staff" ? "ST" : "TM"}
-                </span>
-                <span className="chat-li-main">
-                  <span className="chat-li-top">
-                    <b>{c.kind === "team" ? `${c.name} team` : c.name}</b>
-                    <small>{ago(c.last_at)}</small>
+          {shown.map((c) => {
+            const hot = c.unread > 0 && !c.muted;
+            return (
+              <li key={c.id}>
+                <button type="button" aria-current={c.id === openId || undefined} onClick={() => setOpenId(c.id)}>
+                  <ChatAvatar chat={c} />
+                  <span className="chat-li-main">
+                    <span className="chat-li-top">
+                      <b>{c.kind === "team" ? `${c.name} team` : c.name}</b>
+                      <small className={hot ? "hot" : undefined}>{ago(c.last_at)}</small>
+                    </span>
+                    <span className="chat-li-bottom">
+                      <span className={`chat-li-last${hot ? " hot" : ""}`}>
+                        {c.last_body ? (c.kind === "direct" ? c.last_body : `${(c.last_author ?? "").split(" ")[0]}: ${c.last_body}`) : c.kind === "team" ? "Team chat" : c.kind === "staff" ? "Coaches and admins only" : c.kind === "group" ? "Group chat" : "No messages yet"}
+                      </span>
+                      {c.muted && (
+                        <span className="chat-muted" title="Muted" aria-label="Muted">
+                          🔕
+                        </span>
+                      )}
+                      {hot && <span className="chat-count">{c.unread > 99 ? "99+" : c.unread}</span>}
+                    </span>
                   </span>
-                  <span className="chat-li-last">
-                    {c.last_body ? (c.kind === "direct" ? c.last_body : `${(c.last_author ?? "").split(" ")[0]}: ${c.last_body}`) : c.kind === "team" ? "Team chat" : c.kind === "staff" ? "Coaches and admins only" : c.kind === "group" ? "Group chat" : "No messages yet"}
-                  </span>
-                </span>
-                {c.unread > 0 && !c.muted && <span className="nbadge">{c.unread > 99 ? "99+" : c.unread}</span>}
-                {c.muted && <span className="chat-muted" title="Muted">🔕</span>}
-              </button>
-            </li>
-          ))}
+                </button>
+              </li>
+            );
+          })}
         </ul>
+        {chats.length > 0 && !shown.length && <p className="muted chat-empty">{filter === "unread" ? "You're all caught up." : "No chats match."}</p>}
         {!chats.length && <p className="muted chat-empty">No chats yet. Team chats appear once you&apos;re in a team.</p>}
         <p className="chat-safe">
           Keeping it safe: players can&apos;t send or receive private messages, team chats can be read by club admins, and coaches can remove messages.
@@ -242,9 +288,43 @@ function ContactPicker({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
+const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "⚽", "👏"];
+const NAME_COLOURS = ["#c2410c", "#0f766e", "#7c3aed", "#be185d", "#1d4ed8", "#15803d", "#a16207", "#0e7490"];
+const hashOf = (s: string) => [...s].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7);
+const nameColour = (key: string) => NAME_COLOURS[Math.abs(hashOf(key)) % NAME_COLOURS.length];
+type Reaction = { message_id: string; user_id: string; emoji: string };
+const snippet = (m: Msg) => (m.deleted_at ? "Message removed" : m.body ? m.body.slice(0, 120) : m.image_path ? "📷 Photo" : "");
+
+export function ChatAvatar({ chat }: { chat: ChatSummary }) {
+  if (chat.kind === "team" || chat.kind === "staff")
+    return (
+      <span className={`chat-av ${chat.kind}`} aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          {chat.kind === "team" ? (
+            <>
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+              <circle cx="17" cy="9" r="2.6" />
+              <path d="M16 14.2c2.4.2 4 1.8 4.5 4.8" />
+            </>
+          ) : (
+            <path d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6z" />
+          )}
+        </svg>
+      </span>
+    );
+  return (
+    <span className={`chat-av ${chat.kind}`} aria-hidden="true" style={{ background: nameColour(chat.name) }}>
+      {initials(chat.name)}
+    </span>
+  );
+}
+
 function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; onBack: () => void; onChanged: () => void; onLeft: () => void }) {
   const { data, supabase, toast, patch, isAdmin, manages } = useApp();
   const [msgs, setMsgs] = useState<Msg[] | null>(null);
+  const [reacts, setReacts] = useState<Reaction[]>([]);
+  const [reactOk, setReactOk] = useState(true);
   const [limit, setLimit] = useState(PAGE);
   const [more, setMore] = useState(false);
   const [text, setText] = useState("");
@@ -255,25 +335,47 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
   const [pending, setPending] = useState<Pending | null>(null);
   const [urls, setUrls] = useState<Map<string, string>>(new Map());
   const [big, setBig] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Msg | null>(null);
+  const [menu, setMenu] = useState<Msg | null>(null);
+  const [opts, setOpts] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const camInput = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const staffRole = data.role === "admin" || data.role === "coach" || data.role === "assistant";
   const moderator = isAdmin || (chat.kind === "team" && staffRole && manages(chat.team_id)) || ((chat.kind === "staff" || chat.kind === "group") && staffRole);
   const canPost = data.chatCanSend && (posting === "all" || moderator);
+  const canReact = data.chatCanSend && reactOk;
   const roleOf = useMemo(() => new Map(data.members.map((m) => [m.user_id, m.role])), [data.members]);
+  const nameOf = useMemo(() => new Map(data.members.map((m) => [m.user_id, m.full_name])), [data.members]);
 
   const load = useCallback(async () => {
     const { data: rows, error } = await supabase
       .from("chat_messages")
-      .select("id,channel_id,author_id,author_name,body,created_at,deleted_at,deleted_by_name,image_path,image_w,image_h")
+      .select("id,channel_id,author_id,author_name,body,created_at,deleted_at,deleted_by_name,image_path,image_w,image_h,reply_to")
       .eq("channel_id", chat.id)
       .order("created_at", { ascending: false })
       .limit(limit + 1);
-    if (error) return;
-    const list = (rows ?? []) as Msg[];
+    let list = (rows ?? []) as Msg[];
+    if (error) {
+      // Before the replies update is run: load without reply_to.
+      const old = await supabase
+        .from("chat_messages")
+        .select("id,channel_id,author_id,author_name,body,created_at,deleted_at,deleted_by_name,image_path,image_w,image_h")
+        .eq("channel_id", chat.id)
+        .order("created_at", { ascending: false })
+        .limit(limit + 1);
+      if (old.error) return;
+      list = (old.data ?? []) as Msg[];
+    }
     setMore(list.length > limit);
-    setMsgs(list.slice(0, limit).reverse());
+    const shown = list.slice(0, limit).reverse();
+    setMsgs(shown);
+    const r = await supabase.from("chat_reactions").select("message_id,user_id,emoji").eq("channel_id", chat.id).in("message_id", shown.map((m) => m.id).slice(-200));
+    if (r.error) setReactOk(false);
+    else setReacts((r.data ?? []) as Reaction[]);
   }, [supabase, chat.id, limit]);
 
   // Mark as read: the chat, and its notification in the inbox.
@@ -300,6 +402,11 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
     if (nearBottom.current && box.current) box.current.scrollTop = box.current.scrollHeight;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastId]);
+
+  // A new reaction on the last messages shouldn't hide under the message box.
+  useEffect(() => {
+    if (nearBottom.current && box.current) box.current.scrollTop = box.current.scrollHeight;
+  }, [reacts.length]);
 
   // Short-lived links for the pictures on screen (the bucket is private).
   useEffect(() => {
@@ -346,24 +453,53 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
       image = { image_path: path, image_w: pending.w, image_h: pending.h };
       setUrls((prev) => new Map(prev).set(path, pending.preview));
     }
-    const { error } = await supabase.from("chat_messages").insert({ channel_id: chat.id, body, ...(image ?? {}) });
+    const { error } = await supabase.from("chat_messages").insert({ channel_id: chat.id, body, ...(image ?? {}), ...(replyTo ? { reply_to: replyTo.id } : {}) });
     setBusy(false);
     if (error) {
       setText((t) => t || body);
       return toast(errMsg(error));
     }
     setPending(null);
+    setReplyTo(null);
     nearBottom.current = true;
     pingPush();
     await load();
     onChanged();
   }
   async function remove(m: Msg) {
+    setMenu(null);
     const { error } = await supabase.rpc("delete_chat_message", { p_id: m.id });
     if (error) return toast(errMsg(error));
     load();
   }
+  async function react(m: Msg, emoji: string) {
+    setMenu(null);
+    const mineNow = reacts.find((r) => r.message_id === m.id && r.user_id === data.userId);
+    // Show it straight away; the poll corrects anything that didn't stick.
+    setReacts((rs) => {
+      const rest = rs.filter((r) => !(r.message_id === m.id && r.user_id === data.userId));
+      return mineNow?.emoji === emoji ? rest : [...rest, { message_id: m.id, user_id: data.userId, emoji }];
+    });
+    const { error } = await supabase.rpc("react_to_message", { p_message: m.id, p_emoji: emoji });
+    if (error) {
+      toast(errMsg(error));
+      load();
+    }
+  }
+  function startReply(m: Msg) {
+    setMenu(null);
+    setReplyTo(m);
+    setTimeout(() => textRef.current?.focus(), 30);
+  }
+  function jumpTo(id: string) {
+    const el = document.getElementById(`m-${id}`);
+    if (!el) return toast("That message is further back. Tap 'Show older messages'.");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlash(id);
+    setTimeout(() => setFlash(null), 1400);
+  }
   async function toggleMute() {
+    setOpts(false);
     const next = !muted;
     setMuted(next);
     const { error } = await supabase.from("chat_reads").upsert({ channel_id: chat.id, user_id: data.userId, muted: next }, { onConflict: "channel_id,user_id" });
@@ -375,6 +511,7 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
     onChanged();
   }
   async function togglePosting() {
+    setOpts(false);
     const next = posting === "all" ? "staff" : "all";
     const { error } = await supabase.from("chat_channels").update({ posting: next }).eq("id", chat.id);
     if (error) return toast(errMsg(error));
@@ -382,7 +519,62 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
     toast(next === "staff" ? "Only coaches can post now" : "Everyone can post now");
   }
 
-  const title = chat.kind === "team" ? `${chat.name} team chat` : chat.name;
+  // Touch: swipe a message right to reply, hold it for reactions. Mouse: click it.
+  const menuAt = useRef(0);
+  const gesture = useRef<{ id: string; x: number; y: number; dx: number; el: HTMLElement; timer: number; held: boolean } | null>(null);
+  function onDown(e: React.PointerEvent<HTMLDivElement>, m: Msg) {
+    if (m.deleted_at || e.pointerType === "mouse") return;
+    const el = e.currentTarget;
+    const timer = window.setTimeout(() => {
+      if (gesture.current && Math.abs(gesture.current.dx) < 8) {
+        gesture.current.held = true;
+        try {
+          navigator.vibrate?.(12);
+        } catch {}
+        menuAt.current = Date.now();
+        // Lifting the finger sends a click; don't let it land on the sheet that just opened.
+        const swallow = (ev: Event) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+        };
+        document.addEventListener("click", swallow, { capture: true, once: true });
+        window.setTimeout(() => document.removeEventListener("click", swallow, { capture: true }), 900);
+        setMenu(m);
+      }
+    }, 420);
+    gesture.current = { id: m.id, x: e.clientX, y: e.clientY, dx: 0, el, timer, held: false };
+  }
+  function onMove(e: React.PointerEvent<HTMLDivElement>) {
+    const g = gesture.current;
+    if (!g) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
+      clearTimeout(g.timer);
+      g.el.style.transform = "";
+      gesture.current = null;
+      return;
+    }
+    g.dx = dx;
+    if (dx > 6 && canPost) {
+      clearTimeout(g.timer);
+      g.el.style.transition = "none";
+      g.el.style.transform = `translateX(${Math.min(dx, 84)}px)`;
+      g.el.dataset.swipe = dx > 58 ? "go" : "on";
+    }
+  }
+  function onUp(m: Msg) {
+    const g = gesture.current;
+    if (!g) return;
+    clearTimeout(g.timer);
+    g.el.style.transition = "";
+    g.el.style.transform = "";
+    delete g.el.dataset.swipe;
+    if (g.dx > 58 && canPost) startReply(m);
+    gesture.current = null;
+  }
+
+  const title = chat.kind === "team" ? `${chat.name} team` : chat.name;
   if (showMembers && chat.kind === "group")
     return <GroupMembers chat={chat} moderator={moderator} onClose={() => setShowMembers(false)} onLeft={onLeft} onChanged={onChanged} />;
   const who =
@@ -391,34 +583,53 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
       : chat.kind === "staff"
         ? "Admins, head coaches and assistant coaches"
         : chat.kind === "group"
-          ? "Group chat"
+          ? "Group chat · tap ⋯ for members"
           : "Private message";
+  const byId = new Map((msgs ?? []).map((m) => [m.id, m]));
+  const authorLabel = (m: Msg) => (m.author_id === data.userId ? "You" : m.author_name);
 
   let lastDay = "";
   return (
     <>
       <header className="chat-head">
         <button type="button" className="icon-btn chat-back" onClick={onBack} aria-label="Back to chats">
-          ‹
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
         </button>
-        <div style={{ minWidth: 0 }}>
+        <ChatAvatar chat={chat} />
+        <div className="chat-head-t">
           <h2>{title}</h2>
-          <small>{who}</small>
+          <small>{muted ? "🔕 Muted · " : ""}{who}</small>
         </div>
-        <div className="chat-head-actions">
-          {chat.kind === "group" && (
-            <button type="button" className="btn sm" onClick={() => setShowMembers(true)}>
-              Members
-            </button>
-          )}
-          {moderator && chat.kind === "team" && (
-            <button type="button" className="btn sm" onClick={togglePosting}>
-              {posting === "all" ? "Coaches only" : "Let everyone post"}
-            </button>
-          )}
-          <button type="button" className="btn sm" onClick={toggleMute} aria-pressed={muted}>
-            {muted ? "Unmute" : "Mute"}
+        <div className="chat-opts">
+          <button type="button" className="icon-btn" onClick={() => setOpts(!opts)} aria-expanded={opts} aria-label="Chat options">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="5.5" r="1.6" />
+              <circle cx="12" cy="12" r="1.6" />
+              <circle cx="12" cy="18.5" r="1.6" />
+            </svg>
           </button>
+          {opts && (
+            <>
+              <div className="chat-opts-scrim" onClick={() => setOpts(false)} />
+              <div className="chat-opts-menu" role="menu">
+                {chat.kind === "group" && (
+                  <button role="menuitem" onClick={() => (setOpts(false), setShowMembers(true))}>
+                    Members
+                  </button>
+                )}
+                {moderator && chat.kind === "team" && (
+                  <button role="menuitem" onClick={togglePosting}>
+                    {posting === "all" ? "Only coaches can post" : "Let everyone post"}
+                  </button>
+                )}
+                <button role="menuitem" onClick={toggleMute}>
+                  {muted ? "Unmute notifications" : "Mute notifications"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
       <div
@@ -430,60 +641,166 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
         }}
       >
         {more && (
-          <button type="button" className="btn sm chat-older" onClick={() => setLimit((l) => l + PAGE)}>
+          <button type="button" className="chat-older" onClick={() => setLimit((l) => l + PAGE)}>
             Show older messages
           </button>
         )}
         {msgs === null ? (
-          <p className="muted">Loading…</p>
+          <div className="chat-skel" aria-label="Loading">
+            <i />
+            <i className="r" />
+            <i />
+          </div>
         ) : msgs.length === 0 ? (
-          <p className="muted chat-pick">No messages yet. Say hello!</p>
+          <p className="chat-hello">No messages yet. Say hello! 👋</p>
         ) : (
-          msgs.map((m) => {
+          msgs.map((m, i) => {
             const day = dayLabel(m.created_at);
             const showDay = day !== lastDay;
             lastDay = day;
             const mine = m.author_id === data.userId;
+            const prev = msgs[i - 1];
+            const next = msgs[i + 1];
+            const same = (a?: Msg, b?: Msg) =>
+              !!a && !!b && a.author_id === b.author_id && dayLabel(a.created_at) === dayLabel(b.created_at) && Math.abs(+new Date(b.created_at) - +new Date(a.created_at)) < 5 * 60e3;
+            const first = !same(prev, m) || showDay;
+            const last = !same(m, next);
             const role = m.author_id ? roleOf.get(m.author_id) : undefined;
+            const rs = reacts.filter((r) => r.message_id === m.id);
+            const counts = REACTIONS.map((e) => [e, rs.filter((r) => r.emoji === e)] as const).filter(([, l]) => l.length);
+            const quoted = m.reply_to ? byId.get(m.reply_to) : undefined;
+            const onlyImage = !!m.image_path && !m.body && !m.deleted_at;
+            const colour = nameColour(m.author_id ?? m.author_name);
             return (
               <div key={m.id}>
-                {showDay && <div className="chat-day">{day}</div>}
-                <div className={`chat-msg${mine ? " mine" : ""}${m.deleted_at ? " gone" : ""}`}>
-                  {!mine && chat.kind !== "direct" && (
-                    <span className="chat-author">
-                      {m.author_name}
-                      {role && <small>{ROLES[role]}</small>}
-                    </span>
-                  )}
-                  {!m.deleted_at && m.image_path && (
-                    <button type="button" className="chat-img" onClick={() => urls.get(m.image_path!) && setBig(urls.get(m.image_path!)!)} aria-label={`Open picture from ${m.author_name}`}>
-                      {urls.get(m.image_path) ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={urls.get(m.image_path)} alt={`Picture from ${m.author_name}`} width={m.image_w ?? undefined} height={m.image_h ?? undefined} loading="lazy" />
-                      ) : (
-                        <span className="chat-img-wait" style={{ aspectRatio: `${m.image_w ?? 4} / ${m.image_h ?? 3}` }} />
-                      )}
-                    </button>
-                  )}
-                  {(m.deleted_at || m.body) && (
-                    <div className="chat-bubble">
-                      {m.deleted_at ? <i>Message removed{m.deleted_by_name ? ` by ${m.deleted_by_name}` : ""}</i> : <Linkify text={m.body} />}
-                    </div>
-                  )}
-                  <span className="chat-meta">
-                    {time(m.created_at)}
-                    {!m.deleted_at && (mine || moderator) && (
-                      <button type="button" className="linklike" onClick={() => remove(m)}>
-                        Remove
+                {showDay && (
+                  <div className="chat-day">
+                    <span>{day}</span>
+                  </div>
+                )}
+                <div
+                  id={`m-${m.id}`}
+                  className={`chat-msg${mine ? " mine" : ""}${m.deleted_at ? " gone" : ""}${first ? " first" : ""}${last ? " last" : ""}${counts.length ? " has-r" : ""}${flash === m.id ? " flash" : ""}`}
+                  onPointerDown={(e) => onDown(e, m)}
+                  onPointerMove={onMove}
+                  onPointerUp={() => onUp(m)}
+                  onPointerCancel={() => onUp(m)}
+                  onContextMenu={(e) => {
+                    if (!m.deleted_at) {
+                      e.preventDefault();
+                      setMenu(m);
+                    }
+                  }}
+                >
+                  <span className="swipe-hint" aria-hidden="true">
+                    ↩
+                  </span>
+                  <div
+                    className={`chat-bubble${onlyImage ? " img-only" : ""}`}
+                    onClick={(e) => {
+                      if (m.deleted_at || (e.target as HTMLElement).closest("a,button")) return;
+                      if (window.matchMedia("(pointer: fine)").matches) setMenu(m);
+                    }}
+                  >
+                    {first && !mine && chat.kind !== "direct" && (
+                      <span className="chat-author" style={{ color: colour }}>
+                        {m.author_name}
+                        {role && role !== "parent" && role !== "player" && <small>{ROLES[role].replace("Head coach", "Coach").replace("Assistant coach", "Assistant").replace("Club admin", "Admin")}</small>}
+                      </span>
+                    )}
+                    {m.reply_to && !m.deleted_at && (
+                      <button type="button" className="chat-quote" style={{ borderColor: quoted ? nameColour(quoted.author_id ?? quoted.author_name) : undefined }} onClick={() => jumpTo(m.reply_to!)}>
+                        <b style={{ color: quoted ? nameColour(quoted.author_id ?? quoted.author_name) : undefined }}>{quoted ? authorLabel(quoted) : "Earlier message"}</b>
+                        <span>{quoted ? snippet(quoted) : "Tap to find it"}</span>
                       </button>
                     )}
-                  </span>
+                    {!m.deleted_at && m.image_path && (
+                      <button type="button" className="chat-img" onClick={() => urls.get(m.image_path!) && setBig(urls.get(m.image_path!)!)} aria-label={`Open picture from ${m.author_name}`}>
+                        {urls.get(m.image_path) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={urls.get(m.image_path)} alt={`Picture from ${m.author_name}`} width={m.image_w ?? undefined} height={m.image_h ?? undefined} loading="lazy" />
+                        ) : (
+                          <span className="chat-img-wait" style={{ aspectRatio: `${m.image_w ?? 4} / ${m.image_h ?? 3}` }} />
+                        )}
+                      </button>
+                    )}
+                    {m.deleted_at ? (
+                      <i className="chat-text">🚫 Message removed{m.deleted_by_name ? ` by ${m.deleted_by_name}` : ""}</i>
+                    ) : m.body ? (
+                      <span className="chat-text">
+                        <Linkify text={m.body} />
+                      </span>
+                    ) : null}
+                    <span className="chat-time">{time(m.created_at)}</span>
+                  </div>
+                  {counts.length > 0 && (
+                    <div className="chat-reacts">
+                      {counts.map(([e, l]) => (
+                        <button
+                          key={e}
+                          type="button"
+                          aria-pressed={l.some((r) => r.user_id === data.userId)}
+                          disabled={!canReact}
+                          onClick={() => react(m, e)}
+                          title={l.map((r) => (r.user_id === data.userId ? "You" : nameOf.get(r.user_id) ?? "Member")).join(", ")}
+                        >
+                          {e}
+                          {l.length > 1 && <b>{l.length}</b>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {menu && (
+        <div className="sheet-scrim msg-scrim" onClick={() => Date.now() - menuAt.current > 500 && setMenu(null)}>
+          <div className="msg-sheet" role="dialog" aria-label="Message options" onClick={(e) => e.stopPropagation()}>
+            <span className="grab" aria-hidden="true" />
+            <div className="msg-sheet-preview">
+              <b>{authorLabel(menu)}</b>
+              <span>{snippet(menu)}</span>
+            </div>
+            {canReact && (
+              <div className="msg-emojis" role="group" aria-label="React">
+                {REACTIONS.map((e) => (
+                  <button key={e} type="button" aria-pressed={reacts.some((r) => r.message_id === menu.id && r.user_id === data.userId && r.emoji === e)} onClick={() => react(menu, e)} aria-label={`React ${e}`}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="msg-actions">
+              {canPost && (
+                <button type="button" onClick={() => startReply(menu)}>
+                  <span aria-hidden="true">↩</span> Reply
+                </button>
+              )}
+              {menu.body && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(menu.body).then(() => toast("Copied"), () => {});
+                    setMenu(null);
+                  }}
+                >
+                  <span aria-hidden="true">⧉</span> Copy
+                </button>
+              )}
+              {(menu.author_id === data.userId || moderator) && (
+                <button type="button" className="danger" onClick={() => remove(menu)}>
+                  <span aria-hidden="true">🗑</span> {menu.author_id === data.userId ? "Delete" : "Remove message"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {big && (
         <div className="chat-lightbox" role="dialog" aria-label="Picture" onClick={() => setBig(null)} onKeyDown={(e) => e.key === "Escape" && setBig(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -493,58 +810,88 @@ function Conversation({ chat, onBack, onChanged, onLeft }: { chat: ChatSummary; 
           </button>
         </div>
       )}
-      {canPost && pending && (
-        <div className="chat-pending">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={pending.preview} alt="Picture to send" />
-          <span>{pending.ext === "gif" ? "GIF" : "Picture"} ready to send. Add a message if you like.</span>
-          <button type="button" className="icon-btn" onClick={() => setPending(null)} aria-label="Remove picture">
-            ✕
-          </button>
-        </div>
-      )}
       {canPost ? (
-        <form
-          className="chat-compose"
-          onSubmit={send}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            pick(e.dataTransfer.files?.[0]);
-          }}
-        >
-          <input ref={fileInput} type="file" accept="image/*" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ""))} />
-          <button type="button" className="btn chat-attach" onClick={() => fileInput.current?.click()} aria-label="Add a picture, screenshot or GIF" title="Add a picture or GIF">
-            📎
-          </button>
-          <textarea
-            className="input"
-            rows={1}
-            maxLength={2000}
-            placeholder="Write a message"
-            aria-label="Message"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onPaste={(e) => {
-              const f = [...e.clipboardData.files].find((x) => x.type.startsWith("image/"));
-              if (f) {
-                e.preventDefault();
-                pick(f);
-              }
+        <div className="chat-bottom">
+          {replyTo && (
+            <div className="chat-replybar" style={{ borderColor: nameColour(replyTo.author_id ?? replyTo.author_name) }}>
+              <div>
+                <b style={{ color: nameColour(replyTo.author_id ?? replyTo.author_name) }}>Replying to {authorLabel(replyTo)}</b>
+                <span>{snippet(replyTo)}</span>
+              </div>
+              <button type="button" className="icon-btn" onClick={() => setReplyTo(null)} aria-label="Cancel reply">
+                ✕
+              </button>
+            </div>
+          )}
+          {pending && (
+            <div className="chat-pending">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pending.preview} alt="Picture to send" />
+              <span>{pending.ext === "gif" ? "GIF" : "Picture"} ready. Add a message if you like.</span>
+              <button type="button" className="icon-btn" onClick={() => setPending(null)} aria-label="Remove picture">
+                ✕
+              </button>
+            </div>
+          )}
+          <form
+            className="chat-compose"
+            onSubmit={send}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              pick(e.dataTransfer.files?.[0]);
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button className="btn primary" type="submit" disabled={busy || (!text.trim() && !pending)}>
-            Send
-          </button>
-        </form>
+          >
+            <input ref={fileInput} type="file" accept="image/*" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ""))} />
+            <input ref={camInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ""))} />
+            <div className="compose-pill">
+              <button type="button" className="compose-ic" onClick={() => fileInput.current?.click()} aria-label="Add a picture, screenshot or GIF" title="Add a picture or GIF">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+              <textarea
+                ref={textRef}
+                rows={1}
+                maxLength={2000}
+                placeholder="Message"
+                aria-label="Message"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onPaste={(e) => {
+                  const f = [...e.clipboardData.files].find((x) => x.type.startsWith("image/"));
+                  if (f) {
+                    e.preventDefault();
+                    pick(f);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
+                    e.preventDefault();
+                    send();
+                  }
+                  if (e.key === "Escape") setReplyTo(null);
+                }}
+              />
+              {!text.trim() && !pending && (
+                <button type="button" className="compose-ic" onClick={() => camInput.current?.click()} aria-label="Take a photo" title="Take a photo">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+                    <circle cx="12" cy="13" r="3.5" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <button className="send-btn" type="submit" disabled={busy || (!text.trim() && !pending)} aria-label="Send">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 12L19.5 4.5 16 19.5l-4.2-5.8z" />
+                <path d="M11.8 13.7L19.5 4.5" />
+              </svg>
+            </button>
+          </form>
+        </div>
       ) : (
-        <p className="chat-readonly">{data.chatCanSend ? "Only coaches can post in this chat." : "You can read the team chat. Coaches and parents send the messages."}</p>
+        <p className="chat-readonly">{data.chatCanSend ? "Only coaches can post in this chat. You can still react to messages." : "You can read the team chat. Coaches and parents send the messages."}</p>
       )}
     </>
   );
