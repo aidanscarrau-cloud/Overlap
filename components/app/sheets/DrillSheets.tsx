@@ -1,5 +1,7 @@
 "use client";
 
+import { AnimatedDiagram } from "../AnimatedDiagram";
+
 import { useRef, useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton, SheetFrame } from "./SheetFrame";
@@ -75,9 +77,7 @@ export function DrillView({ id }: { id: string }) {
         ) : undefined
       }
     >
-      <div className="dia-lg">
-        <Diagram d={d.diagram} label={d.name} />
-      </div>
+      <AnimatedDiagram d={d.diagram} label={d.name} />
       <div className="keyrow">
         <span>
           <i style={{ background: "var(--team)" }} />

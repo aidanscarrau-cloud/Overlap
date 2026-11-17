@@ -1,5 +1,7 @@
 "use client";
 
+import { AnimatedDiagram } from "../AnimatedDiagram";
+
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { SheetFrame } from "../sheets/SheetFrame";
@@ -163,7 +165,7 @@ export function LibraryDrillSheet({ drillKey }: { drillKey: string }) {
       }
     >
       <div className="lib-sheet">
-        <Diagram d={d.diagram} label={d.name} />
+        <AnimatedDiagram d={d.diagram} label={d.name} />
         <div className="dmeta">
           <span>{THEMES[d.theme]}</span>
           <span>{d.minutes} min</span>

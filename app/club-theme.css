@@ -335,3 +335,21 @@ body:has(.look-root[data-look="club"])::before { background: #fff; }
 [data-look="club"] .md-match .reply { display: grid; gap: 8px; }
 [data-look="club"] .md-match .reply-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 [data-look="club"] .md-match .rbtn { min-height: 48px; border-radius: 14px; font-size: 16px; font-weight: 700; }
+
+/* ===================== Animated drill diagrams ===================== */
+.adia { display: grid; gap: 8px; max-width: 640px; }
+.adia svg.dia { border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10, 30, 15, 0.5); }
+.adia .d-a { transition: opacity 0.25s, stroke-width 0.25s; opacity: 0.45; }
+.adia .d-a.now { opacity: 1; stroke: #ffd166; stroke-width: 0.85; }
+.adia .d-a.past { opacity: 0.22; }
+.adia-bar { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; border-radius: 999px; background: var(--surface, #fff); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); }
+.adia-btn { width: 38px; height: 38px; flex: none; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--accent, #2d5bff); color: var(--accent-ink, #fff); cursor: pointer; transition: transform 0.12s; }
+.adia-btn:active { transform: scale(0.92); }
+.adia-btn svg { width: 18px; height: 18px; fill: currentColor; }
+.adia-steps { flex: 1; display: flex; gap: 4px; min-width: 40px; }
+.adia-steps i { flex: 1; height: 5px; border-radius: 3px; background: var(--line, #e6e8ec); overflow: hidden; }
+.adia-steps b { display: block; height: 100%; background: var(--accent, #2d5bff); }
+.adia-n { font-size: 12.5px; font-weight: 600; color: var(--muted, #667085); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.adia-chip { border: 0; background: var(--surface-2, #f3f4f6); color: var(--ink, #15171a); font: inherit; font-weight: 600; font-size: 12.5px; padding: 6px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.adia-chip[aria-pressed="true"] { background: var(--accent-soft, #e8eeff); color: var(--accent-text, #2d5bff); }
+@media (max-width: 420px) { .adia-n { display: none; } }
