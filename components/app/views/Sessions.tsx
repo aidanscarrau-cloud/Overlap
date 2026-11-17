@@ -42,7 +42,7 @@ function TeamSessions() {
       <div className="phead">
         <div>
           <div className="eyebrow">{team.name}</div>
-          <h1>Sessions</h1>
+          <h1>Training</h1>
         </div>
         <div className="phead-actions">
           <CalendarSync />

@@ -10,13 +10,12 @@ import { initials } from "@/lib/format";
 import { Crest } from "@/components/ui";
 
 const NAV = [
-  { href: "/", label: "Overview", short: "Home", icon: "i-home" },
-  { href: "/announcements", label: "Announcements", short: "News", icon: "i-megaphone" },
-  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
+  { href: "/", label: "Home", short: "Home", icon: "i-home" },
+  { href: "/sessions", label: "Schedule", short: "Schedule", icon: "i-cal" },
   { href: "/squad", label: "Squad", short: "Squad", icon: "i-squad" },
-  { href: "/development", label: "Development", short: "IDPs", icon: "i-target" },
-  { href: "/sessions", label: "Sessions", short: "Sessions", icon: "i-cal" },
-  { href: "/matches", label: "Matches", short: "Matches", icon: "i-ball" },
+  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
+  { href: "/development", label: "Development", short: "Development", icon: "i-target" },
+  { href: "/announcements", label: "Announcements", short: "News", icon: "i-megaphone" },
   { href: "/drills", label: "Drill library", short: "Drills", icon: "i-board" },
   { href: "/club", label: "Club & members", short: "Club", icon: "i-people" },
 ];
@@ -24,10 +23,9 @@ const NAV = [
 // Players and parents get a short, plain menu; nothing they don't need.
 const FAMILY_NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
-  { href: "/sessions", label: "Training", short: "Training", icon: "i-cal" },
-  { href: "/matches", label: "Matches", short: "Matches", icon: "i-ball" },
-  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
+  { href: "/sessions", label: "Schedule", short: "Schedule", icon: "i-cal" },
   { href: "/development", label: "My plan", short: "My plan", icon: "i-target" },
+  { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
   { href: "/announcements", label: "News", short: "News", icon: "i-megaphone" },
   { href: "/club", label: "Account", short: "Account", icon: "i-people" },
 ];
@@ -40,16 +38,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const chatUnread = data.chats.filter((c) => !c.muted).reduce((s, c) => s + c.unread, 0);
   const path = usePathname();
   const router = useRouter();
-  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const isSchedule = path.startsWith("/sessions") || path.startsWith("/matches");
+  const active = (href: string) => (href === "/" ? path === "/" : href === "/sessions" ? isSchedule : path.startsWith(href));
   const [more, setMore] = useState(false);
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
   // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
-  const PHONE = data.chatAllowed
-    ? ["/", "/sessions", "/matches", "/chat"]
-    : family
-      ? ["/", "/sessions", "/matches", "/development"]
-      : ["/", "/sessions", "/matches", "/squad"];
+  const PHONE = ["/", "/sessions", family ? "/development" : "/squad", "/chat"];
   const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
@@ -73,12 +68,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app">
       <aside className="side" aria-label="Main">
-        <div className="brand">
-          <svg aria-hidden="true">
-            <use href="#logo" />
-          </svg>
-          <b>Overlap</b>
-        </div>
         <div className="clubbox">
           <div className="clubrow">
             <Crest url={data.club.logo_url} />
@@ -145,31 +134,63 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <div style={{ minWidth: 0 }}>
         <header className="mtop">
-          <div className="brand">
-            <svg aria-hidden="true" style={{ width: 30, height: 30 }}>
-              <use href="#logo" />
-            </svg>
-            <b style={{ fontSize: 22 }}>Overlap</b>
+          <div className="mtop-club">
+            <Crest url={data.club.logo_url} size={34} />
+            <div className="mtop-names">
+              <small>{data.club.name}</small>
+              {data.teams.length ? teamSelect("team-select-m", "mtop-team") : <b>{ROLES[data.role]}</b>}
+            </div>
           </div>
-          {teamSelect("team-select-m")}
           <Bell unread={unread} />
           <Link className="av" href="/club#account" aria-label={`Your account: ${data.myName}`} style={{ textDecoration: "none" }}>
             {initials(data.myName)}
           </Link>
         </header>
-        <main id="main">{children}</main>
+        <main id="main">
+          {isSchedule && <ScheduleSwitch path={path} />}
+          {children}
+        </main>
       </div>
 
       {more && (
-        <div className="more-sheet" role="menu" aria-label="More">
-          {moreItems.map((n) => (
-            <Link key={n.href} href={n.href} role="menuitem" aria-current={active(n.href) ? "page" : undefined} onClick={() => setMore(false)}>
-              <svg className="i">
-                <use href={`#${n.icon}`} />
-              </svg>
-              {n.label}
-            </Link>
-          ))}
+        <div className="sheet-scrim" onClick={() => setMore(false)}>
+          <div className="more-sheet" role="dialog" aria-label="More" onClick={(e) => e.stopPropagation()}>
+            <span className="grab" aria-hidden="true" />
+            <div className="more-me">
+              <div className="av">{initials(data.myName)}</div>
+              <div style={{ minWidth: 0 }}>
+                <b>{data.myName}</b>
+                <small>{ROLES[data.role]} · {data.club.name}</small>
+              </div>
+            </div>
+            <div className="more-grid">
+              {[...moreItems, { href: "/notifications", label: "Notifications", short: "", icon: "i-bell" }].map((n) => (
+                <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined} onClick={() => setMore(false)}>
+                  <span className="more-ic">
+                    <svg className="i">
+                      <use href={`#${n.icon}`} />
+                    </svg>
+                  </span>
+                  {n.label}
+                </Link>
+              ))}
+            </div>
+            {data.clubs.length > 1 && (
+              <select className="tsel" aria-label="Club" value={data.club.id} onChange={(e) => switchClub(e.target.value)}>
+                {data.clubs.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="__new">Enter an invite code…</option>
+              </select>
+            )}
+            <form action="/auth/signout" method="post">
+              <button className="btn more-out" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       )}
       <nav className="bnav" aria-label="Sections">
@@ -183,7 +204,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
         ))}
         {moreItems.length > 0 && (
-        <button type="button" aria-expanded={more} aria-haspopup="menu" onClick={() => setMore(!more)} style={moreItems.some((n) => active(n.href)) && !more ? { color: "var(--gold)" } : undefined}>
+        <button type="button" aria-expanded={more} aria-haspopup="menu" onClick={() => setMore(!more)} aria-current={moreItems.some((n) => active(n.href)) || more ? "page" : undefined}>
           <svg className="i" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
             <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
@@ -206,5 +227,19 @@ function Bell({ unread }: { unread: number }) {
       </svg>
       {unread > 0 && <span className="nbadge">{unread > 9 ? "9+" : unread}</span>}
     </Link>
+  );
+}
+
+function ScheduleSwitch({ path }: { path: string }) {
+  const m = path.startsWith("/matches");
+  return (
+    <div className="sched-switch" role="tablist" aria-label="Schedule">
+      <Link href="/sessions" role="tab" aria-selected={!m} prefetch>
+        Training
+      </Link>
+      <Link href="/matches" role="tab" aria-selected={m} prefetch>
+        Matches
+      </Link>
+    </div>
   );
 }

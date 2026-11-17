@@ -22,14 +22,14 @@ export function FamilySessions() {
   if (!myPlayers.length)
     return (
       <div className="calm-home">
-        <h1>Sessions</h1>
+        <h1>Training</h1>
         <p>Your account isn&apos;t linked to {parent ? "your child" : "your player profile"} yet. Ask your club admin to link you on the Club &amp; members page.</p>
       </div>
     );
 
   return (
     <div className="calm-home">
-      <h1>Sessions</h1>
+      <h1>Training</h1>
       <div className="phead-actions">
         <CalendarSync />
       </div>
