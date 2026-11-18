@@ -62,7 +62,7 @@ export function DrillView({ id }: { id: string }) {
 
   return (
     <SheetFrame
-      title={d.name}
+      title="Drill"
       foot={
         canEdit ? (
           <>

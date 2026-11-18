@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Diagram } from "@/components/ui";
 import type { Category, Diagram as DiagramT } from "@/lib/types";
 import { CATS } from "@/lib/constants";
@@ -128,11 +129,13 @@ export function DrillDetail({
   ages,
   description,
   points,
+  colour,
 }: {
   name: string;
   diagram: DiagramT;
   category: Category;
   label?: string;
+  colour?: string;
   minutes: number;
   players?: string;
   area?: string;
@@ -141,11 +144,106 @@ export function DrillDetail({
   points: string[];
 }) {
   const sections = parseDescription(description);
-  const purpose = sections.find((s) => s.title === "What it's for");
-  const rest = sections.filter((s) => s !== purpose);
+  const purpose = sections.find((s) => s.title === "What it's for") ?? (sections[0]?.title === "About" ? sections[0] : undefined);
+  const LATER = ["Progressions", "Make it easier", "Make it harder"];
+  const setup = sections.filter((s) => s !== purpose && !LATER.includes(s.title));
+  const later = sections.filter((s) => LATER.includes(s.title));
+  const tabs = [
+    { k: "overview", l: "Overview" },
+    ...(setup.length ? [{ k: "setup", l: "Setup" }] : []),
+    ...(later.length ? [{ k: "progress", l: "Progress" }] : []),
+  ];
+  const [tab, setTab] = useState("overview");
+  const block = (list: Section[]) =>
+    list.map((s, i) => (
+      <section key={i} className="dsec">
+        {s.title && (
+          <h3>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {ICONS[s.title] ?? <circle cx="12" cy="12" r="3" />}
+            </svg>
+            {s.title}
+          </h3>
+        )}
+        {s.text && <p>{s.text}</p>}
+        {s.bullets.length > 0 && (
+          <ul>
+            {s.bullets.map((b, j) => (
+              <li key={j}>{b}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+    ));
   return (
     <div className="ddetail">
       <AnimatedDiagram d={diagram} label={name} />
+      <div className="dhead">
+        <span className="cat-tag" data-cat={category} style={colour ? ({ "--cc": colour } as React.CSSProperties) : undefined}>
+          {label ?? CATS[category]}
+        </span>
+        <h2>{name}</h2>
+      </div>
+      <div className="dfacts">
+        <span className="dfact">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 8v4l3 2" />
+          </svg>
+          <b>{minutes}</b> min
+        </span>
+        {players && (
+          <span className="dfact">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+              <circle cx="17" cy="9" r="2.4" />
+            </svg>
+            <b>{players}</b>
+          </span>
+        )}
+        {area && (
+          <span className="dfact">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="6" width="16" height="12" rx="1.5" />
+            </svg>
+            <b>{area}</b>
+          </span>
+        )}
+        {ages && <span className="dfact">{ages}</span>}
+      </div>
+      {tabs.length > 1 && (
+        <div className="seg dtabs" role="tablist" aria-label="Drill details">
+          {tabs.map((t) => (
+            <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => setTab(t.k)}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === "overview" && (
+        <>
+          {purpose && purpose.text && <p className="dpurpose">{purpose.text}</p>}
+          {points.length > 0 && (
+            <section className="dpoints">
+              <h3>Coaching points</h3>
+              <ul>
+                {points.map((p, i) => (
+                  <li key={i}>
+                    <span className="tick" aria-hidden="true">
+                      ✓
+                    </span>
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {tabs.length === 1 && block(setup)}
+        </>
+      )}
+      {tab === "setup" && block(setup)}
+      {tab === "progress" && block(later)}
       <div className="dkey" aria-label="Diagram key">
         <span>
           <i className="k-team" />
@@ -172,70 +270,6 @@ export function DrillDetail({
           Dribble
         </span>
       </div>
-      <div className="dfacts">
-        <span className="cat-tag" data-cat={category}>
-          {label ?? CATS[category]}
-        </span>
-        <span className="dfact">
-          <b>{minutes}</b> min
-        </span>
-        {players && (
-          <span className="dfact">
-            <b>{players}</b> players
-          </span>
-        )}
-        {area && (
-          <span className="dfact">
-            <b>{area}</b>
-          </span>
-        )}
-        {ages && <span className="dfact">{ages}</span>}
-      </div>
-      {purpose && (
-        <p className="dpurpose">
-          {purpose.text.charAt(0).toUpperCase() + purpose.text.slice(1)}
-        </p>
-      )}
-      {rest.map((s, i) => (
-        <section key={i} className="dsec">
-          {s.title && (
-            <h3>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                {ICONS[s.title] ?? <circle cx="12" cy="12" r="3" />}
-              </svg>
-              {s.title}
-            </h3>
-          )}
-          {s.text && <p>{s.text}</p>}
-          {s.bullets.length > 0 && (
-            <ul>
-              {s.bullets.map((b, j) => (
-                <li key={j}>{b}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ))}
-      {points.length > 0 && (
-        <section className="dsec dpoints">
-          <h3>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
-            Coaching points
-          </h3>
-          <ul>
-            {points.map((p, i) => (
-              <li key={i}>
-                <span className="tick" aria-hidden="true">
-                  ✓
-                </span>
-                {p}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
