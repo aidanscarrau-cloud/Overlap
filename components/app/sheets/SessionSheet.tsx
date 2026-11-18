@@ -10,6 +10,7 @@ import { CATS, STATUS } from "@/lib/constants";
 import { addMins, errMsg, fmtLongDay, fmtLongMon, fmtNum, hhmm, iso, parseD, todayIso } from "@/lib/format";
 import type { Category, PlanItem } from "@/lib/types";
 import { ReplyButtons, ReplyCounts } from "../Replies";
+import { PlanPeek, PlanThumb, SessionWalk, WalkButton } from "../sessions/PlanPlayer";
 
 type Draft = { id: string | null; team_id: string; date: string; start_time: string; location: string; title: string; focus: string; notes: string; plan: PlanItem[] };
 
@@ -62,6 +63,8 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
   const seeNotes = can("sessions.view_notes");
   const [tab, setTab] = useState<"plan" | "attendance" | "notes">(canPlan ? "plan" : "attendance");
   const [busy, setBusy] = useState(false);
+  const [peek, setPeek] = useState<number | null>(null);
+  const [walk, setWalk] = useState<number | null>(null);
   const set = (patch: Partial<Draft>) => setD((x) => ({ ...x, ...patch }));
   const players = squad(d.team_id);
 
@@ -168,6 +171,7 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
   if (existing && !canPlan && !canAttend) return <SessionReadOnly id={existing.id} />;
   if (!existing && !canPlan) return <SheetFrame title="New session">You can&apos;t plan sessions for any of your teams.</SheetFrame>;
 
+  const walkItems = (plan: PlanItem[]) => plan.flatMap((item) => (drillMap.get(item.drill_id) ? [{ item, drill: drillMap.get(item.drill_id)! }] : []));
   let clock = d.start_time;
   const used = [...new Set(d.plan.map((x) => drillMap.get(x.drill_id)?.category).filter(Boolean))] as Category[];
 
@@ -308,6 +312,8 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
               </div>
             )}
           </div>
+          {walkItems(d.plan).length > 0 && <WalkButton count={walkItems(d.plan).length} onClick={() => setWalk(0)} />}
+          {walk !== null && <SessionWalk items={walkItems(d.plan)} start={d.start_time} at={walk} onClose={() => setWalk(null)} />}
           <div style={{ display: "grid", gap: 8 }}>
             {d.plan.length ? (
               d.plan.map((x, i) => {
@@ -321,8 +327,10 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
                   set({ plan: p });
                 };
                 return (
-                  <div key={i} className="prow-drill" data-cat={dr.category}>
+                  <div key={i} className={`prow-wrap${peek === i ? " open" : ""}`}>
+                  <div className="prow-drill has-thumb" data-cat={dr.category}>
                     <span className="idx">{i + 1}</span>
+                    <PlanThumb drill={dr} open={peek === i} onToggle={() => setPeek(peek === i ? null : i)} />
                     <span className="nm">
                       <b>{dr.name}</b>
                       <span className="clock">
@@ -353,10 +361,12 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
                       <button className="icon-btn" aria-label="Move down" disabled={i === d.plan.length - 1} onClick={() => move(1)}>
                         ↓
                       </button>
-                      <button className="icon-btn" aria-label="Remove" onClick={() => set({ plan: d.plan.filter((_, j) => j !== i) })}>
+                      <button className="icon-btn" aria-label="Remove" onClick={() => (setPeek(null), set({ plan: d.plan.filter((_, j) => j !== i) }))}>
                         ✕
                       </button>
                     </span>
+                  </div>
+                  {peek === i && <PlanPeek drill={dr} onOpen={() => open({ kind: "drill", id: dr.id })} />}
                   </div>
                 );
               })
@@ -489,7 +499,10 @@ function DrillPicker({ onAdd }: { onAdd: (id: string) => void }) {
 
 function SessionReadOnly({ id }: { id: string }) {
   const { data, drillMap, open, myPlayers, kidName } = useApp();
+  const [peek, setPeek] = useState<number | null>(null);
+  const [walk, setWalk] = useState(false);
   const s = data.sessions.find((x) => x.id === id)!;
+  const items = s.plan.flatMap((item) => (drillMap.get(item.drill_id) ? [{ item, drill: drillMap.get(item.drill_id)! }] : []));
   let clock = hhmm(s.start_time);
   return (
     <SheetFrame title="Session plan">
@@ -523,6 +536,8 @@ function SessionReadOnly({ id }: { id: string }) {
         </div>
       )}
       <Timeline s={s} drills={drillMap} lg />
+      {items.length > 0 && <WalkButton count={items.length} onClick={() => setWalk(true)} />}
+      {walk && <SessionWalk items={items} start={hhmm(s.start_time)} onClose={() => setWalk(false)} />}
       <div style={{ display: "grid", gap: 8 }}>
         {s.plan.map((x, i) => {
           const dr = drillMap.get(x.drill_id);
@@ -530,16 +545,20 @@ function SessionReadOnly({ id }: { id: string }) {
           clock = addMins(clock, +x.mins || 0);
           if (!dr) return null;
           return (
-            <button key={i} className="prow-drill" data-cat={dr.category} style={{ gridTemplateColumns: "28px 1fr auto", textAlign: "left" }} onClick={() => open({ kind: "drill", id: dr.id })}>
-              <span className="idx">{i + 1}</span>
-              <span className="nm">
-                <b>{dr.name}</b>
-                <span className="clock">
-                  {st}–{clock} · {CATS[dr.category]}
-                </span>
-              </span>
-              <span className="muted">{x.mins} min</span>
-            </button>
+            <div key={i} className={`prow-wrap${peek === i ? " open" : ""}`}>
+              <div className="prow-drill has-thumb ro" data-cat={dr.category}>
+                <span className="idx">{i + 1}</span>
+                <PlanThumb drill={dr} open={peek === i} onToggle={() => setPeek(peek === i ? null : i)} />
+                <button type="button" className="nm linklike-row" onClick={() => setPeek(peek === i ? null : i)}>
+                  <b>{dr.name}</b>
+                  <span className="clock">
+                    {st}–{clock} · {CATS[dr.category]}
+                  </span>
+                </button>
+                <span className="muted">{x.mins} min</span>
+              </div>
+              {peek === i && <PlanPeek drill={dr} onOpen={() => open({ kind: "drill", id: dr.id })} />}
+            </div>
           );
         })}
         {!s.plan.length && <div className="empty">Your coach hasn't added drills to this session yet.</div>}
