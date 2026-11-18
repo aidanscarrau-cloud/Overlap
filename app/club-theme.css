@@ -576,3 +576,103 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .ticket .rbtn { box-shadow: none; }
 [data-look="club"] .rbtn.yes[aria-pressed="true"] { background: #1f9d55; color: #fff; }
 [data-look="club"] .rbtn.no[aria-pressed="true"] { background: #d64545; color: #fff; }
+
+/* ===================== Drills, rebuilt ===================== */
+[data-look="club"] .drills-page { display: grid; gap: 14px; }
+[data-look="club"] .drills-page .phead { margin-bottom: 4px; }
+[data-look="club"] .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #e4e6ea; max-width: 460px; }
+[data-look="club"] .seg button { border: 0; background: none; border-radius: 10px; padding: 10px 8px; font: inherit; font-weight: 700; font-size: 15px; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background-color 0.15s, color 0.15s; }
+[data-look="club"] .seg button span { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, 0.06); }
+[data-look="club"] .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+[data-look="club"] .seg button[aria-selected="true"] span { background: var(--accent-soft); color: var(--accent-text); }
+
+[data-look="club"] .dfind { display: flex; gap: 8px; }
+[data-look="club"] .dsearch { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 46px; border-radius: 14px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); color: var(--muted); }
+[data-look="club"] .dsearch input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: inherit; font-size: 16px; color: var(--ink); }
+[data-look="club"] .dsearch:focus-within { box-shadow: 0 0 0 2px var(--accent); }
+[data-look="club"] .dage { flex: none; height: 46px; border: 0; border-radius: 14px; padding: 0 34px 0 14px; font: inherit; font-weight: 600; font-size: 15px; color: var(--ink); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23667085' stroke-width='1.8' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center; appearance: none; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); }
+[data-look="club"] .dchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 0 4px 2px; }
+[data-look="club"] .dchips::-webkit-scrollbar { display: none; }
+[data-look="club"] .dchips .chip { flex: none; }
+@media (max-width: 700px) { [data-look="club"] .dchips { margin-inline: -16px; padding-inline: 16px; } }
+
+/* Tiles */
+[data-look="club"] .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+@media (max-width: 560px) { [data-look="club"] .dgrid { grid-template-columns: 1fr 1fr; gap: 10px; } }
+[data-look="club"] .dtile2 { position: relative; display: flex; flex-direction: column; border-radius: 18px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; min-width: 0; }
+@media (hover: hover) { [data-look="club"] .dtile2:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -14px rgba(16, 24, 40, 0.35); } }
+[data-look="club"] .dtile2:active { transform: scale(0.985); }
+[data-look="club"] .dtile2-open { all: unset; cursor: pointer; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+[data-look="club"] .dtile2-open:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -3px; border-radius: 18px; }
+[data-look="club"] .dtile2-pic { display: block; padding: 6px 6px 0; }
+[data-look="club"] .dtile2-pic svg.dia { border-radius: 12px; }
+[data-look="club"] .dtile2-body { display: grid; gap: 4px; padding: 10px 12px 12px; min-width: 0; align-content: start; }
+[data-look="club"] .dtile2-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+[data-look="club"] .cat-tag { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: color-mix(in srgb, var(--cc, var(--muted)) 75%, #000); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-look="club"] .cat-tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--muted)); flex: none; }
+[data-look="club"] .dtile2-min { flex: none; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+[data-look="club"] .dtile2-body b { font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.08; }
+[data-look="club"] .dtile2-purpose { font-size: 13.5px; line-height: 1.35; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+[data-look="club"] .dtile2-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+[data-look="club"] .dtile2-meta span { display: inline-flex; align-items: center; gap: 4px; }
+[data-look="club"] .dtile2-meta svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+@media (max-width: 560px) {
+  [data-look="club"] .dgrid .dtile2-purpose, [data-look="club"] .dgrid .dtile2-meta span + span { display: none; }
+  [data-look="club"] .dgrid .dtile2-body b { font-size: 17px; }
+}
+[data-look="club"] .dtile2-act { position: absolute; top: 12px; right: 12px; }
+[data-look="club"] .dt-add, [data-look="club"] .dt-added { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 600; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+[data-look="club"] .dt-add { border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; transition: transform 0.12s; }
+[data-look="club"] .dt-add:active { transform: scale(0.88); }
+[data-look="club"] .dt-added { background: #fff; color: #1a8a4a; font-size: 17px; }
+
+/* Shelves */
+[data-look="club"] .dshelf-sec { display: grid; gap: 8px; margin-top: 6px; }
+[data-look="club"] .dshelf-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+[data-look="club"] .dshelf-h h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 23px; }
+[data-look="club"] .dshelf-h h2 small { font-family: var(--body); font-size: 14px; color: var(--muted); font-weight: 600; margin-left: 4px; }
+[data-look="club"] .dshelf-links { display: flex; gap: 14px; }
+[data-look="club"] .linkbtn { border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 700; font-size: 14px; color: var(--accent-text); cursor: pointer; }
+[data-look="club"] .linkbtn:disabled { opacity: 0.5; }
+[data-look="club"] .dshelf { display: grid; grid-auto-flow: column; grid-auto-columns: 262px; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px 4px 10px; margin: 0 -4px; }
+[data-look="club"] .dshelf::-webkit-scrollbar { display: none; }
+[data-look="club"] .dshelf > .dtile2 { scroll-snap-align: start; }
+@media (max-width: 700px) { [data-look="club"] .dshelf { grid-auto-columns: 72vw; margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px; } }
+[data-look="club"] .dempty { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 34px 20px; border-radius: 18px; background: var(--surface); color: var(--muted); }
+[data-look="club"] .dempty b { color: var(--ink); font-size: 17px; }
+
+/* Drill detail */
+[data-look="club"] .ddetail { display: grid; gap: 14px; }
+[data-look="club"] .ddetail .adia { max-width: none; }
+[data-look="club"] .dkey { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+[data-look="club"] .dkey span { display: inline-flex; align-items: center; gap: 6px; }
+[data-look="club"] .dkey i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.35); }
+[data-look="club"] .dkey .k-team { background: var(--team); }
+[data-look="club"] .dkey .k-opp { background: var(--opp); }
+[data-look="club"] .dkey .k-neu { background: var(--neutral); }
+[data-look="club"] .dkey .k-pass, [data-look="club"] .dkey .k-run, [data-look="club"] .dkey .k-drib { width: 22px; height: 0; border-radius: 0; border: 0; border-top: 2px solid #3b7d4f; }
+[data-look="club"] .dkey .k-run { border-top-style: dashed; }
+[data-look="club"] .dkey .k-drib { border-top-style: dotted; border-top-width: 3px; }
+[data-look="club"] .dfacts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+[data-look="club"] .dfacts .cat-tag { padding: 6px 10px; border-radius: 999px; background: color-mix(in srgb, var(--cc, #999) 14%, #fff); }
+[data-look="club"] .dfact { padding: 6px 11px; border-radius: 999px; background: var(--surface); font-size: 13.5px; color: var(--muted); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
+[data-look="club"] .dfact b { color: var(--ink); }
+[data-look="club"] .dpurpose { margin: 2px 0 0; font-size: 18px; line-height: 1.4; font-weight: 500; color: var(--ink); padding-left: 14px; border-left: 4px solid var(--accent); max-width: 62ch; }
+[data-look="club"] .dsec { padding: 14px 16px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
+[data-look="club"] .dsec h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-family: var(--display); font-weight: 700; font-size: 19px; }
+[data-look="club"] .dsec h3 svg { width: 20px; height: 20px; fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+[data-look="club"] .dsec p { margin: 0; font-size: 15.5px; line-height: 1.5; max-width: 66ch; }
+[data-look="club"] .dsec ul { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15px; line-height: 1.45; }
+[data-look="club"] .dsec ul li::marker { color: var(--accent); }
+[data-look="club"] .dpoints { background: var(--brand); color: var(--brand-ink); }
+[data-look="club"] .dpoints h3 svg { stroke: var(--accent-on-brand); }
+[data-look="club"] .dpoints ul { list-style: none; padding: 0; gap: 8px; margin-top: 8px; }
+[data-look="club"] .dpoints li { display: flex; gap: 10px; align-items: flex-start; font-size: 16px; font-weight: 500; }
+[data-look="club"] .dpoints .tick { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 800; margin-top: 1px; }
+@media (min-width: 1000px) {
+  [data-look="club"] .sheet .ddetail { grid-template-columns: 1fr 1fr; align-items: start; }
+  [data-look="club"] .sheet .ddetail > .adia, [data-look="club"] .sheet .ddetail > .dkey, [data-look="club"] .sheet .ddetail > .dfacts, [data-look="club"] .sheet .ddetail > .dpurpose { grid-column: 1 / -1; }
+}
+/* Shelves must never widen the page */
+[data-look="club"] .drills-page, [data-look="club"] .dshelf-sec { grid-template-columns: minmax(0, 1fr); }
+[data-look="club"] .drills-page > *, [data-look="club"] .dshelf-sec > * { min-width: 0; }

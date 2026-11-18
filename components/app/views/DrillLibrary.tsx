@@ -1,12 +1,10 @@
 "use client";
 
-import { AnimatedDiagram } from "../AnimatedDiagram";
-
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { SheetFrame } from "../sheets/SheetFrame";
-import { Diagram, Icon } from "@/components/ui";
-import { CATS } from "@/lib/constants";
+import { Icon } from "@/components/ui";
+import { DrillDetail, DrillTile, purposeOf } from "../drills/DrillParts";
 import { AGE_BANDS, LIBRARY, LIBRARY_BY_KEY, THEMES, type AgeBand, type LibraryDrill, type Theme } from "@/lib/library-drills";
 import { errMsg } from "@/lib/format";
 
@@ -19,7 +17,7 @@ function useAddDrills() {
   const [busy, setBusy] = useState(false);
   async function add(list: LibraryDrill[]) {
     const fresh = list.filter((d) => !have.has(norm(d.name)));
-    if (!fresh.length) return toast("Already in your library");
+    if (!fresh.length) return toast("Already in your club's drills");
     setBusy(true);
     const rows = fresh.map((d) => ({
       club_id: data.club.id,
@@ -36,7 +34,7 @@ function useAddDrills() {
     setBusy(false);
     if (error) return toast(errMsg(error));
     patch((x) => ({ ...x, drills: [...x.drills, ...((ins ?? []) as typeof x.drills)] }));
-    toast(fresh.length === 1 ? `${fresh[0].name} added to your library` : `${fresh.length} drills added to your library`);
+    toast(fresh.length === 1 ? `${fresh[0].name} added to your club's drills` : `${fresh.length} drills added to your club's drills`);
     refresh();
   }
   return { have, add, busy };
@@ -54,19 +52,47 @@ export function LibraryBrowser() {
     (d) => (theme === "all" || d.theme === theme) && (age === "all" || d.ages.includes(age)) && (!s || norm(d.name + " " + d.description + " " + d.points.join(" ")).includes(s)),
   );
   const themes = (Object.keys(THEMES) as Theme[]).filter((t) => LIBRARY.some((d) => d.theme === t));
-  const notAdded = list.filter((d) => !have.has(norm(d.name)));
+  const shelves = theme === "all" && !s;
+
+  const tile = (d: LibraryDrill) => {
+    const added = have.has(norm(d.name));
+    return (
+      <DrillTile
+        key={d.key}
+        name={d.name}
+        diagram={d.diagram}
+        category={d.category}
+        label={THEMES[d.theme]}
+        minutes={d.minutes}
+        players={d.player_count}
+        extra={d.ages.map((a) => AGE_BANDS[a]).join(" · ")}
+        purpose={purposeOf(d.description)}
+        onOpen={() => open({ kind: "library-drill", key: d.key })}
+        action={
+          canEdit ? (
+            added ? (
+              <span className="dt-added" title="In your club's drills" aria-label="In your club's drills">
+                ✓
+              </span>
+            ) : (
+              <button type="button" className="dt-add" disabled={busy} onClick={() => add([d])} aria-label={`Add ${d.name} to your club's drills`} title="Add to our drills">
+                +
+              </button>
+            )
+          ) : undefined
+        }
+      />
+    );
+  };
 
   return (
     <>
-      <p className="muted lib-intro">
-        Ready-made practices written for Overlap. Add the ones you like to your club&apos;s library, then change them however you want.
-      </p>
-      <div className="toolbar">
-        <label className="search">
+      <div className="dfind">
+        <label className="dsearch">
           <Icon id="i-search" />
-          <input className="input" type="search" placeholder="Search the library" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the library" />
+          <input type="search" placeholder="Search drills" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search the Overlap library" />
         </label>
-        <select className="input lib-age" value={age} onChange={(e) => setAge(e.target.value as "all" | AgeBand)} aria-label="Age group">
+        <select className="dage" value={age} onChange={(e) => setAge(e.target.value as "all" | AgeBand)} aria-label="Age group">
           <option value="all">All ages</option>
           {(Object.keys(AGE_BANDS) as AgeBand[]).map((a) => (
             <option key={a} value={a}>
@@ -74,66 +100,48 @@ export function LibraryBrowser() {
             </option>
           ))}
         </select>
-        <div className="chips">
-          {(["all", ...themes] as ("all" | Theme)[]).map((t) => (
-            <button key={t} className="chip" aria-pressed={theme === t} onClick={() => setTheme(t)}>
-              {t === "all" ? "All" : THEMES[t]}
-              <span className="n">{t === "all" ? LIBRARY.length : LIBRARY.filter((d) => d.theme === t).length}</span>
-            </button>
-          ))}
-        </div>
       </div>
-      {canEdit && notAdded.length > 1 && (
-        <div className="lib-bulk">
-          <button className="btn" disabled={busy} onClick={() => add(notAdded)}>
-            Add all {notAdded.length} shown to my library
+      <div className="dchips" role="group" aria-label="Theme">
+        {(["all", ...themes] as ("all" | Theme)[]).map((t) => (
+          <button key={t} className="chip" aria-pressed={theme === t} onClick={() => setTheme(t)}>
+            {t === "all" ? "All" : THEMES[t]}
           </button>
+        ))}
+      </div>
+      {shelves ? (
+        themes.map((t) => {
+          const row = list.filter((d) => d.theme === t);
+          if (!row.length) return null;
+          const missing = row.filter((d) => !have.has(norm(d.name)));
+          return (
+            <section key={t} className="dshelf-sec">
+              <div className="dshelf-h">
+                <h2>
+                  {THEMES[t]} <small>{row.length}</small>
+                </h2>
+                <span className="dshelf-links">
+                  {canEdit && missing.length > 1 && (
+                    <button type="button" className="linkbtn" disabled={busy} onClick={() => add(missing)}>
+                      Add all {missing.length}
+                    </button>
+                  )}
+                  <button type="button" className="linkbtn" onClick={() => setTheme(t)}>
+                    See all
+                  </button>
+                </span>
+              </div>
+              <div className="dshelf">{row.map(tile)}</div>
+            </section>
+          );
+        })
+      ) : list.length ? (
+        <div className="dgrid">{list.map(tile)}</div>
+      ) : (
+        <div className="dempty">
+          <b>No practices match.</b>
+          <span>Try another word, or clear the filters.</span>
         </div>
       )}
-      <div className="drills">
-        {list.length ? (
-          list.map((d) => {
-            const added = have.has(norm(d.name));
-            return (
-              <div key={d.key} className="card dcard lib-card">
-                <button className="lib-open" onClick={() => open({ kind: "library-drill", key: d.key })} aria-label={`Preview ${d.name}`}>
-                  <div className="pic">
-                    <Diagram d={d.diagram} label={d.name} />
-                    <span className="badge" data-cat={d.category}>
-                      {CATS[d.category]}
-                    </span>
-                    <span className="mins">{d.minutes}′</span>
-                  </div>
-                  <div className="body">
-                    <h3>{d.name}</h3>
-                    <p>{d.description.split("\n\n")[0].replace(/^What it's for: /, "")}</p>
-                    <div className="dmeta">
-                      <span>
-                        <Icon id="i-people" />
-                        {d.player_count}
-                      </span>
-                      <span>{d.ages.map((a) => AGE_BANDS[a]).join(", ")}</span>
-                    </div>
-                  </div>
-                </button>
-                {canEdit && (
-                  <div className="lib-foot">
-                    {added ? (
-                      <span className="lib-added">✓ In your library</span>
-                    ) : (
-                      <button className="btn sm" disabled={busy} onClick={() => add([d])}>
-                        Add to my library
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <div className="empty">No library drills match.</div>
-        )}
-      </div>
     </>
   );
 }
@@ -150,45 +158,30 @@ export function LibraryDrillSheet({ drillKey }: { drillKey: string }) {
       foot={
         <>
           <span className="spacer" />
+          {can("drills.edit") && added && <span className="lib-added">✓ In your club&apos;s drills</span>}
           <button className="btn" onClick={close}>
             Close
           </button>
-          {can("drills.edit") &&
-            (added ? (
-              <span className="lib-added">✓ In your library</span>
-            ) : (
-              <button className="btn primary" disabled={busy} onClick={() => add([d]).then(close)}>
-                Add to my library
-              </button>
-            ))}
+          {can("drills.edit") && !added && (
+            <button className="btn primary" disabled={busy} onClick={() => add([d]).then(close)}>
+              Add to our drills
+            </button>
+          )}
         </>
       }
     >
-      <div className="lib-sheet">
-        <AnimatedDiagram d={d.diagram} label={d.name} />
-        <div className="dmeta">
-          <span>{THEMES[d.theme]}</span>
-          <span>{d.minutes} min</span>
-          <span>
-            <Icon id="i-people" />
-            {d.player_count}
-          </span>
-          <span>
-            <Icon id="i-area" />
-            {d.area}
-          </span>
-          <span>{d.ages.map((a) => AGE_BANDS[a]).join(", ")}</span>
-        </div>
-        <p className="lib-desc">{d.description}</p>
-        <div>
-          <h3>Coaching points</h3>
-          <ul>
-            {d.points.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <DrillDetail
+        name={d.name}
+        diagram={d.diagram}
+        category={d.category}
+        label={THEMES[d.theme]}
+        minutes={d.minutes}
+        players={d.player_count}
+        area={d.area}
+        ages={d.ages.map((a) => AGE_BANDS[a]).join(" · ")}
+        description={d.description}
+        points={d.points}
+      />
     </SheetFrame>
   );
 }

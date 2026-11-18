@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatedDiagram } from "../AnimatedDiagram";
+import { DrillDetail } from "../drills/DrillParts";
 
 import { useRef, useState } from "react";
 import { useApp } from "../AppProvider";
@@ -77,56 +77,16 @@ export function DrillView({ id }: { id: string }) {
         ) : undefined
       }
     >
-      <AnimatedDiagram d={d.diagram} label={d.name} />
-      <div className="keyrow">
-        <span>
-          <i style={{ background: "var(--team)" }} />
-          Your team
-        </span>
-        <span>
-          <i style={{ background: "var(--opp)" }} />
-          Opponents
-        </span>
-        <span>
-          <i style={{ background: "var(--neutral)" }} />
-          Neutral / coach
-        </span>
-        <span>── pass</span>
-        <span>- - run</span>
-        <span>··· dribble</span>
-      </div>
-      <div className="dmeta">
-        <span className="cat" data-cat={d.category}>
-          {CATS[d.category]}
-        </span>
-        <span>
-          <Icon id="i-clock" />
-          {d.minutes} min
-        </span>
-        <span>
-          <Icon id="i-people" />
-          {d.player_count || "–"}
-        </span>
-        <span>
-          <Icon id="i-area" />
-          {d.area || "–"}
-        </span>
-      </div>
-      {d.description && <p style={{ margin: 0, maxWidth: "65ch", whiteSpace: "pre-wrap" }}>{d.description}</p>}
-      {d.points.length > 0 && (
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>
-            Coaching points
-          </div>
-          <ol className="points">
-            {d.points.map((p, i) => (
-              <li key={i}>
-                <span>{p}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+      <DrillDetail
+        name={d.name}
+        diagram={d.diagram}
+        category={d.category}
+        minutes={d.minutes}
+        players={d.player_count || undefined}
+        area={d.area || undefined}
+        description={d.description}
+        points={d.points}
+      />
       {team && canDo("sessions.edit", team.id) && (
         <div className="card card-b" style={{ display: "grid", gap: 10, paddingTop: 16 }}>
           <span className="eyebrow">Add to a {team.name} session</span>

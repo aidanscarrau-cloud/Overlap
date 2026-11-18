@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { useFamilyRedirect } from "../FamilyRedirect";
-import { Diagram, Icon } from "@/components/ui";
+import { Icon } from "@/components/ui";
+import { DrillTile, purposeOf } from "../drills/DrillParts";
 import { CATS } from "@/lib/constants";
 import type { Category, Drill } from "@/lib/types";
 import { LibraryBrowser } from "./DrillLibrary";
@@ -25,14 +26,17 @@ function DrillsPage() {
   const canEdit = can("drills.edit");
   const [cat, setCat] = useState<"all" | Category>("all");
   const [q, setQ] = useState("");
-  const [view, setView] = useState<"club" | "library">("club");
+  const [view, setView] = useState<"club" | "library">(data.drills.length ? "club" : "library");
   const ds = filterDrills(data.drills, cat, q);
+  const cats = (Object.keys(CATS) as Category[]).filter((c) => data.drills.some((d) => d.category === c));
   return (
-    <>
+    <div className="drills-page">
       <div className="phead">
         <div>
-          <div className="eyebrow">Shared across all teams · {data.drills.length} drills</div>
-          <h1>Drill library</h1>
+          <div className="eyebrow">
+            {data.drills.length} club drill{data.drills.length === 1 ? "" : "s"} · {LIBRARY.length} in the Overlap library
+          </div>
+          <h1>Drills</h1>
         </div>
         {canEdit && (
           <button className="btn primary" onClick={() => open({ kind: "drill-edit", id: null })}>
@@ -41,66 +45,65 @@ function DrillsPage() {
           </button>
         )}
       </div>
-      <div className="subtabs" role="tablist" style={{ marginBottom: 14 }}>
+      <div className="seg" role="tablist" aria-label="Which drills">
         <button role="tab" aria-selected={view === "club"} onClick={() => setView("club")}>
-          Our drills ({data.drills.length})
+          Our drills <span>{data.drills.length}</span>
         </button>
         <button role="tab" aria-selected={view === "library"} onClick={() => setView("library")}>
-          Overlap library ({LIBRARY.length})
+          Overlap library <span>{LIBRARY.length}</span>
         </button>
       </div>
       {view === "library" ? (
         <LibraryBrowser />
       ) : (
-      <>
-      <div className="toolbar">
-        <label className="search">
-          <Icon id="i-search" />
-          <input className="input" id="drill-q" type="search" placeholder="Search drills" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search drills" />
-        </label>
-        <div className="chips">
-          {(["all", ...Object.keys(CATS)] as ("all" | Category)[]).map((c) => (
-            <button key={c} className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>
-              {c === "all" ? "All" : CATS[c]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="drills">
-        {ds.length ? (
-          ds.map((d) => (
-            <button key={d.id} className="card dcard" onClick={() => open({ kind: "drill", id: d.id })}>
-              <div className="pic">
-                <Diagram d={d.diagram} label={d.name} />
-                <span className="badge" data-cat={d.category}>
-                  {CATS[d.category]}
-                </span>
-                <span className="mins">{d.minutes}′</span>
-              </div>
-              <div className="body">
-                <h3>{d.name}</h3>
-                <p>{d.description}</p>
-                <div className="dmeta">
-                  <span>
-                    <Icon id="i-people" />
-                    {d.player_count || "–"}
-                  </span>
-                  <span>
-                    <Icon id="i-area" />
-                    {d.area || "–"}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))
-        ) : (
-          <div className="empty">
-            {data.drills.length ? "No drills match." : canEdit ? "Your library is empty. Create your first drill, or add some from the Overlap library." : "No drills yet."}
+        <>
+          <div className="dfind">
+            <label className="dsearch">
+              <Icon id="i-search" />
+              <input type="search" placeholder="Search your drills" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search your drills" />
+            </label>
           </div>
-        )}
-      </div>
-      </>
+          {cats.length > 1 && (
+            <div className="dchips" role="group" aria-label="Type">
+              {(["all", ...cats] as ("all" | Category)[]).map((c) => (
+                <button key={c} className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>
+                  {c === "all" ? "All" : CATS[c]}
+                </button>
+              ))}
+            </div>
+          )}
+          {ds.length ? (
+            <div className="dgrid">
+              {ds.map((d) => (
+                <DrillTile
+                  key={d.id}
+                  name={d.name}
+                  diagram={d.diagram}
+                  category={d.category}
+                  label={CATS[d.category]}
+                  minutes={d.minutes}
+                  players={d.player_count || undefined}
+                  extra={d.area || undefined}
+                  purpose={purposeOf(d.description)}
+                  onOpen={() => open({ kind: "drill", id: d.id })}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="dempty">
+              <b>{data.drills.length ? "No drills match." : "Your club has no drills yet."}</b>
+              {!data.drills.length && (
+                <>
+                  <span>Start with some of the 60 ready-made practices, then change them to suit your team.</span>
+                  <button className="btn primary" onClick={() => setView("library")}>
+                    Browse the Overlap library
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
-    </>
+    </div>
   );
 }
