@@ -21,8 +21,10 @@ export function ClubPage() {
     <>
       <div className="phead">
         <div>
-          <div className="eyebrow">{ROLES[data.role]}</div>
-          <h1>Club &amp; members</h1>
+          <div className="eyebrow">
+            {ROLES[data.role]} · {data.club.name}
+          </div>
+          <h1>{data.role === "player" || data.role === "parent" ? "Your account" : "Club & members"}</h1>
         </div>
       </div>
       <div style={{ display: "grid", gap: 16 }}>
