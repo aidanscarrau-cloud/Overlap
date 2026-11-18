@@ -259,7 +259,7 @@ export const LIBRARY: LibraryDrill[] = [
     points: ["Pass and keep running", "Partner: open up and set it into space", "Head up while dribbling at speed"],
     diagram: dia(
       [c(30, 18), c(30, 46), c(70, 18), c(70, 46), p(16, 18), p(12, 18), p(8, 18), p(16, 46), p(12, 46), p(8, 46), p(34, 22, "W"), p(34, 50, "W"), b(19, 18)],
-      [drib(19, 18, 28, 17), pass(28, 17, 33, 21), pass(34, 20, 42, 16), run(30, 17, 66, 17)],
+      [drib(19, 18, 28, 17), pass(28, 17, 33, 21), pass(34, 20, 47, 17), run(30, 17, 44, 17), drib(47, 17, 66, 17)],
     ),
   },
 
@@ -815,7 +815,7 @@ export const LIBRARY: LibraryDrill[] = [
     points: ["Draw the defence to one side, switch quickly", "Full back: high and wide, open body", "Pass into the full back's stride"],
     diagram: dia(
       [...box(20, 8, 80, 56), c(20, 14), c(80, 14), c(20, 50), c(80, 50), p(30, 32), p(40, 22), p(40, 42), p(52, 32), p(64, 24), p(26, 10, "FB"), p(26, 54, "FB"), o(36, 30), o(48, 24), o(48, 40), o(60, 32), o(66, 44), b(41, 22)],
-      [pass(41, 23, 51, 31), pass(53, 33, 28, 52), run(26, 54, 64, 54)],
+      [pass(41, 23, 51, 31), pass(53, 33, 28, 52), drib(28, 53, 64, 54)],
     ),
   },
   {

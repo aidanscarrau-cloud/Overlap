@@ -27,7 +27,7 @@ const outQuad = (t: number) => 1 - (1 - t) * (1 - t);
 const PLAYER = new Set(["p", "o", "n"]);
 
 /** Works out who moves where for each step, starting from the drawn positions. */
-function plan(d: DiagramT) {
+export function plan(d: DiagramT) {
   const items: DiagramItem[] = d.items.map((it) => [...it] as DiagramItem);
   const pos: Pt[] = items.map((it) => [it[1], it[2]]);
   const isBall = (i: number) => items[i][0] === "b";
@@ -95,7 +95,10 @@ function plan(d: DiagramT) {
     const prev = steps[steps.length - 1];
     const prevWasPass = prev && prev.kinds.includes("pass") && prev.kinds.length === 1;
     // Off-the-ball runs go with the pass before them, unless that player is the one receiving.
-    if (k === "run" && prevWasPass && !prev.moves.some((m) => m.who === moves[0].who)) {
+    // Off the ball means not the one the pass is going to: whoever receives waits for the ball.
+    const passEnd = prevWasPass ? prev.moves.find((m) => m.kind === "pass")!.to : null;
+    const receiving = passEnd ? dist(moves[0].from, passEnd) < NEAR : false;
+    if (k === "run" && prevWasPass && !receiving && !prev.moves.some((m) => m.who === moves[0].who)) {
       prev.arrows.push(ai);
       prev.moves.push(...moves);
       prev.kinds.push(k);
@@ -108,7 +111,7 @@ function plan(d: DiagramT) {
     if (!pass) return;
     const end = positionsAt(items, steps, si + 1, 0);
     let best = -1;
-    let bd = NEAR;
+    let bd = 9;
     end.forEach((q, i) => {
       if (!PLAYER.has(items[i][0]) || i === s.actor) return;
       const dd = dist(q, pass.to);
@@ -118,6 +121,19 @@ function plan(d: DiagramT) {
       }
     });
     s.receiver = best;
+    // The ball rolls right to the receiver's feet (on the side it comes from), not a step short.
+    if (best >= 0 && bd < 9) {
+      const r = end[best];
+      const dx = pass.from[0] - r[0];
+      const dy = pass.from[1] - r[1];
+      const L = Math.hypot(dx, dy) || 1;
+      const feet: Pt = [r[0] + (dx / L) * 3.3, r[1] + (dy / L) * 3.3];
+      const old = pass.to;
+      pass.to = feet;
+      // Whatever happens to that ball next starts from where it now stops.
+      for (const later of steps.slice(si + 1))
+        for (const m of later.moves) if (m.who === pass.who && m.from[0] === old[0] && m.from[1] === old[1]) m.from = feet;
+    }
   });
   return { items, steps };
 }
