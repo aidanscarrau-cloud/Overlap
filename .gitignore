@@ -6,3 +6,6 @@ out
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# TestersAI plugin: keeps a paid licence key here once unlocked; never commit it
+.claude/skills/testersai/.unlock_status.json
