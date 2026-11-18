@@ -16,6 +16,7 @@ import { SelfReviewPrompts } from "../idp/SelfReview";
 import { isStaffRole } from "@/lib/permissions";
 import { initials } from "@/lib/format";
 import type { Match, Session } from "@/lib/types";
+import { LineupPitch } from "../squad/LineupPitch";
 
 /** Coaches and admins get the pro home; players and parents the calm one. */
 export function Home() {
@@ -532,11 +533,43 @@ function FamilyHome() {
         );
       })}
 
+      <FamilyLineups />
+
       <ClubNews />
 
       {myPlayers.map((p) => (
         <MyAvailability key={"a" + p.id} playerId={p.id} status={p.status} note={p.status_note} name={kidName(p)} parent={parent} />
       ))}
     </div>
+  );
+}
+
+/** The line-up each of my players' teams has saved, with my player highlighted. */
+function FamilyLineups() {
+  const { data, myPlayers } = useApp();
+  const mine = new Set(myPlayers.map((p) => p.id));
+  const teams = data.teams.filter((t) => myPlayers.some((p) => p.team_ids.includes(t.id)) && data.lineups.some((l) => l.team_id === t.id));
+  if (!teams.length) return null;
+  return (
+    <>
+      {teams.map((t) => {
+        const players = data.players.filter((p) => p.team_ids.includes(t.id));
+        const in11 = Object.values(data.lineups.find((l) => l.team_id === t.id)!.slots);
+        const mineIn = myPlayers.filter((p) => in11.includes(p.id));
+        return (
+          <section key={t.id} className="md-sec" id="lineup">
+            <div className="md-sec-h">
+              <h2>{teams.length > 1 ? `${t.name} line-up` : "Team line-up"}</h2>
+            </div>
+            {myPlayers.length > 0 && (
+              <p className="md-muted" style={{ margin: 0 }}>
+                {mineIn.length ? `${mineIn.map((p) => p.full_name.split(" ")[0]).join(" and ")} ${mineIn.length > 1 ? "are" : "is"} in the line-up (highlighted).` : "On the bench for now: the coach may change it before the game."}
+              </p>
+            )}
+            <LineupPitch team={t} players={players} replyOf={() => null} canEdit={false} rate={() => null} day="" mine={mine} savedOnly />
+          </section>
+        );
+      })}
+    </>
   );
 }

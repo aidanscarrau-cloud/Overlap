@@ -1164,3 +1164,6 @@ html { -webkit-text-size-adjust: 100%; }
 .auth-code .input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 .auth-code .btn { flex: none; }
 .auth-code .input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.auth-alt { display: grid; gap: 6px; } .auth2 .auth-link-btn { width: 100%; justify-content: center; min-height: 48px; font-weight: 700; }
+[data-look="club"] .sq-dot.mine { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85), 0 4px 10px rgba(0, 0, 0, 0.32); }
+[data-look="club"] .md-sec .sq-pitch-wrap { max-width: 520px; }

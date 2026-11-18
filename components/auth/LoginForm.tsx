@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { errMsg } from "@/lib/format";
 
-type Mode = "signin" | "signup" | "forgot";
+type Mode = "signin" | "signup" | "forgot" | "link";
 
 export function LoginForm({ next, initialError, startMode, clubName }: { next: string; initialError?: string; startMode: Mode; clubName?: string }) {
   const router = useRouter();
@@ -66,6 +66,13 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
         setInfo(`We sent a confirmation link to ${email}. Open it to finish creating your account.`);
         return;
       }
+      if (mode === "link") {
+        // Only for existing accounts: new people still join through an invite.
+        const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` } });
+        if (error && !/signups not allowed|user not found/i.test(error.message)) throw error;
+        setInfo(`If ${email} has an Overlap account, a sign-in link is on its way. Open it on this phone or any other.`);
+        return;
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/callback?next=/reset-password` });
       if (error) throw error;
       setInfo(`If ${email} has an account, a password reset link is on its way.`);
@@ -76,11 +83,12 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
     }
   }
 
-  const title = mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password";
+  const title = mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : mode === "link" ? "Sign in without a password" : "Reset your password";
   return (
     <div className="auth-card">
       <h2>{title}</h2>
-      {mode !== "forgot" && (
+      {mode === "link" && <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>We&apos;ll email you a link. Tap it and you&apos;re in, no password to remember.</p>}
+      {mode !== "forgot" && mode !== "link" && (
         <div className="auth-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "signin"} onClick={() => setMode("signin")}>
             Sign in
@@ -114,7 +122,7 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
           <span>Email</span>
           <input className="input" id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
-        {mode !== "forgot" && (
+        {mode !== "forgot" && mode !== "link" && (
           <label className="field">
             <span>Password</span>
             <input
@@ -130,15 +138,20 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
           </label>
         )}
         <button className="btn primary" type="submit" disabled={busy}>
-          {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
+          {busy ? "Please wait…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : mode === "link" ? "Email me a sign-in link" : "Send reset link"}
         </button>
       </form>
       {mode === "signin" && (
-        <button type="button" className="linkbtn" onClick={() => setMode("forgot")}>
-          Forgot your password?
-        </button>
+        <div className="auth-alt">
+          <button type="button" className="btn auth-link-btn" onClick={() => (setMode("link"), setError(""), setInfo(""))}>
+            ✉️ Email me a sign-in link instead
+          </button>
+          <button type="button" className="linkbtn" onClick={() => setMode("forgot")}>
+            Forgot your password?
+          </button>
+        </div>
       )}
-      {mode !== "forgot" && !inviteCode && (
+      {mode !== "forgot" && mode !== "link" && !inviteCode && (
         <section className="auth-join" aria-label="How to join">
           <h3>New to {clubName ?? "Overlap"}?</h3>
           <ol>
@@ -167,7 +180,7 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
           </ol>
         </section>
       )}
-      {mode === "forgot" && (
+      {(mode === "forgot" || mode === "link") && (
         <button type="button" className="linkbtn" onClick={() => setMode("signin")}>
           Back to sign in
         </button>

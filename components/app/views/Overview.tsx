@@ -225,7 +225,7 @@ export function Overview() {
           </div>
         ) : null}
         <div className="card stat">
-          <span className="eyebrow">Training load</span>
+          <span className="eyebrow">Time training</span>
           <div className="v tnum">
             {thisWeek.reduce((n, s) => n + totalMins(s), 0)}
             <small> min</small>

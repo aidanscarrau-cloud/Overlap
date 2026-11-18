@@ -4,7 +4,7 @@ import { useApp } from "./AppProvider";
 import { Shirt } from "@/components/ui";
 import { fmtMins, isHighLoad, weeklyAverage } from "@/lib/load";
 
-const HIGH_HELP = "Much more than their usual week. Sudden jumps in training load raise injury risk, so consider a lighter session.";
+const HIGH_HELP = "Much more training than their usual week. Big jumps raise the risk of injury, so think about a lighter session.";
 
 /** Full load breakdown for one player (player view). */
 export function LoadCard({ playerId }: { playerId: string }) {
@@ -17,8 +17,8 @@ export function LoadCard({ playerId }: { playerId: string }) {
   return (
     <div className={`card load-card${high ? " high" : ""}`}>
       <div className="load-head">
-        <span className="eyebrow">Training load · all teams</span>
-        {high && <span className="rbadge no">High load</span>}
+        <span className="eyebrow">Time training · all teams</span>
+        {high && <span className="rbadge no">Busy week</span>}
       </div>
       <div className="load-rows">
         <div className="load-row">
@@ -39,6 +39,7 @@ export function LoadCard({ playerId }: { playerId: string }) {
       <span className="sub">
         {l.sessions_7d} session{l.sessions_7d === 1 ? "" : "s"} in the last 7 days{l.teams_7d > 1 ? ` with ${l.teams_7d} teams` : ""} · {l.planned_sessions_7d} planned in the next 7 days ({fmtMins(l.planned_mins_7d)})
       </span>
+      <span className="sub">How many minutes they&apos;ve trained across all their teams, compared with a normal week for them.</span>
       {high && <span className="sub" style={{ color: "var(--bad)" }}>{HIGH_HELP}</span>}
     </div>
   );
@@ -52,9 +53,9 @@ export function LoadLine({ playerId }: { playerId: string }) {
   const high = isHighLoad(l);
   return (
     <span className="load-line" title={high ? HIGH_HELP : "Minutes trained in the last 7 days, across all teams"}>
-      Load 7 days: <b>{fmtMins(l.mins_7d)}</b>
+      Trained this week: <b>{fmtMins(l.mins_7d)}</b>
       {l.teams_7d > 1 && <span className="team-tag">{l.teams_7d} teams</span>}
-      {high && <span className="rbadge no">High</span>}
+      {high && <span className="rbadge no">Busy week</span>}
     </span>
   );
 }
@@ -72,9 +73,9 @@ export function LoadWatch() {
   return (
     <section className="card" style={{ marginTop: 16 }}>
       <div className="card-h">
-        <h2>Load watch</h2>
+        <h2>Who&apos;s trained most</h2>
         <span className="muted" style={{ fontSize: 13 }}>
-          {highCount ? `${highCount} on high load` : "Last 7 days, all teams"}
+          {highCount ? `${highCount} having a busy week` : "Last 7 days, all teams"}
         </span>
       </div>
       <div className="card-b rows">
@@ -110,7 +111,7 @@ export function MyLoadLine({ playerId }: { playerId: string }) {
       {isHighLoad(l) && (
         <>
           {" "}
-          <span className="rbadge no">High load</span>
+          <span className="rbadge no">Busy week</span>
         </>
       )}
     </span>

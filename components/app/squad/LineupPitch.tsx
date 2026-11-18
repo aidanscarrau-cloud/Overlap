@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useApp } from "../AppProvider";
 import { STATUS } from "@/lib/constants";
 import { errMsg } from "@/lib/format";
+import { pingPush } from "@/lib/push-client";
 import { FORMATIONS, FORMAT_LABEL, formationFor } from "@/lib/formations";
 import type { MatchFormat, Player, Team } from "@/lib/types";
 
@@ -44,7 +45,27 @@ function autoFill(format: MatchFormat, formation: string, players: Player[], rat
   return slots;
 }
 
-export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { team: Team; players: Player[]; replyOf: (p: Player) => Reply | null; canEdit: boolean; rate: (p: Player) => number | null; day: string }) {
+export function LineupPitch({
+  team,
+  players,
+  replyOf,
+  canEdit,
+  rate,
+  day,
+  mine,
+  savedOnly,
+}: {
+  team: Team;
+  players: Player[];
+  replyOf: (p: Player) => Reply | null;
+  canEdit: boolean;
+  rate: (p: Player) => number | null;
+  day: string;
+  /** Players and parents: their own player(s) are highlighted and nobody's profile opens. */
+  mine?: Set<string>;
+  /** Show nothing until the coach has saved a line-up. */
+  savedOnly?: boolean;
+}) {
   const { data, supabase, toast, patch, open } = useApp();
   const saved = data.lineups.find((l) => l.team_id === team.id);
   const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
@@ -57,6 +78,7 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
     return { format, formation, slots };
   };
   const [edit, setEdit] = useState(false);
+  const family = !!mine;
   const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<Spot | null>(null);
@@ -146,23 +168,24 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
       return { ...d, formation: name, slots: new Map([...d.slots].filter(([i]) => i < n)) };
     });
   }
-  async function save() {
+  async function save(share = false) {
     setBusy(true);
     const slots = Object.fromEntries([...draft.slots].map(([i, id]) => [String(i), id]));
-    const { error } = await supabase.rpc("save_team_lineup", { p_team: team.id, p_format: draft.format, p_formation: draft.formation, p_slots: slots });
+    const { error } = await supabase.rpc("save_team_lineup", { p_team: team.id, p_format: draft.format, p_formation: draft.formation, p_slots: slots, ...(share ? { p_notify: true } : {}) });
     setBusy(false);
     if (error) return toast(errMsg(error));
     patch((x) => ({ ...x, lineups: [...x.lineups.filter((l) => l.team_id !== team.id), { team_id: team.id, format: draft.format, formation: draft.formation, slots }] }));
     setEdit(false);
     setPicked(null);
-    toast("Line-up saved");
+    toast(share ? "Line-up saved and shared with the team" : "Line-up saved");
+    if (share) pingPush();
   }
 
   const isPicked = (s: Spot) => !!picked && picked.kind === s.kind && (s.kind === "slot" ? (picked as { i: number }).i === s.i : (picked as { id: string }).id === s.id);
   const dot = (p: Player | undefined, pos: string) => {
     const r = p ? replyOf(p) : null;
     return (
-      <span className={`sq-dot${pos === "GK" ? " gk" : ""}${!p ? " empty" : ""}${p && p.status !== "available" ? " out" : ""}`}>
+      <span className={`sq-dot${pos === "GK" ? " gk" : ""}${!p ? " empty" : ""}${p && p.status !== "available" ? " out" : ""}${p && mine?.has(p.id) ? " mine" : ""}`}>
         {p ? (p.shirt_number ?? p.full_name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")) : "+"}
         {p && r && !edit && (
           <i style={{ background: REPLY[r].bg, color: REPLY[r].c }} aria-hidden="true">
@@ -173,6 +196,7 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
     );
   };
 
+  if (savedOnly && !saved) return null;
   return (
     <section className={`sq-pitch-wrap${edit ? " editing" : ""}`} aria-label="Line-up">
       <div className="lu-bar">
@@ -185,8 +209,11 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
               <button type="button" className="btn sm" onClick={() => (setEdit(false), setPicked(null))}>
                 Cancel
               </button>
-              <button type="button" className="btn sm primary" disabled={busy} onClick={save}>
-                {busy ? "Saving…" : "Save line-up"}
+              <button type="button" className="btn sm" disabled={busy} onClick={() => save(false)}>
+                Save
+              </button>
+              <button type="button" className="btn sm primary" disabled={busy} onClick={() => save(true)} title="Saves it and lets players and parents know">
+                {busy ? "Saving…" : "Save & share"}
               </button>
             </span>
           ) : (
@@ -240,7 +267,7 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
               onPointerUp={up}
               onClick={(e) => {
                 if (edit) return e.preventDefault();
-                if (p) open({ kind: "player", id: p.id });
+                if (p && (!family || mine!.has(p.id))) open({ kind: "player", id: p.id });
               }}
               disabled={!edit && !p}
             >
@@ -271,7 +298,7 @@ export function LineupPitch({ team, players, replyOf, canEdit, rate, day }: { te
                 onPointerUp={up}
                 onClick={(e) => {
                   if (edit) return e.preventDefault();
-                  open({ kind: "player", id: p.id });
+                  if (!family || mine!.has(p.id)) open({ kind: "player", id: p.id });
                 }}
                 title={`${p.full_name} · ${STATUS[p.status]}`}
                 aria-label={`${p.full_name}, ${STATUS[p.status]}${edit ? ", on the bench" : ""}`}
