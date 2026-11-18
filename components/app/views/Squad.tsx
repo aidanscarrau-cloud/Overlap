@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../AppProvider";
 import { useFamilyRedirect } from "../FamilyRedirect";
-import { Icon, Shirt } from "@/components/ui";
+import { Icon } from "@/components/ui";
 import { NoTeams } from "./Overview";
-import { LoadLine } from "../Load";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
-import type { Status } from "@/lib/types";
+import { fmtDay, todayIso } from "@/lib/format";
+import { overall } from "@/lib/idp";
+import type { Player, Position } from "@/lib/types";
 
 export function Squad() {
   // Players and parents don't use this page; send them home.
@@ -15,95 +16,265 @@ export function Squad() {
   return family ? null : <SquadPage />;
 }
 
+export const POS_COLOUR: Record<Position, string> = { GK: "#f59e0b", DEF: "#3b82f6", MID: "#22c55e", FWD: "#ef4444" };
+const STATUS_COLOUR = { available: "#16a34a", injured: "#c2372f", unavailable: "#a16207" } as const;
+type Reply = "y" | "n" | "q";
+/** Shirt number, or initials when there isn't one. */
+export const badgeOf = (p: Player) => (p.shirt_number != null ? String(p.shirt_number) : p.full_name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""));
+const REPLY = { y: { t: "✓", c: "#16a34a", bg: "#e8f6ee", w: "Coming" }, n: { t: "✕", c: "#c2372f", bg: "#fdecec", w: "Can't come" }, q: { t: "?", c: "#98a2b3", bg: "#f2f3f5", w: "No reply" } };
+
+// Rows on the pitch, from the back: how many fit before the rest go on the bench.
+const ROW_MAX: Record<Position, number> = { GK: 1, DEF: 4, MID: 4, FWD: 3 };
+const ROW_Y: Record<Position, number> = { GK: 88, DEF: 68, MID: 45, FWD: 21 };
+
 function SquadPage() {
-  const { data, team, squad, playerRate, can, canDo, isAdmin, open } = useApp();
-  const [filter, setFilter] = useState<"all" | Status>("all");
+  const { data, team, squad, playerRate, can, canDo, isAdmin, open, sessionsOf, repliesFor, evaluationsOf } = useApp();
+  const [view, setView] = useState<"pitch" | "list">("pitch");
+  const [filter, setFilter] = useState<"all" | "coming" | "noreply" | "out" | "low">("all");
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("overlap-squad-view");
+      if (v === "list" || v === "pitch") setView(v);
+    } catch {}
+  }, []);
+  const pickView = (v: "pitch" | "list") => {
+    setView(v);
+    try {
+      localStorage.setItem("overlap-squad-view", v);
+    } catch {}
+  };
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canEdit = canDo("squad.edit", team.id);
   const seeAtt = can("attendance.view");
-  const teamName = (id: string) => data.teams.find((t) => t.id === id)?.name ?? "another team";
-  const all = squad();
-  const cnt: Record<string, number> = { all: all.length, available: 0, injured: 0, unavailable: 0 };
-  all.forEach((p) => cnt[p.status]++);
-  const sq = all.filter((p) => filter === "all" || p.status === filter);
+  const seeIdp = can("idp.view");
+  const all = squad().sort((a, b) => (a.shirt_number ?? 99) - (b.shirt_number ?? 99));
+  const next = sessionsOf().find((s) => s.date >= todayIso());
+  const replies = next ? repliesFor(next.id) : null;
+  const replyOf = (p: Player): Reply | null => (replies ? (replies.get(p.id) ? (replies.get(p.id)!.going ? "y" : "n") : "q") : null);
+  const rating = (p: Player) => (seeIdp ? overall(evaluationsOf(p.id)[0]?.ratings) : null);
+  const rate = (p: Player) => (seeAtt ? playerRate(p) : null);
+  const out = all.filter((p) => p.status !== "available");
+  const coming = all.filter((p) => replyOf(p) === "y");
+  const rates = all.map(rate).filter((r): r is number => r !== null);
+  const avg = rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : null;
+  const day = next ? fmtDay(next.date) : "";
+
+  const ql = q.trim().toLowerCase();
+  const shown = all.filter(
+    (p) =>
+      (!ql || p.full_name.toLowerCase().includes(ql) || String(p.shirt_number ?? "") === ql) &&
+      (filter === "all" ||
+        (filter === "coming" && replyOf(p) === "y") ||
+        (filter === "noreply" && replyOf(p) === "q") ||
+        (filter === "out" && p.status !== "available") ||
+        (filter === "low" && (rate(p) ?? 100) < 75)),
+  );
+
+  // Pitch: available players by position, the most regular attenders first; the rest on the bench.
+  const avail = all.filter((p) => p.status === "available").sort((a, b) => (rate(b) ?? 0) - (rate(a) ?? 0));
+  const onPitch = new Map<Position, Player[]>();
+  POS.forEach((pos) => onPitch.set(pos, avail.filter((p) => p.position === pos).slice(0, ROW_MAX[pos])));
+  const placed = new Set([...onPitch.values()].flat().map((p) => p.id));
+  const bench = all.filter((p) => !placed.has(p.id));
+
+  const token = (p: Player, x: number, y: number) => {
+    const r = replyOf(p);
+    return (
+      <button key={p.id} type="button" className="sq-tok" style={{ left: `${x}%`, top: `${y}%` }} onClick={() => open({ kind: "player", id: p.id })} aria-label={`${p.full_name}${r ? `, ${REPLY[r].w}` : ""}`}>
+        <span className={`sq-dot${p.position === "GK" ? " gk" : ""}`}>
+          {badgeOf(p)}
+          {r && (
+            <i style={{ background: REPLY[r].bg, color: REPLY[r].c }} aria-hidden="true">
+              {REPLY[r].t}
+            </i>
+          )}
+        </span>
+        <span className="sq-nm">{p.full_name.split(" ")[0]}</span>
+      </button>
+    );
+  };
+
+  const pitch = (
+    <section className="sq-pitch-wrap" aria-label="Squad on the pitch">
+      <div className="sq-pitch">
+        <span className="sq-box top" />
+        <span className="sq-box bot" />
+        <span className="sq-half" />
+        <span className="sq-circle" />
+        {POS.map((pos) => {
+          const row = onPitch.get(pos)!;
+          return row.map((p, i) => token(p, ((i + 1) * 100) / (row.length + 1), ROW_Y[pos]));
+        })}
+        {!avail.length && <p className="sq-pitch-empty">No one available{all.length ? " right now" : " yet"}.</p>}
+      </div>
+      {bench.length > 0 && (
+        <div className="sq-bench">
+          <b>Bench</b>
+          <div className="sq-bench-list">
+            {bench.map((p) => (
+              <button key={p.id} type="button" className={`sq-bt${p.status !== "available" ? " out" : ""}`} onClick={() => open({ kind: "player", id: p.id })} title={`${p.full_name} · ${STATUS[p.status]}`} aria-label={`${p.full_name}, ${STATUS[p.status]}`}>
+                {badgeOf(p)}
+                <i style={{ background: STATUS_COLOUR[p.status] }} />
+              </button>
+            ))}
+          </div>
+          {out.length > 0 && <span className="sq-bench-note">{out.length} out</span>}
+        </div>
+      )}
+      {next && (
+        <p className="sq-legend">
+          <span>
+            <i style={{ background: REPLY.y.bg, color: REPLY.y.c }}>✓</i>coming {day}
+          </span>
+          <span>
+            <i style={{ background: REPLY.n.bg, color: REPLY.n.c }}>✕</i>can&apos;t
+          </span>
+          <span>
+            <i style={{ background: REPLY.q.bg, color: REPLY.q.c }}>?</i>no reply
+          </span>
+        </p>
+      )}
+    </section>
+  );
+
+  const list = (
+    <section className="sq-list-wrap" aria-label="Squad list">
+      <div className="sq-sum">
+        <button type="button" onClick={() => setFilter("all")}>
+          <b>{all.length}</b>
+          <small>Players</small>
+        </button>
+        {next && (
+          <button type="button" onClick={() => setFilter("coming")}>
+            <b className="ok">{coming.length}</b>
+            <small>Coming {day}</small>
+          </button>
+        )}
+        <button type="button" onClick={() => setFilter("out")}>
+          <b className={out.length ? "bad" : ""}>{out.length}</b>
+          <small>Out</small>
+        </button>
+        {avg !== null && (
+          <button type="button" onClick={() => setFilter("low")}>
+            <b>{avg}%</b>
+            <small>Attendance</small>
+          </button>
+        )}
+      </div>
+      <div className="sq-find">
+        <label className="dsearch">
+          <Icon id="i-search" />
+          <input type="search" placeholder="Search name or number" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search players" />
+        </label>
+      </div>
+      <div className="dchips" role="group" aria-label="Show">
+        {(
+          [
+            ["all", `All ${all.length}`, true],
+            ["coming", `Coming ${day} ${coming.length}`, !!next],
+            ["noreply", "No reply", !!next],
+            ["out", `Out ${out.length}`, true],
+            ["low", "Low attendance", seeAtt],
+          ] as const
+        )
+          .filter(([, , show]) => show)
+          .map(([k, l]) => (
+            <button key={k} type="button" className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>
+              {l}
+            </button>
+          ))}
+      </div>
+      {shown.length ? (
+        POS.map((pos) => {
+          const g = shown.filter((p) => p.position === pos);
+          if (!g.length) return null;
+          return (
+            <div key={pos} className="sq-grp">
+              <h2>
+                <i style={{ background: POS_COLOUR[pos] }} />
+                {POSNAME[pos]} <small>{g.length}</small>
+              </h2>
+              <ul className="sq-rows">
+                {g.map((p) => {
+                  const r = replyOf(p);
+                  const rt = rating(p);
+                  const at = rate(p);
+                  const from = p.team_id !== team.id ? data.teams.find((t) => t.id === p.team_id)?.name : null;
+                  return (
+                    <li key={p.id}>
+                      <button type="button" className="sq-row" onClick={() => open({ kind: "player", id: p.id })}>
+                        <span className="sq-num" style={{ background: POS_COLOUR[p.position] }}>
+                          {badgeOf(p)}
+                        </span>
+                        <span className="sq-t">
+                          <b>{p.full_name}</b>
+                          <small>
+                            <span style={{ color: STATUS_COLOUR[p.status] }}>● {STATUS[p.status]}</span>
+                            {p.status !== "available" && p.status_note ? ` · ${p.status_note}` : ""}
+                            {rt !== null ? ` · ★ ${rt}` : ""}
+                            {from ? ` · from ${from}` : ""}
+                          </small>
+                        </span>
+                        {r && (
+                          <span className="sq-rep" style={{ background: REPLY[r].bg, color: REPLY[r].c }} title={`${REPLY[r].w} ${day}`}>
+                            {REPLY[r].t}
+                          </span>
+                        )}
+                        {at !== null && (
+                          <span className={`sq-att${at < 75 ? " low" : ""}`}>
+                            {at}%<small>attend</small>
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })
+      ) : (
+        <div className="dempty">
+          <b>{all.length ? "No players match." : "No players yet."}</b>
+          {!all.length && canEdit && (
+            <button className="btn primary" onClick={() => open({ kind: "player", id: null })}>
+              Add your first player
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
 
   return (
-    <>
+    <div className="sq-page">
       <div className="phead">
         <div>
           <div className="eyebrow">
-            {team.name}
-            {team.age_group ? ` · ${team.age_group}` : ""}
+            {team.name} · {all.length} player{all.length === 1 ? "" : "s"}
           </div>
           <h1>Squad</h1>
         </div>
         {canEdit && (
-          <button className="btn primary" onClick={() => open({ kind: "player", id: null })}>
+          <button className="btn primary sq-add" onClick={() => open({ kind: "player", id: null })} aria-label="Add player">
             <Icon id="i-plus" />
-            Add player
+            <span>Add player</span>
           </button>
         )}
       </div>
-      <div className="toolbar">
-        <div className="chips">
-          {(["all", "available", "injured", "unavailable"] as const).map((k) => (
-            <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>
-              {k === "all" ? "All players" : STATUS[k]}
-              <span className="n">{cnt[k]}</span>
-            </button>
-          ))}
-        </div>
+      <div className="seg sq-seg" role="tablist" aria-label="View">
+        <button role="tab" aria-selected={view === "pitch"} onClick={() => pickView("pitch")}>
+          Pitch
+        </button>
+        <button role="tab" aria-selected={view === "list"} onClick={() => pickView("list")}>
+          List
+        </button>
       </div>
-      {sq.length ? (
-        POS.map((pos) => {
-          const g = sq.filter((p) => p.position === pos);
-          if (!g.length) return null;
-          return (
-            <section key={pos} className="pgroup" data-pos={pos}>
-              <h2>
-                {POSNAME[pos]} <small>{g.length}</small>
-              </h2>
-              <div className="pgrid">
-                {g.map((p) => {
-                  const r = playerRate(p);
-                  return (
-                    <button key={p.id} className={`card pcard s-${p.status}${p.status !== "available" ? " out" : ""}`} onClick={() => open({ kind: "player", id: p.id })}>
-                      <Shirt p={p} />
-                      <span style={{ minWidth: 0, display: "grid", gap: 3 }}>
-                        <span className="nm">{p.full_name}</span>
-                        <span className="ln">
-                          <span className="pos" data-pos={p.position}>
-                            {p.position}
-                          </span>
-                          <span className={`status s-${p.status}`}>{STATUS[p.status]}</span>
-                        </span>
-                        {p.team_id !== team.id ? (
-                          <span className="team-tag">From {teamName(p.team_id)}</span>
-                        ) : p.team_ids.length > 1 ? (
-                          <span className="team-tag">Also {p.team_ids.slice(1).map(teamName).join(", ")}</span>
-                        ) : null}
-                      </span>
-                      {p.status_note && <span className="note">{p.status_note}</span>}
-                      <LoadLine playerId={p.id} />
-                      {(seeAtt || data.me.player_ids.includes(p.id)) && (
-                      <span className="att">
-                        Attendance
-                        <span className="bar">
-                          <i style={{ width: `${r ?? 0}%` }} />
-                        </span>
-                        <b>{r === null ? "–" : r + "%"}</b>
-                      </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })
-      ) : (
-        <div className="empty">{all.length ? "No players match this filter." : canEdit ? "No players yet. Add your first player." : "No players in this team yet."}</div>
-      )}
-    </>
+      <div className={`sq-split show-${view}`}>
+        {pitch}
+        {list}
+      </div>
+    </div>
   );
 }

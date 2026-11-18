@@ -5,6 +5,7 @@ import { useApp } from "../AppProvider";
 import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
 import { Shirt } from "@/components/ui";
 import { LoadCard } from "../Load";
+import { PlayerProfile } from "../squad/PlayerProfile";
 import Link from "next/link";
 import { POS, STATUS } from "@/lib/constants";
 import { errMsg } from "@/lib/format";
@@ -19,6 +20,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
       : { full_name: "", shirt_number: Math.max(0, ...squad().map((x) => x.shirt_number ?? 0)) + 1, position: "MID" as Position, status: "available" as Status, status_note: "", team_id: team?.id ?? "", birth_year: "" as number | "" },
   );
   const [err, setErr] = useState("");
+  const [editing, setEditing] = useState(!p);
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<typeof d>) => setD((x) => ({ ...x, ...patch }));
   const r = p ? playerRate(p) : null;
@@ -29,27 +31,8 @@ export function PlayerSheet({ id }: { id: string | null }) {
 
   if (id && !p) return <SheetFrame title="Player not found">This player has been removed.</SheetFrame>;
 
-  if (!canEdit && p) {
-    return (
-      <SheetFrame title={p.full_name}>
-        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <Shirt p={p} />
-          <div>
-            <span className="pos" data-pos={p.position}>
-              {p.position}
-            </span>{" "}
-            <span className={`status s-${p.status}`}>{STATUS[p.status]}</span>
-            {p.status_note && <div className="muted" style={{ fontSize: 13.5, marginTop: 4 }}>{p.status_note}</div>}
-          </div>
-        </div>
-        <OtherTeams playerId={p.id} />
-        <IdpLink playerId={p.id} />
-        <LoadCard playerId={p.id} />
-        {r !== null && <AttendanceCard r={r} />}
-        <ReadOnlyNote>You can view this player but not edit their details.</ReadOnlyNote>
-      </SheetFrame>
-    );
-  }
+  // An existing player opens on their profile; editing is one tap away.
+  if (p && (!editing || !canEdit)) return <PlayerProfile p={p} canEdit={canEdit} onEdit={() => setEditing(true)} />;
 
   async function save() {
     if (!d.full_name.trim()) return setErr("Enter the player's name.");
