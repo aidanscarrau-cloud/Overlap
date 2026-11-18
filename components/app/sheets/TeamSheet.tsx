@@ -49,7 +49,7 @@ export function TeamSheet({ id }: { id: string | null }) {
       foot={
         <>
           {t ? <ConfirmButton label="Delete team" onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
-          <button className="btn" onClick={close}>
+          <button className="btn cancel" onClick={close}>
             Cancel
           </button>
           <button className="btn primary" onClick={save} disabled={busy}>

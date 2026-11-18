@@ -90,7 +90,7 @@ export function PlayerSheet({ id }: { id: string | null }) {
       foot={
         <>
           {p ? <ConfirmButton label="Remove player" onConfirm={remove} disabled={busy} /> : <span className="spacer" />}
-          <button className="btn" onClick={close}>
+          <button className="btn cancel" onClick={close}>
             Cancel
           </button>
           <button className="btn primary" onClick={save} disabled={busy}>

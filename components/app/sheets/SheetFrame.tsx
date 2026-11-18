@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../AppProvider";
 
-export function SheetFrame({ title, children, foot }: { title: string; children: React.ReactNode; foot?: React.ReactNode }) {
+export function SheetFrame({ title, children, foot, wide }: { title: string; children: React.ReactNode; foot?: React.ReactNode; wide?: boolean }) {
   const { close } = useApp();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
@@ -12,7 +12,7 @@ export function SheetFrame({ title, children, foot }: { title: string; children:
   }, [close]);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <div className={`sheet${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-head">
           <h2>{title}</h2>
           <button className="icon-btn" onClick={close} aria-label="Close">

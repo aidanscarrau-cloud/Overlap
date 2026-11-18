@@ -24,7 +24,7 @@ export const THEME_LOOK: Record<Theme, { short: string; tile: string; colour: st
   finishing: { short: "Finishing", tile: "GO", colour: "#eab308" },
   games: { short: "Games", tile: "GM", colour: "#14b8a6" },
 };
-const FOCUSES = (Object.keys(THEMES) as Theme[]).filter((t) => t !== "warmup" && t !== "games");
+export const FOCUSES = (Object.keys(THEMES) as Theme[]).filter((t) => t !== "warmup" && t !== "games");
 const TIMES = [45, 60, 75, 90];
 
 /** U-number in a team name → the library's age band. */
@@ -37,8 +37,8 @@ export function ageOfTeam(team: Team | null | undefined): "all" | AgeBand {
 
 /* ------------------------------------------------------------------ the session builder */
 
-type Phase = "Warm-up" | "Main" | "Game";
-type Slot = { phase: Phase; key: string; pool: string[] };
+export type Phase = "Warm-up" | "Main" | "Game";
+export type Slot = { phase: Phase; key: string; pool: string[] };
 const PHASE_COLOUR: Record<Phase, string> = { "Warm-up": "#f97316", Main: "#8b5cf6", Game: "#22c55e" };
 
 // Small seeded shuffle so "Shuffle" gives a new mix but the same inputs give the same plan.
@@ -53,7 +53,7 @@ function shuffled<T>(list: T[], seed: number) {
   return a;
 }
 
-function suggest(focus: Theme, age: "all" | AgeBand, mins: number, seed: number): Slot[] {
+export function suggest(focus: Theme, age: "all" | AgeBand, mins: number, seed: number): Slot[] {
   const fits = (d: LibraryDrill) => age === "all" || d.ages.includes(age);
   const pool = (t: Theme) => shuffled(LIBRARY.filter((d) => d.theme === t && fits(d)), seed + t.length).map((d) => d.key);
   const warm = pool("warmup");
