@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { todayIso } from "@/lib/format";
 import { registerWorker } from "@/lib/push-client";
-import { brandVars } from "@/lib/brand";
+import { DEFAULT_BRAND, brandVars } from "@/lib/brand";
+import { lastClubCookie } from "@/lib/last-club";
 import type { ClubData, Drill, Match, MatchPlayer, MatchReply, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
 import { isStaffRole, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
@@ -83,6 +84,12 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
   // Local copy so changes show instantly; replaced whenever fresh data arrives from the server.
   const [data, setData] = useState(serverData);
   useEffect(() => setData(serverData), [serverData]);
+  // Remember this club's look on this device, for the sign-in page next time.
+  useEffect(() => {
+    const c = data.club;
+    if (!c?.name) return;
+    document.cookie = lastClubCookie({ name: c.name, logo: c.logo_url ?? null, primary: c.brand_primary ?? DEFAULT_BRAND.primary, accent: c.brand_accent ?? DEFAULT_BRAND.accent });
+  }, [data.club]);
   const supabase = useMemo(() => createClient(), []);
   const [teamId, setTeamId] = useState<string | null>(initialTeam);
   const team = data.teams.find((t) => t.id === teamId) ?? data.teams.find((t) => data.myTeamIds.includes(t.id)) ?? data.teams[0] ?? null;

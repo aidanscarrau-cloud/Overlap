@@ -7,8 +7,18 @@ import { errMsg } from "@/lib/format";
 
 type Mode = "signin" | "signup" | "forgot";
 
-export function LoginForm({ next, initialError, startMode }: { next: string; initialError?: string; startMode: Mode }) {
+export function LoginForm({ next, initialError, startMode, clubName }: { next: string; initialError?: string; startMode: Mode; clubName?: string }) {
   const router = useRouter();
+  // Arrived from an invite link (/join/CODE): say so, and keep the code with the new account.
+  const inviteCode = (next.match(/^\/join\/([A-Za-z0-9]+)/) ?? next.match(/[?&]code=([A-Za-z0-9]+)/))?.[1]?.toUpperCase();
+  const [code, setCode] = useState("");
+  const useCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    const c = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (c.length < 4) return setError("Check the code: it's the letters and numbers in your invite.");
+    router.push(`/login?next=${encodeURIComponent(`/join/${c}`)}&mode=signup`);
+    setMode("signup");
+  };
   const [mode, setMode] = useState<Mode>(startMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -80,9 +90,15 @@ export function LoginForm({ next, initialError, startMode }: { next: string; ini
           </button>
         </div>
       )}
-      {mode === "signup" && !next.startsWith("/join/") && !next.startsWith("/onboarding?code=") && (
+      {inviteCode && mode !== "forgot" && (
+        <div className="auth-invite" role="status">
+          <b>You&apos;re joining with invite code {inviteCode}</b>
+          <span>{mode === "signup" ? "Create your account below. Already have one? Sign in instead." : "Sign in, or create an account if you're new."}</span>
+        </div>
+      )}
+      {mode === "signup" && !inviteCode && (
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-          You&apos;ll need an invite code from your club to get in after creating your account.
+          Joining a club? Use the invite link or code from your club so you land in the right team.
         </p>
       )}
       {error && <div className="notice bad" role="alert">{error}</div>}
@@ -121,6 +137,35 @@ export function LoginForm({ next, initialError, startMode }: { next: string; ini
         <button type="button" className="linkbtn" onClick={() => setMode("forgot")}>
           Forgot your password?
         </button>
+      )}
+      {mode !== "forgot" && !inviteCode && (
+        <section className="auth-join" aria-label="How to join">
+          <h3>New to {clubName ?? "Overlap"}?</h3>
+          <ol>
+            <li>
+              <b>Players and parents:</b> open the invite link your coach or club sent you by email or text. It brings you here and puts you straight into the right team.
+            </li>
+            <li>
+              <b>Got a code instead?</b> Type it here:
+              <form className="auth-code" onSubmit={useCode}>
+                <input className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. ABCD2345" aria-label="Invite code" autoCapitalize="characters" autoComplete="off" maxLength={16} />
+                <button className="btn" type="submit">
+                  Join
+                </button>
+              </form>
+            </li>
+            <li>
+              <b>No invite yet?</b> Ask your coach or club secretary to send you one from Overlap.
+            </li>
+            <li>
+              <b>Starting a new club?</b>{" "}
+              <button type="button" className="linkbtn inline" onClick={() => setMode("signup")}>
+                Create an account
+              </button>{" "}
+              and you&apos;ll be guided through setting it up.
+            </li>
+          </ol>
+        </section>
       )}
       {mode === "forgot" && (
         <button type="button" className="linkbtn" onClick={() => setMode("signin")}>
