@@ -200,7 +200,11 @@ export type AppNotification = {
 export type EmailPref = "always" | "no_phone" | "never";
 export type NotificationPrefs = { sessions: boolean; announcements: boolean; reminders: boolean; development: boolean; messages: boolean; email: EmailPref };
 
+/** A team's chosen formation and who stands where (spot index → player id). */
+export type TeamLineup = { team_id: string; format: MatchFormat; formation: string; slots: Record<string, string> };
+
 export type ClubData = {
+  lineups: TeamLineup[];
   /** Can this person see chat (player accounts under the club's chat age may not). */
   chatAllowed: boolean;
   /** Can they send in team chats (younger players may be read-only). */

@@ -5,6 +5,7 @@ import { useApp } from "../AppProvider";
 import { useFamilyRedirect } from "../FamilyRedirect";
 import { Icon } from "@/components/ui";
 import { NoTeams } from "./Overview";
+import { LineupPitch } from "../squad/LineupPitch";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
 import { fmtDay, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
@@ -23,9 +24,6 @@ type Reply = "y" | "n" | "q";
 export const badgeOf = (p: Player) => (p.shirt_number != null ? String(p.shirt_number) : p.full_name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""));
 const REPLY = { y: { t: "✓", c: "#16a34a", bg: "#e8f6ee", w: "Coming" }, n: { t: "✕", c: "#c2372f", bg: "#fdecec", w: "Can't come" }, q: { t: "?", c: "#98a2b3", bg: "#f2f3f5", w: "No reply" } };
 
-// Rows on the pitch, from the back: how many fit before the rest go on the bench.
-const ROW_MAX: Record<Position, number> = { GK: 1, DEF: 4, MID: 4, FWD: 3 };
-const ROW_Y: Record<Position, number> = { GK: 88, DEF: 68, MID: 45, FWD: 21 };
 
 function SquadPage() {
   const { data, team, squad, playerRate, can, canDo, isAdmin, open, sessionsOf, repliesFor, evaluationsOf } = useApp();
@@ -71,72 +69,7 @@ function SquadPage() {
         (filter === "low" && (rate(p) ?? 100) < 75)),
   );
 
-  // Pitch: available players by position, the most regular attenders first; the rest on the bench.
-  const avail = all.filter((p) => p.status === "available").sort((a, b) => (rate(b) ?? 0) - (rate(a) ?? 0));
-  const onPitch = new Map<Position, Player[]>();
-  POS.forEach((pos) => onPitch.set(pos, avail.filter((p) => p.position === pos).slice(0, ROW_MAX[pos])));
-  const placed = new Set([...onPitch.values()].flat().map((p) => p.id));
-  const bench = all.filter((p) => !placed.has(p.id));
-
-  const token = (p: Player, x: number, y: number) => {
-    const r = replyOf(p);
-    return (
-      <button key={p.id} type="button" className="sq-tok" style={{ left: `${x}%`, top: `${y}%` }} onClick={() => open({ kind: "player", id: p.id })} aria-label={`${p.full_name}${r ? `, ${REPLY[r].w}` : ""}`}>
-        <span className={`sq-dot${p.position === "GK" ? " gk" : ""}`}>
-          {badgeOf(p)}
-          {r && (
-            <i style={{ background: REPLY[r].bg, color: REPLY[r].c }} aria-hidden="true">
-              {REPLY[r].t}
-            </i>
-          )}
-        </span>
-        <span className="sq-nm">{p.full_name.split(" ")[0]}</span>
-      </button>
-    );
-  };
-
-  const pitch = (
-    <section className="sq-pitch-wrap" aria-label="Squad on the pitch">
-      <div className="sq-pitch">
-        <span className="sq-box top" />
-        <span className="sq-box bot" />
-        <span className="sq-half" />
-        <span className="sq-circle" />
-        {POS.map((pos) => {
-          const row = onPitch.get(pos)!;
-          return row.map((p, i) => token(p, ((i + 1) * 100) / (row.length + 1), ROW_Y[pos]));
-        })}
-        {!avail.length && <p className="sq-pitch-empty">No one available{all.length ? " right now" : " yet"}.</p>}
-      </div>
-      {bench.length > 0 && (
-        <div className="sq-bench">
-          <b>Bench</b>
-          <div className="sq-bench-list">
-            {bench.map((p) => (
-              <button key={p.id} type="button" className={`sq-bt${p.status !== "available" ? " out" : ""}`} onClick={() => open({ kind: "player", id: p.id })} title={`${p.full_name} · ${STATUS[p.status]}`} aria-label={`${p.full_name}, ${STATUS[p.status]}`}>
-                {badgeOf(p)}
-                <i style={{ background: STATUS_COLOUR[p.status] }} />
-              </button>
-            ))}
-          </div>
-          {out.length > 0 && <span className="sq-bench-note">{out.length} out</span>}
-        </div>
-      )}
-      {next && (
-        <p className="sq-legend">
-          <span>
-            <i style={{ background: REPLY.y.bg, color: REPLY.y.c }}>✓</i>coming {day}
-          </span>
-          <span>
-            <i style={{ background: REPLY.n.bg, color: REPLY.n.c }}>✕</i>can&apos;t
-          </span>
-          <span>
-            <i style={{ background: REPLY.q.bg, color: REPLY.q.c }}>?</i>no reply
-          </span>
-        </p>
-      )}
-    </section>
-  );
+  const pitch = <LineupPitch key={team.id} team={team} players={all} replyOf={replyOf} canEdit={canEdit} rate={rate} day={day} />;
 
   const list = (
     <section className="sq-list-wrap" aria-label="Squad list">

@@ -1092,3 +1092,24 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .pp-acts button:active { transform: scale(0.96); }
 @media (max-width: 700px) { [data-look="club"] .pp-hero { margin: -22px -22px 0; } }
 [data-look="club"] .pp-num.ini { font-size: 56px; }
+
+/* ===================== Line-up: formations and dragging ===================== */
+[data-look="club"] .lu-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+[data-look="club"] .lu-name { font-size: 14px; color: var(--muted); font-weight: 600; }
+[data-look="club"] .lu-name b { font-family: var(--display); font-weight: 700; font-size: 22px; color: var(--ink); }
+[data-look="club"] .lu-acts { display: flex; gap: 8px; }
+[data-look="club"] .lu-pick { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
+[data-look="club"] .lu-row { display: flex; flex-wrap: wrap; gap: 6px; }
+[data-look="club"] .lu-auto { margin-left: auto; background: var(--brand); color: var(--brand-ink); }
+[data-look="club"] .lu-help { margin: 0; font-size: 13px; color: var(--muted); }
+[data-look="club"] .editing .sq-pitch { box-shadow: 0 0 0 3px var(--accent), 0 14px 30px -16px rgba(8, 40, 20, 0.6); }
+[data-look="club"] .editing .sq-tok, [data-look="club"] .editing .sq-bt { touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+[data-look="club"] .editing .sq-tok:active, [data-look="club"] .editing .sq-bt:active { cursor: grabbing; }
+[data-look="club"] .sq-dot.empty { background: rgba(255, 255, 255, 0.16); color: #fff; border: 2px dashed rgba(255, 255, 255, 0.85); box-shadow: none; font-family: var(--body); font-size: 22px; }
+[data-look="club"] .sq-dot.out { box-shadow: 0 0 0 3px #c2372f, 0 4px 10px rgba(0, 0, 0, 0.32); }
+[data-look="club"] .sq-tok:disabled { cursor: default; }
+[data-look="club"] .sq-tok:disabled .sq-nm { opacity: 0.8; }
+[data-look="club"] .sq-tok.picked .sq-dot, [data-look="club"] .sq-bt.picked { box-shadow: 0 0 0 4px #ffd166, 0 4px 10px rgba(0, 0, 0, 0.32); transform: scale(1.08); }
+[data-look="club"] .editing .sq-bench { outline: 2px dashed #cfd4dc; outline-offset: -2px; }
+[data-look="club"] .lu-ghost { position: fixed; z-index: 100; translate: -50% -50%; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: #ffd166; color: #1a1300; font-family: var(--display); font-weight: 700; font-size: 20px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35); pointer-events: none; }
+[data-look="club"] .lu-warn { margin: 0; padding: 8px 12px; border-radius: 12px; background: #fdecec; color: #8a1f17; font-size: 13.5px; font-weight: 600; }
