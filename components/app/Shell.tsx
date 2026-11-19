@@ -9,6 +9,7 @@ import { ROLES } from "@/lib/constants";
 import { initials } from "@/lib/format";
 import { Crest } from "@/components/ui";
 import { isStandalone } from "@/lib/push-client";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
@@ -43,8 +44,8 @@ const FAMILY_NAV = [
   { href: "/sessions", label: "Schedule", short: "Schedule", icon: "i-cal" },
   {
     href: "/development",
-    label: "My plan",
-    short: "My plan",
+    label: "Progress",
+    short: "Progress",
     icon: "i-target",
   },
   { href: "/fitness", label: "Fitness", short: "Fitness", icon: "i-clock" },
@@ -54,10 +55,12 @@ const FAMILY_NAV = [
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { data, team, setTeam, unread } = useApp();
+  const { data, team, setTeam, unread, myPlayers, kidName } = useApp();
   const family = data.role === "player" || data.role === "parent";
+  // Plain words for families: "Leo's progress" for a parent of one, "My progress" for a player.
+  const progress = data.role === "player" ? "My progress" : myPlayers.length === 1 ? `${kidName(myPlayers[0])}'s progress` : "Progress";
   // Player accounts under the club's chat age don't get chat at all.
-  const nav = (family ? FAMILY_NAV : NAV).filter(
+  const nav = (family ? FAMILY_NAV.map((n) => (n.href === "/development" ? { ...n, label: progress } : n)) : NAV).filter(
     (n) => n.href !== "/chat" || data.chatAllowed,
   );
   const chatUnread = data.chats
@@ -196,6 +199,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 Sign out
               </button>
             </form>
+            <ThemeToggle compact />
           </div>
         </div>
         {data.clubs.length === 1 && (
@@ -324,6 +328,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <option value="__new">Enter an invite code…</option>
               </select>
             )}
+            <ThemeToggle />
             <form action="/auth/signout" method="post">
               <button className="btn more-out" type="submit">
                 Sign out

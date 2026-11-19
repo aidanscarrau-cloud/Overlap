@@ -531,7 +531,7 @@ function FamilyHome() {
           <section key={"g" + p.id} className="md-sec">
             <div className="md-sec-h">
               <h2>{parent ? `${kidName(p)}'s goals` : "Your goals"}</h2>
-              <Link href={`/development/${p.id}`}>My plan</Link>
+              <Link href={`/development/${p.id}`}>{parent ? `${kidName(p)}'s progress` : "My progress"}</Link>
             </div>
             <div className="md-list">
               {goals.map((g) => (

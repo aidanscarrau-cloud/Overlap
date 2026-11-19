@@ -30,6 +30,8 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
   const latest = evs[0];
   const previous = evs[1];
   const goals = goalsOf(playerId);
+  // One plain "work on this" for families, ahead of the charts: the active goal due soonest.
+  const focusGoal = goals.filter((g) => g.status === "active").sort((a, b) => (a.target_date ?? "9999").localeCompare(b.target_date ?? "9999"))[0];
   const active = goals.filter((g) => g.status === "active");
   const done = goals.filter((g) => g.status !== "active");
   const ov = overall(latest?.ratings);
@@ -79,6 +81,14 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
         <div className="sr-prompts">
           <SelfReviewPrompts />
         </div>
+      )}
+      {mine && focusGoal && (
+        <section className="idp-focus">
+          <span className="eyebrow">{data.role === "player" ? "Your focus right now" : `${kidName(player)}'s focus right now`}</span>
+          <b>{focusGoal.title}</b>
+          {focusGoal.detail && <p>{focusGoal.detail}</p>}
+          {focusGoal.target_date && <small>Aim to get there by {longDate(focusGoal.target_date)}</small>}
+        </section>
       )}
       {latest ? (
         <>

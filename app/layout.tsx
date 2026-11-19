@@ -39,7 +39,11 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} ${mono.variable} ${onest.variable} ${barlow.variable} ${barlowCond.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${mono.variable} ${onest.variable} ${barlow.variable} ${barlowCond.variable}`}>
+      <head>
+        {/* Light, dark or auto, chosen in the menu. Set before the page draws so it never flashes. */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("overlap-theme");document.documentElement.dataset.theme=t==="dark"||t==="auto"?t:"light"}catch(e){document.documentElement.dataset.theme="light"}` }} />
+      </head>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} style={{ display: "contents" }} />
         {children}
