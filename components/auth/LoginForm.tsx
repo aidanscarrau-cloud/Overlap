@@ -178,11 +178,7 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
               <b>No invite yet?</b> Ask your coach or club secretary to send you one from Overlap.
             </li>
             <li>
-              <b>Starting a new club?</b>{" "}
-              <button type="button" className="linkbtn inline" onClick={() => setMode("signup")}>
-                Create an account
-              </button>{" "}
-              and you&apos;ll be guided through setting it up.
+              <b>From another club?</b> Overlap isn&apos;t open to new clubs just yet. <a href="/#contact">Register your interest</a>.
             </li>
           </ol>
         </section>

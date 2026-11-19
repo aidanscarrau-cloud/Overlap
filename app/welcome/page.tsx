@@ -58,7 +58,7 @@ export default function Welcome() {
         <nav aria-label="Main">
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
-          <a href="#contact">Contact</a>
+          <a href="#contact">Register interest</a>
           <Link href="/login" className="lp-signin">
             Sign in
           </Link>
@@ -72,14 +72,14 @@ export default function Welcome() {
           <p>Training, matches, team chat, trials, line-ups and player development, for coaches, players and parents. Set up in an afternoon. Works on any phone, no app store needed.</p>
           <div className="lp-ctas">
             <a href="#contact" className="btn primary lp-big">
-              Book a demo
+              Register interest
             </a>
-            <Link href="/login?mode=signup" className="btn lp-big lp-ghost">
-              Set up your club
-            </Link>
+            <a href="#features" className="btn lp-big lp-ghost">
+              See how it works
+            </a>
           </div>
           <ul className="lp-ticks">
-            <li>$60 a month for the whole club</li>
+            <li>Opening to more clubs soon</li>
             <li>Unlimited teams, players and parents</li>
             <li>Your club&apos;s badge and colours</li>
             <li>Made in Australia</li>
@@ -161,7 +161,7 @@ export default function Welcome() {
 
       <section id="pricing" className="lp-pricing">
         <div>
-          <span className="lp-kicker">Pricing</span>
+          <span className="lp-kicker">Planned pricing</span>
           <h2>One simple price per club</h2>
           <p>Not per player, not per team. Every coach, player and parent in your club is included, along with every feature.</p>
           <ul className="lp-ticks">
@@ -171,25 +171,23 @@ export default function Welcome() {
           </ul>
         </div>
         <div className="lp-price-card">
-          <span className="lp-price-for">Whole club</span>
+          <span className="lp-price-for">Planned price · whole club</span>
           <div className="lp-price">
             <b>$60</b>
             <span>per month</span>
           </div>
-          <p>For your whole club, however many teams: $720 a year. A club with 100 players pays about 60c per player a month. Prices in Australian dollars.</p>
+          <p>For your whole club, however many teams: $720 a year. A club with 100 players would pay about 60c per player a month. Prices in Australian dollars.</p>
+          <p className="lp-pilot">We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
           <a href="#contact" className="btn primary lp-big">
-            Book a demo
-          </a>
-          <a href="/login?mode=signup" className="lp-price-alt">
-            Or set up your club now →
+            Register interest
           </a>
         </div>
       </section>
 
       <section id="contact" className="lp-contact">
         <div>
-          <h2>See it with your club&apos;s colours</h2>
-          <p>Tell us a bit about your club and we&apos;ll show you Overlap set up for you, or answer any questions.</p>
+          <h2>Register your club&apos;s interest</h2>
+          <p>We&apos;re trialling Overlap with our own club this season before opening it up. Tell us about your club and we&apos;ll be in touch, or ask us anything.</p>
         </div>
         <ContactForm />
       </section>

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       from: `"Overlap website" <${fromAddr}>`,
       to,
       replyTo: `"${name.replace(/["<>]/g, "")}" <${email}>`,
-      subject: (support ? `Support: ${topic || "Help"}${club ? ` (${club})` : ""}` : `Demo request: ${club}`).slice(0, 150),
+      subject: (support ? `Support: ${topic || "Help"}${club ? ` (${club})` : ""}` : `Club interest: ${club}`).slice(0, 150),
       text: [support ? `Topic: ${topic}` : "", `Name: ${name}`, club && `Club: ${club}`, `Email: ${email}`, phone && `Phone: ${phone}`, teams && `Teams: ${teams}`, "", message || "(no message)", "", "Reply to this email to answer them directly."].filter((x) => x !== "").join("\n"),
     });
   } catch {

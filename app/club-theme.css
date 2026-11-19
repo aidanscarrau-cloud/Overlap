@@ -1886,3 +1886,4 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .lp-price b { font-family: var(--display); font-size: 64px; line-height: 1; }
 [data-look="club"] .lp-price span { font-size: 18px; color: #c9ccd3; }
 [data-look="club"] .lp-price-alt { color: #fff; font-weight: 600; text-decoration: none; text-align: center; font-size: 15px; }
+[data-look="club"] .lp-pilot { background: rgba(255,255,255,.08); border-radius: 12px; padding: 10px 12px; color: #e6e8ec !important; font-size: 15px; }

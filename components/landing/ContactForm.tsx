@@ -27,8 +27,8 @@ export function ContactForm({ kind = "demo" }: { kind?: "demo" | "support" }) {
   if (state.ok)
     return (
       <div className="lp-form lp-sent" role="status">
-        <b>{support ? "Thanks, we've got your message." : "Thanks, we'll be in touch soon."}</b>
-        <p>We usually reply by email within a day.</p>
+        <b>{support ? "Thanks, we've got your message." : "Thanks, you're on the list."}</b>
+        <p>{support ? "We usually reply by email within a day." : "We'll email you when Overlap opens to more clubs, and before then if you asked us something."}</p>
       </div>
     );
   return (
@@ -80,7 +80,7 @@ export function ContactForm({ kind = "demo" }: { kind?: "demo" | "support" }) {
         </p>
       )}
       <button className="btn primary lp-big" disabled={state.busy}>
-        {state.busy ? "Sending…" : support ? "Send message" : "Book a demo"}
+        {state.busy ? "Sending…" : support ? "Send message" : "Register interest"}
       </button>
     </form>
   );
