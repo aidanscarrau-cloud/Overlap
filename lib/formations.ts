@@ -11,11 +11,32 @@ const gk: Slot = { x: 50, y: 92, pos: "GK" };
 /** Formations for each match size, goalkeeper first. Junior football uses 5, 7 and 9-a-side. */
 export const FORMATIONS: Record<MatchFormat, Formation[]> = {
   "11": [
+    // Four at the back
     { name: "4-4-2", slots: [gk, ...row(74, "DEF", 4, 76), ...row(48, "MID", 4, 76), ...row(20, "FWD", 2, 30)] },
     { name: "4-3-3", slots: [gk, ...row(74, "DEF", 4, 76), ...row(50, "MID", 3, 54), ...row(22, "FWD", 3, 64)] },
     { name: "4-2-3-1", slots: [gk, ...row(75, "DEF", 4, 76), ...row(58, "MID", 2, 32), ...row(38, "MID", 3, 64), ...row(16, "FWD", 1)] },
-    { name: "3-5-2", slots: [gk, ...row(74, "DEF", 3, 56), ...row(48, "MID", 5, 84), ...row(20, "FWD", 2, 30)] },
     { name: "4-1-4-1", slots: [gk, ...row(76, "DEF", 4, 76), ...row(60, "MID", 1), ...row(40, "MID", 4, 76), ...row(16, "FWD", 1)] },
+    { name: "4-4-1-1", slots: [gk, ...row(75, "DEF", 4, 76), ...row(52, "MID", 4, 76), ...row(32, "MID", 1), ...row(16, "FWD", 1)] },
+    { name: "4-4-2 diamond", slots: [gk, ...row(75, "DEF", 4, 76), ...row(60, "MID", 1), ...row(47, "MID", 2, 52), ...row(34, "MID", 1), ...row(17, "FWD", 2, 30)] },
+    { name: "4-3-1-2", slots: [gk, ...row(75, "DEF", 4, 76), ...row(54, "MID", 3, 54), ...row(35, "MID", 1), ...row(17, "FWD", 2, 30)] },
+    { name: "4-3-2-1", slots: [gk, ...row(75, "DEF", 4, 76), ...row(56, "MID", 3, 54), ...row(35, "MID", 2, 36), ...row(16, "FWD", 1)] },
+    { name: "4-5-1", slots: [gk, ...row(74, "DEF", 4, 76), ...row(46, "MID", 5, 84), ...row(18, "FWD", 1)] },
+    { name: "4-2-2-2", slots: [gk, ...row(75, "DEF", 4, 76), ...row(57, "MID", 2, 32), ...row(38, "MID", 2, 64), ...row(17, "FWD", 2, 30)] },
+    { name: "4-1-2-1-2", slots: [gk, ...row(76, "DEF", 4, 76), ...row(61, "MID", 1), ...row(48, "MID", 2, 60), ...row(35, "MID", 1), ...row(17, "FWD", 2, 30)] },
+    { name: "4-2-4", slots: [gk, ...row(74, "DEF", 4, 76), ...row(50, "MID", 2, 32), ...row(22, "FWD", 4, 76)] },
+    { name: "4-1-3-2", slots: [gk, ...row(75, "DEF", 4, 76), ...row(59, "MID", 1), ...row(41, "MID", 3, 64), ...row(18, "FWD", 2, 30)] },
+    // Three at the back
+    { name: "3-5-2", slots: [gk, ...row(74, "DEF", 3, 56), ...row(48, "MID", 5, 84), ...row(20, "FWD", 2, 30)] },
+    { name: "3-4-3", slots: [gk, ...row(74, "DEF", 3, 56), ...row(50, "MID", 4, 80), ...row(22, "FWD", 3, 64)] },
+    { name: "3-4-1-2", slots: [gk, ...row(74, "DEF", 3, 56), ...row(53, "MID", 4, 80), ...row(35, "MID", 1), ...row(17, "FWD", 2, 30)] },
+    { name: "3-4-2-1", slots: [gk, ...row(74, "DEF", 3, 56), ...row(54, "MID", 4, 80), ...row(35, "MID", 2, 40), ...row(16, "FWD", 1)] },
+    { name: "3-1-4-2", slots: [gk, ...row(75, "DEF", 3, 56), ...row(60, "MID", 1), ...row(43, "MID", 4, 80), ...row(18, "FWD", 2, 30)] },
+    { name: "3-3-3-1", slots: [gk, ...row(75, "DEF", 3, 56), ...row(56, "MID", 3, 54), ...row(36, "MID", 3, 70), ...row(16, "FWD", 1)] },
+    // Five at the back
+    { name: "5-3-2", slots: [gk, ...row(72, "DEF", 5, 86), ...row(48, "MID", 3, 54), ...row(20, "FWD", 2, 30)] },
+    { name: "5-4-1", slots: [gk, ...row(72, "DEF", 5, 86), ...row(46, "MID", 4, 76), ...row(18, "FWD", 1)] },
+    { name: "5-2-3", slots: [gk, ...row(72, "DEF", 5, 86), ...row(50, "MID", 2, 32), ...row(22, "FWD", 3, 64)] },
+    { name: "5-2-1-2", slots: [gk, ...row(72, "DEF", 5, 86), ...row(53, "MID", 2, 32), ...row(36, "MID", 1), ...row(18, "FWD", 2, 30)] },
   ],
   "9": [
     { name: "3-3-2", slots: [gk, ...row(72, "DEF", 3, 60), ...row(46, "MID", 3, 64), ...row(20, "FWD", 2, 30)] },
@@ -39,3 +60,6 @@ export const formationFor = (format: MatchFormat, name: string) =>
 export const FORMAT_LABEL: Record<MatchFormat, string> = { "5": "5-a-side", "7": "7-a-side", "9": "9-a-side", "11": "11-a-side" };
 /** Usual match length in minutes for each size (junior games are shorter). */
 export const DEFAULT_LENGTH: Record<MatchFormat, number> = { "5": 40, "7": 50, "9": 60, "11": 80 };
+
+/** Group label for the 11-a-side dropdown, from the number at the back. */
+export const backLine = (name: string) => ({ "3": "Three at the back", "4": "Four at the back", "5": "Five at the back" })[name[0]] ?? "Other";

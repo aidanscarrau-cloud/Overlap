@@ -5,27 +5,19 @@ import { useApp } from "../AppProvider";
 import { STATUS } from "@/lib/constants";
 import { errMsg } from "@/lib/format";
 import { pingPush } from "@/lib/push-client";
-import { FORMATIONS, FORMAT_LABEL, formationFor } from "@/lib/formations";
+import { FORMATIONS, FORMAT_LABEL, backLine, formationFor } from "@/lib/formations";
 import type { MatchFormat, Player, Team } from "@/lib/types";
 
 /*
  * The Squad pitch: the team's chosen formation with a player in each spot.
- * Coaches switch to "Edit line-up" to pick the match size and formation, then drag players between spots,
+ * Coaches switch to "Edit line-up" to pick an 11-a-side formation, then drag players between spots,
  * from the bench onto the pitch, or off to the bench (or tap one player, then another, to swap them).
  */
 
 type Reply = "y" | "n" | "q";
 const REPLY = { y: { t: "✓", c: "#16a34a", bg: "#e8f6ee" }, n: { t: "✕", c: "#c2372f", bg: "#fdecec" }, q: { t: "?", c: "#98a2b3", bg: "#f2f3f5" } };
 const STATUS_COLOUR = { available: "#16a34a", injured: "#c2372f", unavailable: "#a16207" } as const;
-const FORMATS: MatchFormat[] = ["5", "7", "9", "11"];
 type Spot = { kind: "slot"; i: number } | { kind: "bench"; id: string };
-
-/** Junior football in Australia: small-sided games for the youngest, 11-a-side from about U12. */
-export function defaultFormat(team: Team): MatchFormat {
-  const m = team.name.match(/\bU\s?(\d{1,2})\b/i) ?? team.age_group?.match(/\bU?\s?(\d{1,2})\b/i);
-  const n = m ? Number(m[1]) : 99;
-  return n <= 7 ? "5" : n <= 9 ? "7" : n <= 11 ? "9" : "11";
-}
 
 /** Fill a formation from the squad: the right position first, the most regular attenders first. */
 function autoFill(format: MatchFormat, formation: string, players: Player[], rate: (p: Player) => number | null) {
@@ -70,9 +62,11 @@ export function LineupPitch({
   const saved = data.lineups.find((l) => l.team_id === team.id);
   const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
   const initial = () => {
-    const format = (saved?.format ?? defaultFormat(team)) as MatchFormat;
-    const formation = formationFor(format, saved?.formation ?? "").name;
-    const slots = saved
+    // Line-ups are always 11-a-side; an older 5/7/9-a-side save starts again from the 11-a-side spots.
+    const format: MatchFormat = "11";
+    const keep = saved && saved.format === "11";
+    const formation = formationFor(format, keep ? saved.formation : "").name;
+    const slots = keep
       ? new Map(Object.entries(saved.slots).filter(([, id]) => byId.has(id)).map(([k, id]) => [Number(k), id] as const))
       : autoFill(format, formation, players, rate);
     return { format, formation, slots };
@@ -157,15 +151,24 @@ export function LineupPitch({
     setPicked(null);
   }
 
-  function setFormat(format: MatchFormat) {
-    const formation = FORMATIONS[format][0].name;
-    setDraft({ format, formation, slots: autoFill(format, formation, players, rate) });
-  }
   function setFormation(name: string) {
-    // Keep everyone in the same numbered spot; spots that no longer exist go to the bench.
+    // Everyone keeps a spot in their line (defence stays in defence, etc.); anyone left over fills the gaps.
     setDraft((d) => {
-      const n = formationFor(d.format, name).slots.length;
-      return { ...d, formation: name, slots: new Map([...d.slots].filter(([i]) => i < n)) };
+      const from = formationFor(d.format, d.formation).slots;
+      const to = formationFor(d.format, name).slots;
+      const placed = [...d.slots].map(([i, id]) => ({ id, pos: from[i]?.pos ?? "MID" }));
+      const used = new Set<string>();
+      const slots = new Map<number, string>();
+      to.forEach((sl, i) => {
+        const p = placed.find((x) => !used.has(x.id) && x.pos === sl.pos);
+        if (p) (slots.set(i, p.id), used.add(p.id));
+      });
+      to.forEach((sl, i) => {
+        if (slots.has(i) || sl.pos === "GK") return;
+        const p = placed.find((x) => !used.has(x.id) && x.pos !== "GK");
+        if (p) (slots.set(i, p.id), used.add(p.id));
+      });
+      return { ...d, formation: name, slots };
     });
   }
   async function save(share = false) {
@@ -224,19 +227,23 @@ export function LineupPitch({
       </div>
       {edit && (
         <div className="lu-pick">
-          <div className="lu-row" role="group" aria-label="Match size">
-            {FORMATS.map((x) => (
-              <button key={x} type="button" className="chip" aria-pressed={draft.format === x} onClick={() => setFormat(x)}>
-                {x}-a-side
-              </button>
-            ))}
-          </div>
-          <div className="lu-row" role="group" aria-label="Formation">
-            {FORMATIONS[draft.format].map((fm) => (
-              <button key={fm.name} type="button" className="chip" aria-pressed={draft.formation === fm.name} onClick={() => setFormation(fm.name)}>
-                {fm.name}
-              </button>
-            ))}
+          <div className="lu-row">
+            <label className="lu-select">
+              <span>Formation</span>
+              <select value={draft.formation} onChange={(e) => setFormation(e.target.value)} aria-label="Formation">
+                {[...new Set(FORMATIONS["11"].map((fm) => backLine(fm.name)))].map((g) => (
+                  <optgroup key={g} label={g}>
+                    {FORMATIONS["11"]
+                      .filter((fm) => backLine(fm.name) === g)
+                      .map((fm) => (
+                        <option key={fm.name} value={fm.name}>
+                          {fm.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
             <button type="button" className="chip lu-auto" onClick={() => setDraft((d) => ({ ...d, slots: autoFill(d.format, d.formation, players, rate) }))}>
               ✦ Auto-fill
             </button>
