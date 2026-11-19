@@ -203,8 +203,15 @@ export type NotificationPrefs = { sessions: boolean; announcements: boolean; rem
 /** A team's chosen formation and who stands where (spot index → player id). */
 export type TeamLineup = { team_id: string; format: MatchFormat; formation: string; slots: Record<string, string> };
 
+export type FitnessDay = { id: string; team_id: string; date: string; title: string; tests: string[]; notes: string };
+export type FitnessResult = { id: string; team_id: string; test_day_id: string | null; player_id: string; test_key: string; attempt: number; value: number; tested_on: string };
+export type FitnessBand = { test_key: string; age_group: "u10" | "u12" | "u14" | "u16" | "open"; typical_low: number; typical_high: number };
+
 export type ClubData = {
   lineups: TeamLineup[];
+  fitnessDays: FitnessDay[];
+  fitnessResults: FitnessResult[];
+  fitnessBands: FitnessBand[];
   /** Can this person see chat (player accounts under the club's chat age may not). */
   chatAllowed: boolean;
   /** Can they send in team chats (younger players may be read-only). */

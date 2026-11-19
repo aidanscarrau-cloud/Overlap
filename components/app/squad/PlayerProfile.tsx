@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { SheetFrame } from "../sheets/SheetFrame";
 import { LoadCard } from "../Load";
+import { PlayerFitness } from "../fitness/Fitness";
 import { STATUS } from "@/lib/constants";
 import { errMsg, fmtDay, fmtNum, fmtMon, hhmm, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
@@ -155,6 +156,18 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
                 Progress report →
               </Link>
             )}
+          </section>
+        )}
+
+        {data.fitnessResults.some((r) => r.player_id === p.id) && (
+          <section className="pp-sec">
+            <h3>
+              Fitness
+              <Link href="/fitness" onClick={close}>
+                All results
+              </Link>
+            </h3>
+            <PlayerFitness player={p} compact />
           </section>
         )}
 
