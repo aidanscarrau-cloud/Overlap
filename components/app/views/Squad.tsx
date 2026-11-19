@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui";
 import { NoTeams } from "./Overview";
 import { LineupPitch } from "../squad/LineupPitch";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
+import { InjuryBoard } from "../injuries/Injuries";
 import { fmtDay, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
 import type { Player, Position } from "@/lib/types";
@@ -118,6 +119,7 @@ function SquadPage() {
             </button>
           ))}
       </div>
+      {filter !== "all" || q ? null : <InjuryBoard players={all} />}
       {shown.length ? (
         POS.map((pos) => {
           const g = shown.filter((p) => p.position === pos);

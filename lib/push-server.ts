@@ -27,6 +27,7 @@ function setupVapid() {
 
 const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" | "development" | "messages"> = {
   session_new: "sessions",
+  injury: "sessions",
   session_changed: "sessions",
   session_cancelled: "sessions",
   announcement: "announcements",

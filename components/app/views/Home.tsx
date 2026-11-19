@@ -1,5 +1,6 @@
 "use client";
 
+import { FamilyInjuries } from "../injuries/Injuries";
 import Link from "next/link";
 import { useApp } from "../AppProvider";
 import { ReplyBadge, ReplyButtons } from "../Replies";
@@ -427,6 +428,8 @@ function FamilyHome() {
           </section>
         );
       })}
+
+      <FamilyInjuries />
 
       {nextMatch && !shownMatch.has(nextMatch.id) && (
         <section className="md-match">

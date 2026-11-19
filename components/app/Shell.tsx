@@ -16,6 +16,7 @@ const NAV = [
   { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
   { href: "/development", label: "Development", short: "Development", icon: "i-target" },
   { href: "/fitness", label: "Fitness", short: "Fitness", icon: "i-clock" },
+  { href: "/insights", label: "Insights", short: "Insights", icon: "i-chart" },
   { href: "/announcements", label: "Announcements", short: "News", icon: "i-megaphone" },
   { href: "/drills", label: "Drills", short: "Drills", icon: "i-board" },
   { href: "/club", label: "Club & members", short: "Club", icon: "i-people" },

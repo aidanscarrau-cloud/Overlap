@@ -24,6 +24,7 @@ const ICON: Record<NotificationKind, string> = {
   self_review: "i-target",
   self_review_done: "i-target",
   message: "i-chat",
+  injury: "i-squad",
 };
 
 export function Notifications() {

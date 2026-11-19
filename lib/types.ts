@@ -156,7 +156,8 @@ export type NotificationKind =
   | "result"
   | "self_review"
   | "self_review_done"
-  | "message";
+  | "message"
+  | "injury";
 export type ChatSummary = {
   id: string;
   kind: "team" | "staff" | "direct" | "group";
@@ -207,7 +208,16 @@ export type FitnessDay = { id: string; team_id: string; date: string; title: str
 export type FitnessResult = { id: string; team_id: string; test_day_id: string | null; player_id: string; test_key: string; attempt: number; value: number; tested_on: string };
 export type FitnessBand = { test_key: string; age_group: "u10" | "u12" | "u14" | "u16" | "open"; typical_low: number; typical_high: number };
 
+export type Injury = {
+  id: string; team_id: string; player_id: string; body_part: string; side: "left" | "right" | "both" | "na";
+  kind: "sprain" | "strain" | "knock" | "fracture" | "concussion" | "illness" | "overuse" | "other";
+  severity: "minor" | "moderate" | "serious"; occurred_on: string; cause: "training" | "match" | "outside" | "unknown";
+  notes: string; expected_return: string | null; stage: number; cleared_by_doctor: boolean; status: "active" | "recovered";
+  recovered_on: string | null; reported_by_family: boolean; created_by_name: string; created_at: string;
+};
+
 export type ClubData = {
+  injuries: Injury[];
   lineups: TeamLineup[];
   fitnessDays: FitnessDay[];
   fitnessResults: FitnessResult[];

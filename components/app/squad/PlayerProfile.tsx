@@ -7,6 +7,7 @@ import { useApp } from "../AppProvider";
 import { SheetFrame } from "../sheets/SheetFrame";
 import { LoadCard } from "../Load";
 import { PlayerFitness } from "../fitness/Fitness";
+import { PlayerInjuries, InjurySheet } from "../injuries/Injuries";
 import { STATUS } from "@/lib/constants";
 import { errMsg, fmtDay, fmtNum, fmtMon, hhmm, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
@@ -37,6 +38,8 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
   const assists = stats.reduce((n, m) => n + (m.assists || 0), 0);
   const devGoals = seeIdp ? goalsOf(p.id).filter((g) => g.status === "active").slice(0, 3) : [];
   const parents = data.members.filter((m) => m.player_ids.includes(p.id) && m.role === "parent" && m.user_id !== data.userId);
+  const seeInj = data.injuries.some((i) => i.player_id === p.id) || mine;
+  const [logInj, setLogInj] = useState(false);
   const canMessage = data.chatAllowed && data.role !== "player" && parents.length > 0;
 
   async function setStatus(status: Status) {
@@ -159,6 +162,13 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
           </section>
         )}
 
+        {(seeInj || canEdit) && (data.injuries.some((i) => i.player_id === p.id) || canEdit || mine) && (
+          <section className="pp-sec">
+            <h3>Injuries</h3>
+            <PlayerInjuries player={p} />
+          </section>
+        )}
+
         {data.fitnessResults.some((r) => r.player_id === p.id) && (
           <section className="pp-sec">
             <h3>
@@ -177,10 +187,10 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
           <div className="pp-acts">
             {canEdit &&
               (p.status === "available" ? (
-                <button type="button" disabled={busy} onClick={() => setStatus("injured")}>
-                  <span aria-hidden="true">🩹</span>Mark injured
+                <button type="button" disabled={busy} onClick={() => setLogInj(true)}>
+                  <span aria-hidden="true">🩹</span>Log injury
                 </button>
-              ) : (
+              ) : data.injuries.some((i) => i.player_id === p.id && i.status === "active") ? null : (
                 <button type="button" disabled={busy} onClick={() => setStatus("available")}>
                   <span aria-hidden="true">✅</span>Mark available
                 </button>
@@ -198,6 +208,7 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
           </div>
         )}
       </div>
+      {logInj && <InjurySheet player={p} onClose={() => setLogInj(false)} />}
     </SheetFrame>
   );
 }

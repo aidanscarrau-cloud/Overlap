@@ -42,7 +42,7 @@ const teamAge = (t: Team | undefined) => {
 
 /* ------------------------------------------------------------------ a simple modal */
 
-function Modal({ title, onClose, children, foot, wide }: { title: string; onClose: () => void; children: React.ReactNode; foot?: React.ReactNode; wide?: boolean }) {
+export function Modal({ title, onClose, children, foot, wide }: { title: string; onClose: () => void; children: React.ReactNode; foot?: React.ReactNode; wide?: boolean }) {
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", k);
