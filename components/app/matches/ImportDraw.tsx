@@ -5,7 +5,7 @@ import { useApp } from "../AppProvider";
 import { SheetFrame } from "../sheets/SheetFrame";
 import { pingPush } from "@/lib/push-client";
 import { COL_LABEL, buildRows, guessColumns, norm, parseTable, teamNames, type ColType, type DrawRow } from "@/lib/draw-import";
-import { DEFAULT_LENGTH, FORMAT_LABEL } from "@/lib/formations";
+import { DEFAULT_LENGTH } from "@/lib/formations";
 import { HA_LABEL } from "@/lib/matches";
 import { errMsg, parseD } from "@/lib/format";
 import type { MatchFormat } from "@/lib/types";
@@ -18,7 +18,7 @@ export function ImportDraw() {
   const [text, setText] = useState("");
   const [types, setTypes] = useState<ColType[] | null>(null);
   const [ours, setOurs] = useState("");
-  const [format, setFormat] = useState<MatchFormat>("11");
+  const format: MatchFormat = "11";
   const [rows, setRows] = useState<DrawRow[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -148,16 +148,7 @@ export function ImportDraw() {
                   </select>
                 </label>
               )}
-              <label className="field">
-                <span>Match size</span>
-                <select className="input" id="draw-format" value={format} onChange={(e) => setFormat(e.target.value as MatchFormat)}>
-                  {(["11", "9", "7", "5"] as MatchFormat[]).map((f) => (
-                    <option key={f} value={f}>
-                      {FORMAT_LABEL[f]} ({DEFAULT_LENGTH[f]} min)
-                    </option>
-                  ))}
-                </select>
-              </label>
+
             </div>
             <button type="button" className="btn primary" style={{ justifySelf: "start" }} onClick={preview}>
               Find {team?.name ?? "our"} matches

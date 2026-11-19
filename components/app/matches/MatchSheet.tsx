@@ -6,7 +6,7 @@ import { ConfirmButton, SheetFrame } from "../sheets/SheetFrame";
 import { ReplyButtons } from "../Replies";
 import { Pitch } from "./Pitch";
 import { pingPush } from "@/lib/push-client";
-import { DEFAULT_LENGTH, FORMATIONS, FORMAT_LABEL, formationFor } from "@/lib/formations";
+import { DEFAULT_LENGTH, FORMATIONS, backLine, formationFor } from "@/lib/formations";
 import { HA_LABEL, RESULT_WORD, resultOf } from "@/lib/matches";
 import { errMsg, hhmm, parseD, todayIso } from "@/lib/format";
 import type { HomeAway, Match, MatchFormat, MatchPlayer, MatchStatus, Player } from "@/lib/types";
@@ -78,7 +78,7 @@ function DetailsForm({ match, date, onDone }: { match: Match | null; date?: stri
           venue: match.venue,
           competition: match.competition,
           round: match.round,
-          format: match.format,
+          format: "11",
           length_mins: match.length_mins,
           status: match.status === "played" ? "played" : match.status,
         }
@@ -166,24 +166,6 @@ function DetailsForm({ match, date, onDone }: { match: Match | null; date?: stri
           <input className="input" id="m-round" maxLength={30} value={d.round} onChange={(e) => set({ round: e.target.value })} placeholder="e.g. 5" />
         </label>
         <label className="field">
-          <span>Match size</span>
-          <select
-            className="input"
-            id="m-format"
-            value={d.format}
-            onChange={(e) => {
-              const f = e.target.value as MatchFormat;
-              set({ format: f, length_mins: d.length_mins === DEFAULT_LENGTH[d.format] ? DEFAULT_LENGTH[f] : d.length_mins });
-            }}
-          >
-            {(["11", "9", "7", "5"] as MatchFormat[]).map((f) => (
-              <option key={f} value={f}>
-                {FORMAT_LABEL[f]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
           <span>Length (minutes)</span>
           <input className="input" type="number" inputMode="numeric" id="m-length" min={10} max={150} value={d.length_mins} onChange={(e) => set({ length_mins: +e.target.value })} />
         </label>
@@ -213,8 +195,8 @@ type Pick = { role: "start" | "bench"; slot: number | null };
 function SquadPicker({ match }: { match: Match }) {
   const { data, squad, squadOf, matchRepliesFor, supabase, refresh, toast } = useApp();
   const saved = squadOf(match.id);
-  const [formationName, setFormationName] = useState(formationFor(match.format, match.formation).name);
-  const formation = formationFor(match.format, formationName);
+  const [formationName, setFormationName] = useState(formationFor("11", match.formation).name);
+  const formation = formationFor("11", formationName);
   const [picks, setPicks] = useState<Map<string, Pick>>(() => new Map(saved.map((r) => [r.player_id, { role: r.role, slot: r.role === "start" ? r.slot : null }])));
   const [selected, setSelected] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -284,13 +266,25 @@ function SquadPicker({ match }: { match: Match }) {
     setSelected(null);
   }
   function changeFormation(name: string) {
-    const f = formationFor(match.format, name);
+    const f = formationFor("11", name);
+    const from = formation.slots;
     setFormationName(f.name);
+    // Starters keep a spot in their line (defence, midfield, attack); anyone who no longer fits goes to the bench.
     setPicks((prev) => {
       const next = new Map(prev);
-      next.forEach((v, pid) => {
-        if (v.role === "start" && (v.slot === null || v.slot >= f.slots.length)) next.set(pid, { role: "bench", slot: null });
+      const starters = [...prev].filter(([, v]) => v.role === "start").map(([pid, v]) => ({ pid, pos: v.slot !== null ? (from[v.slot]?.pos ?? "MID") : "MID" }));
+      const used = new Set<string>();
+      const place = new Map<string, number>();
+      f.slots.forEach((sl, i) => {
+        const p = starters.find((x) => !used.has(x.pid) && x.pos === sl.pos);
+        if (p) (place.set(p.pid, i), used.add(p.pid));
       });
+      f.slots.forEach((sl, i) => {
+        if ([...place.values()].includes(i) || sl.pos === "GK") return;
+        const p = starters.find((x) => !used.has(x.pid) && x.pos !== "GK");
+        if (p) (place.set(p.pid, i), used.add(p.pid));
+      });
+      starters.forEach(({ pid }) => next.set(pid, place.has(pid) ? { role: "start", slot: place.get(pid)! } : { role: "bench", slot: null }));
       return next;
     });
   }
@@ -338,12 +332,18 @@ function SquadPicker({ match }: { match: Match }) {
       <div className="squad-grid">
         <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
           <label className="field" style={{ maxWidth: 220 }}>
-            <span>Formation ({FORMAT_LABEL[match.format]})</span>
+            <span>Formation</span>
             <select className="input" id="m-formation" value={formation.name} onChange={(e) => changeFormation(e.target.value)}>
-              {FORMATIONS[match.format].map((f) => (
-                <option key={f.name} value={f.name}>
-                  {f.name}
-                </option>
+              {[...new Set(FORMATIONS["11"].map((f) => backLine(f.name)))].map((g) => (
+                <optgroup key={g} label={g}>
+                  {FORMATIONS["11"]
+                    .filter((f) => backLine(f.name) === g)
+                    .map((f) => (
+                      <option key={f.name} value={f.name}>
+                        {f.name}
+                      </option>
+                    ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -577,7 +577,7 @@ export function MatchView({ match }: { match: Match }) {
   const mine = myPlayers.filter((p) => p.team_ids.includes(match.team_id));
   const rows = squadOf(match.id);
   const byId = new Map(data.players.map((p) => [p.id, p]));
-  const formation = formationFor(match.format, match.formation);
+  const formation = formationFor("11", match.formation);
   const bySlot = new Map<number, Player>();
   rows.forEach((r) => r.role === "start" && r.slot !== null && byId.get(r.player_id) && bySlot.set(r.slot, byId.get(r.player_id)!));
   const bench = rows.filter((r) => r.role === "bench").map((r) => byId.get(r.player_id)).filter(Boolean) as Player[];
