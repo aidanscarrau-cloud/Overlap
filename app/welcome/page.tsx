@@ -79,6 +79,7 @@ export default function Welcome() {
             </Link>
           </div>
           <ul className="lp-ticks">
+            <li>$60 a month for the whole club</li>
             <li>Unlimited teams, players and parents</li>
             <li>Your club&apos;s badge and colours</li>
             <li>Made in Australia</li>
@@ -170,10 +171,17 @@ export default function Welcome() {
           </ul>
         </div>
         <div className="lp-price-card">
-          <b>Founding clubs</b>
-          <p>We&apos;re taking on a small number of clubs at a founding-club price for the first season.</p>
+          <span className="lp-price-for">Whole club</span>
+          <div className="lp-price">
+            <b>$60</b>
+            <span>per month</span>
+          </div>
+          <p>For your whole club, however many teams: $720 a year. A club with 100 players pays about 60c per player a month. Prices in Australian dollars.</p>
           <a href="#contact" className="btn primary lp-big">
-            Ask about pricing
+            Book a demo
+          </a>
+          <a href="/login?mode=signup" className="lp-price-alt">
+            Or set up your club now →
           </a>
         </div>
       </section>
