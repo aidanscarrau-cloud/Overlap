@@ -30,7 +30,7 @@ export function seriesDates(first: string, repeat: Repeat, until: string) {
   return out;
 }
 
-export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?: string; copyFrom?: string }) {
+export function SessionSheet({ id, date, copyFrom, tab: startTab }: { id: string | null; date?: string; copyFrom?: string; tab?: "plan" | "attendance" | "notes" }) {
   const { data, team, drillMap, squad, attendedSet, repliesFor, can, canDo, supabase, refresh, close, toast, open } = useApp();
   const planTeams = data.teams.filter((t) => canDo("sessions.edit", t.id));
   const existing = id ? data.sessions.find((s) => s.id === id) : null;
@@ -61,7 +61,7 @@ export function SessionSheet({ id, date, copyFrom }: { id: string | null; date?:
   const canPlan = canDo("sessions.edit", existing?.team_id ?? (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id));
   const canAttend = canDo("attendance.edit", existing?.team_id ?? team?.id);
   const seeNotes = can("sessions.view_notes");
-  const [tab, setTab] = useState<"plan" | "attendance" | "notes">(canPlan ? "plan" : "attendance");
+  const [tab, setTab] = useState<"plan" | "attendance" | "notes">(startTab ?? (canPlan ? "plan" : "attendance"));
   const [busy, setBusy] = useState(false);
   const [walk, setWalk] = useState<number | null>(null);
   const [edit, setEdit] = useState<null | "when" | "where" | "focus" | "repeat" | "team">(null);

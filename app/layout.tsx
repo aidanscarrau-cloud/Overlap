@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SPRITE } from "@/components/sprite";
+import { StaleBuildReload } from "@/components/StaleBuildReload";
 import "./globals.css";
 import "./club-theme.css";
 
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} style={{ display: "contents" }} />
+        <StaleBuildReload />
         {children}
       </body>
     </html>

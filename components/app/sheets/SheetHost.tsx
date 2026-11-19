@@ -17,7 +17,7 @@ export function SheetHost() {
   // key forces a fresh draft each time a different item opens
   switch (sheet.kind) {
     case "session":
-      return <SessionSheet key={"s" + sheet.id + (sheet.date ?? "") + (sheet.copyFrom ?? "")} id={sheet.id} date={sheet.date} copyFrom={sheet.copyFrom} />;
+      return <SessionSheet key={"s" + sheet.id + (sheet.date ?? "") + (sheet.copyFrom ?? "")} id={sheet.id} date={sheet.date} copyFrom={sheet.copyFrom} tab={sheet.tab} />;
     case "match":
       return <MatchSheet key={"m" + sheet.id + (sheet.date ?? "")} id={sheet.id} date={sheet.date} />;
     case "import-draw":

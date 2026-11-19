@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../AppProvider";
 import { injuryLabel, STAGES } from "../injuries/Injuries";
-import { fmtMon, fmtNum, iso, parseD, todayIso, weekKey } from "@/lib/format";
+import { fmtDay, fmtMon, fmtNum, iso, parseD, todayIso, weekKey } from "@/lib/format";
 import type { Player } from "@/lib/types";
 
 /* Coach insights: how the team is turning up, replying, playing and recovering. Staff only. */
@@ -58,6 +58,8 @@ export function InsightsPage() {
   const minTicks = Math.max(2, Math.ceil(n * 0.25));
   const taken = past.filter((s) => attendedSet(s.id).size >= minTicks);
   const untaken = past.length - taken.length;
+  // The most recent session without a proper register, to fix in one tap.
+  const lastUntaken = [...past].reverse().find((x) => !taken.includes(x));
 
   // Weekly attendance % (attended ÷ squad size, averaged over the week's sessions).
   const weeks = new Map<string, { a: number; s: number; d: string }>();
@@ -81,8 +83,10 @@ export function InsightsPage() {
   const asked = all.filter(
     (s) => s.date >= from && s.date <= iso(new Date(Date.now() + 7 * 864e5)),
   );
+  // Like registers: only judge replies on sessions where families were actually replying.
+  const replyActive = asked.filter((s) => repliesFor(s.id).size >= minTicks);
   const repliedBy = (p: Player) =>
-    asked.filter((s) => repliesFor(s.id).has(p.id)).length;
+    replyActive.filter((s) => repliesFor(s.id).has(p.id)).length;
   const replyAvg =
     asked.length && n
       ? pct(
@@ -128,9 +132,9 @@ export function InsightsPage() {
   // Never ticked at a register in this range: could be new, injured, or not on the register yet.
   const notSeen = rows.filter((r) => r.n >= 3 && !r.seen);
   const quiet =
-    asked.length >= 2
+    replyActive.length >= 2
       ? rows
-          .filter((r) => pct(r.replied, asked.length) < 50)
+          .filter((r) => pct(r.replied, replyActive.length) < 50)
           .sort((a, b) => a.replied - b.replied)
       : [];
 
@@ -310,9 +314,16 @@ export function InsightsPage() {
             </p>
           )}
           {untaken > 0 && (
-            <p className="in-foot">
-              Registers weren&apos;t taken at {untaken} of {past.length} past session{past.length === 1 ? "" : "s"}, so those are left out.
-            </p>
+            <div className="in-foot in-reg">
+              <span>
+                Registers weren&apos;t taken at {untaken} of {past.length} past session{past.length === 1 ? "" : "s"}, so those are left out.
+              </span>
+              {lastUntaken && (
+                <button type="button" className="btn sm" onClick={() => open({ kind: "session", id: lastUntaken.id, tab: "attendance" })}>
+                  Take the register for {fmtDay(lastUntaken.date)} {fmtNum(lastUntaken.date)} {fmtMon(lastUntaken.date)}
+                </button>
+              )}
+            </div>
           )}
         </section>
 
@@ -327,16 +338,22 @@ export function InsightsPage() {
                 <li key={r.p.id}>
                   {who(r.p)}
                   <span>
-                    {r.replied} of {asked.length}
+                    {r.replied} of {replyActive.length}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
             <p className="md-muted">
-              {asked.length >= 2
-                ? "Everyone's replying. 👍"
-                : "Not enough sessions yet."}
+              {replyActive.length >= 2 ? (
+                "Everyone's replying. 👍"
+              ) : asked.length >= 2 ? (
+                <>
+                  Families haven&apos;t started replying to sessions yet. Share the <Link href="/get-app">Get the app</Link> guide so they can reply in one tap.
+                </>
+              ) : (
+                "Not enough sessions yet."
+              )}
             </p>
           )}
         </section>

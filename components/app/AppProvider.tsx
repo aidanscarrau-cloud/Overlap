@@ -12,7 +12,7 @@ import { isStaffRole, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 
 export type Sheet =
-  | { kind: "session"; id: string | null; date?: string; copyFrom?: string }
+  | { kind: "session"; id: string | null; date?: string; copyFrom?: string; tab?: "plan" | "attendance" | "notes" }
   | { kind: "player"; id: string | null }
   | { kind: "drill"; id: string }
   | { kind: "drill-edit"; id: string | null }

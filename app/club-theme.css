@@ -204,7 +204,7 @@ body:has(.look-root[data-look="club"])::before { background: #fff; }
 /* Phone tab bar: five even tabs */
 [data-look="club"] .bnav { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
 [data-look="club"] .bnav a,
-[data-look="club"] .bnav button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 9px; font-size: 12.5px; }
+[data-look="club"] .bnav button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 9px; font-size: 13.5px; }
 [data-look="club"] .bnav button[aria-current="page"] { color: var(--accent-text); }
 [data-look="club"] .bnav a[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
 
@@ -339,7 +339,7 @@ body:has(.look-root[data-look="club"])::before { background: #fff; }
 /* "Add to home screen": a slim banner instead of a big card */
 [data-look="club"] .install-hint { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; margin-bottom: 18px; border-radius: 16px; background: var(--accent-soft); box-shadow: none; border: 0; }
 [data-look="club"] .install-hint h2, [data-look="club"] .install-hint h3 { font-size: 15px; margin: 0; }
-[data-look="club"] .install-hint p { font-size: 13.5px; margin: 0; }
+[data-look="club"] .install-hint p { font-size: 15px; margin: 0; }
 [data-look="club"] .install-hint .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
 [data-look="club"] .md-match { border-left: 0; background: linear-gradient(var(--accent), var(--accent)) top / 100% 5px no-repeat, var(--surface); }
 [data-look="club"] .md-match .reply { display: grid; gap: 8px; }
@@ -1842,3 +1842,5 @@ html { -webkit-text-size-adjust: 100%; }
 :root[data-theme="auto"] .look-root[data-app] .subtabs button[aria-selected="true"], :root[data-theme="auto"] .look-root[data-app] .subtabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: none; }
 }
 [data-look="club"] .theme-seg button { white-space: nowrap; }
+
+[data-look="club"] .in-reg { display: grid; gap: 8px; justify-items: start; }
