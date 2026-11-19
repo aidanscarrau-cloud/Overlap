@@ -106,3 +106,86 @@ ${i.body ? `<div style="font:15px/22px ${font};color:#4b5563;margin-top:3px">${e
   await t.sendMail({ from: `"${plainName(clubName)} via Overlap" <${senderAddress()}>`, to, subject: subject.slice(0, 200), text, html });
   return true;
 }
+
+/**
+ * A one-off email from the club to someone who may not be on Overlap yet (trial sign-ups, offers):
+ * the club's badge and colours, a few short paragraphs, optional detail rows and up to two buttons.
+ */
+export async function sendClubMessage(opts: {
+  to: string;
+  cc?: string;
+  replyTo?: string;
+  club: EmailClub;
+  siteUrl: string;
+  kicker: string;
+  subject: string;
+  greeting: string;
+  paragraphs: string[];
+  rows?: { label: string; value: string }[];
+  button?: { label: string; url: string };
+  second?: { label: string; url: string };
+  footer: string;
+}) {
+  const t = mailer();
+  if (!t) return false;
+  const { club, siteUrl } = opts;
+  const v = brandVars(club.primary, club.accent);
+  const brand = v["--brand"], brand2 = v["--brand-2"], brandInk = v["--brand-ink"], accent = v["--accent"], accentInk = v["--accent-ink"];
+  const accentText = v["--accent-text"], kicker = v["--accent-on-brand"];
+  const logo = club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo) ? club.logo : `${siteUrl}/email/overlap-logo.png`;
+  const font = "Arial,Helvetica,sans-serif";
+  const text = [
+    opts.greeting,
+    "",
+    ...opts.paragraphs.flatMap((p) => [p, ""]),
+    ...(opts.rows ?? []).map((r) => `${r.label}: ${r.value}`),
+    ...(opts.rows?.length ? [""] : []),
+    ...(opts.button ? [`${opts.button.label}: ${opts.button.url}`] : []),
+    ...(opts.second ? [`${opts.second.label}: ${opts.second.url}`] : []),
+    "",
+    opts.footer,
+  ].join("\n");
+  const rows = (opts.rows ?? [])
+    .map(
+      (r) => `<tr><td style="padding:6px 0;border-top:1px solid #e9ebef;font:13px/19px ${font};color:#6b7280;width:120px;vertical-align:top">${esc(r.label)}</td><td style="padding:6px 0 6px 10px;border-top:1px solid #e9ebef;font:bold 14px/19px ${font};color:#15171a">${esc(r.value)}</td></tr>`,
+    )
+    .join("");
+  const btn = (b: { label: string; url: string }, primary: boolean) =>
+    primary
+      ? `<td bgcolor="${accent}" style="border-radius:12px"><a href="${esc(b.url)}" style="display:inline-block;padding:13px 22px;font:bold 15px/18px ${font};color:${accentInk};text-decoration:none;border-radius:12px">${esc(b.label)}</a></td>`
+      : `<td style="padding-left:14px"><a href="${esc(b.url)}" style="font:bold 14px/18px ${font};color:${accentText};text-decoration:none">${esc(b.label)}</a></td>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>${esc(opts.subject)}</title></head>
+<body style="margin:0;padding:0;background:#eef0f3;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(opts.paragraphs[0] ?? "")}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eef0f3" style="background:#eef0f3"><tr><td align="center" style="padding:26px 12px 34px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:540px">
+<tr><td bgcolor="${brand}" style="background:${brand};background-image:linear-gradient(160deg,${brand} 0%,${brand2} 100%);border-radius:22px 22px 0 0;padding:22px 26px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+    <td width="60" valign="middle" style="width:60px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:14px;padding:5px;line-height:0">
+      <img src="${esc(logo)}" width="46" height="46" alt="${esc(club.name)}" style="display:block;width:46px;height:46px;border:0;object-fit:contain"></td></tr></table></td>
+    <td valign="middle" style="padding-left:14px">
+      <div style="font:bold 11px/14px ${font};letter-spacing:2px;text-transform:uppercase;color:${kicker}">${esc(opts.kicker)}</div>
+      <div style="font:bold 22px/26px ${font};color:${brandInk};margin-top:2px">${esc(club.name)}</div>
+    </td></tr></table>
+</td></tr>
+<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:22px 26px 6px">
+  <p style="margin:0 0 14px;font:16px/24px ${font};color:#15171a">${esc(opts.greeting)}</p>
+  ${opts.paragraphs.map((p) => `<p style="margin:0 0 14px;font:15px/23px ${font};color:#374151">${esc(p)}</p>`).join("")}
+  ${rows ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 12px">${rows}</table>` : ""}
+</td></tr>
+<tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 22px 22px;padding:8px 26px 24px">
+  ${opts.button || opts.second ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${opts.button ? btn(opts.button, true) : ""}${opts.second ? btn(opts.second, false) : ""}</tr></table>` : ""}
+</td></tr>
+<tr><td align="center" style="padding:18px 16px 0;font:12px/18px ${font};color:#8b919c">${esc(opts.footer)}<br><b style="color:#5b6472">Overlap</b>, the club hub</td></tr>
+</table></td></tr></table></body></html>`;
+  await t.sendMail({
+    from: `"${plainName(club.name)} via Overlap" <${senderAddress()}>`,
+    to: opts.to,
+    ...(opts.cc ? { cc: opts.cc } : {}),
+    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    subject: opts.subject.slice(0, 200),
+    text,
+    html,
+  });
+  return true;
+}

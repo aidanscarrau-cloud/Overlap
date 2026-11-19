@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { AppNotification, ChatSummary, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team, TeamLineup, FitnessDay, FitnessResult, FitnessBand, Injury } from "@/lib/types";
+import type { AppNotification, ChatSummary, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team, TeamLineup, FitnessDay, FitnessResult, FitnessBand, Injury, Trial, TrialDate, TrialApplicant, TrialAttendance, TrialRating } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -98,6 +98,11 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("fitness_results").select("id,team_id,test_day_id,player_id,test_key,attempt,value,tested_on").eq("club_id", clubId).order("tested_on"),
       supabase.from("fitness_bands").select("test_key,age_group,typical_low,typical_high").eq("club_id", clubId),
       supabase.from("player_injuries").select("*").eq("club_id", clubId).order("occurred_on", { ascending: false }),
+      supabase.from("trials").select("id,club_id,team_id,title,intro,slug,status,closes_on,agreements,ask_player_contact,created_at").eq("club_id", clubId).order("created_at", { ascending: false }),
+      supabase.from("trial_dates").select("id,trial_id,date,start_time,end_time,location").eq("club_id", clubId).order("date"),
+      supabase.from("trial_applicants").select("id,trial_id,team_id,full_name,dob,current_club,positions,parent_name,parent_phone,parent_email,player_phone,player_email,agreed,notes,status,source,offered_at,responded_at,last_emailed,last_emailed_at,player_id,submitted_at").eq("club_id", clubId).order("full_name"),
+      supabase.from("trial_attendance").select("applicant_id,date_id").eq("club_id", clubId),
+      supabase.from("trial_ratings").select("id,applicant_id,date_id,rated_by,rated_by_name,rating,notes,updated_at").eq("club_id", clubId),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -108,7 +113,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -198,5 +203,10 @@ export async function getClubData(): Promise<ClubData> {
     fitnessResults: fitnessResults.error ? [] : ((fitnessResults.data ?? []) as FitnessResult[]).map((r) => ({ ...r, value: Number(r.value) })),
     fitnessBands: fitnessBands.error ? [] : ((fitnessBands.data ?? []) as FitnessBand[]),
     injuries: injuries.error ? [] : ((injuries.data ?? []) as Injury[]),
+    trials: trials.error ? [] : ((trials.data ?? []) as Trial[]),
+    trialDates: trialDates.error ? [] : ((trialDates.data ?? []) as TrialDate[]),
+    trialApplicants: trialApplicants.error ? [] : ((trialApplicants.data ?? []) as TrialApplicant[]),
+    trialAttendance: trialAttendance.error ? [] : ((trialAttendance.data ?? []) as TrialAttendance[]),
+    trialRatings: trialRatings.error ? [] : ((trialRatings.data ?? []) as TrialRating[]),
   };
 }

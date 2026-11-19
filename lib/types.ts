@@ -157,7 +157,8 @@ export type NotificationKind =
   | "self_review"
   | "self_review_done"
   | "message"
-  | "injury";
+  | "injury"
+  | "trial";
 export type ChatSummary = {
   id: string;
   kind: "team" | "staff" | "direct" | "group";
@@ -208,6 +209,36 @@ export type FitnessDay = { id: string; team_id: string; date: string; title: str
 export type FitnessResult = { id: string; team_id: string; test_day_id: string | null; player_id: string; test_key: string; attempt: number; value: number; tested_on: string };
 export type FitnessBand = { test_key: string; age_group: "u10" | "u12" | "u14" | "u16" | "open"; typical_low: number; typical_high: number };
 
+export type TrialStatus = "applied" | "shortlisted" | "offered" | "accepted" | "declined" | "not_selected";
+export type Trial = { id: string; club_id: string; team_id: string; title: string; intro: string; slug: string; status: "open" | "closed" | "done"; closes_on: string | null; agreements: string[]; ask_player_contact: boolean; created_at: string };
+export type TrialDate = { id: string; trial_id: string; date: string; start_time: string; end_time: string | null; location: string };
+export type TrialApplicant = {
+  id: string;
+  trial_id: string;
+  team_id: string;
+  full_name: string;
+  dob: string | null;
+  current_club: string;
+  positions: string;
+  parent_name: string;
+  parent_phone: string;
+  parent_email: string;
+  player_phone: string;
+  player_email: string;
+  agreed: Record<string, boolean>;
+  notes: string;
+  status: TrialStatus;
+  source: "form" | "import" | "manual";
+  offered_at: string | null;
+  responded_at: string | null;
+  last_emailed: string | null;
+  last_emailed_at: string | null;
+  player_id: string | null;
+  submitted_at: string;
+};
+export type TrialAttendance = { applicant_id: string; date_id: string };
+export type TrialRating = { id: string; applicant_id: string; date_id: string | null; rated_by: string; rated_by_name: string; rating: number | null; notes: string; updated_at: string };
+
 export type Injury = {
   id: string; team_id: string; player_id: string; body_part: string; side: "left" | "right" | "both" | "na";
   kind: "sprain" | "strain" | "knock" | "fracture" | "concussion" | "illness" | "overuse" | "other";
@@ -218,6 +249,11 @@ export type Injury = {
 
 export type ClubData = {
   injuries: Injury[];
+  trials: Trial[];
+  trialDates: TrialDate[];
+  trialApplicants: TrialApplicant[];
+  trialAttendance: TrialAttendance[];
+  trialRatings: TrialRating[];
   lineups: TeamLineup[];
   fitnessDays: FitnessDay[];
   fitnessResults: FitnessResult[];

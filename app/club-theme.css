@@ -1420,3 +1420,139 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .in-range button { padding: 8px 12px; font-size: 14px; }
 [data-look="club"] .inj-side { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 760px) { [data-look="club"] .in .phead { display: grid; } [data-look="club"] .in-range { width: 100%; grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------------------------------------------------------------- trials (coach side) */
+[data-look="club"] .tr { display: grid; gap: 14px; }
+[data-look="club"] .tr-empty { background: var(--card, #fff); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+[data-look="club"] .tr-empty h2 { font-family: var(--display); font-size: 22px; margin: 0 0 8px; }
+[data-look="club"] .tr-empty ol { margin: 0 0 16px; padding-left: 20px; line-height: 1.6; }
+[data-look="club"] .tr-head { background: var(--card, #fff); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 12px; }
+[data-look="club"] .tr-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+[data-look="club"] .tr-stats div { display: grid; }
+[data-look="club"] .tr-stats b { font-family: var(--display); font-size: 30px; line-height: 1; }
+[data-look="club"] .tr-stats b.ok { color: #15803d; }
+[data-look="club"] .tr-stats small { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+[data-look="club"] .tr-share { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+[data-look="club"] .tr-share code { font-size: 13px; background: #f2f4f7; padding: 7px 10px; border-radius: 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-look="club"] .tr-pill { font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: #e7f6ec; color: #166534; }
+[data-look="club"] .tr-pill.closed, [data-look="club"] .tr-pill.done { background: #eef1f4; color: #475467; }
+[data-look="club"] .tr-dates { margin: 0; font-size: 13.5px; color: var(--muted); }
+[data-look="club"] .tr-tabs { grid-template-columns: repeat(3, 1fr); max-width: 520px; }
+[data-look="club"] .tr-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+[data-look="club"] .tr-tools .dsearch { flex: 1 1 220px; }
+[data-look="club"] .tr-filter { width: auto; min-width: 160px; }
+[data-look="club"] .tr-count { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+[data-look="club"] .tr-count b { color: var(--ink, #101828); font-size: 16px; }
+[data-look="club"] .tr-rows { list-style: none; margin: 0; padding: 0; background: var(--card, #fff); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+[data-look="club"] .tr-rows li { border-top: 1px solid var(--line); display: flex; align-items: center; }
+[data-look="club"] .tr-rows li:first-child { border-top: 0; }
+[data-look="club"] .tr-rows li > button { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; text-align: left; background: none; border: 0; font: inherit; color: inherit; padding: 11px 14px; cursor: pointer; min-height: 56px; }
+[data-look="club"] .tr-rows li > button:hover { background: #f8f9fb; }
+[data-look="club"] .tr-who { display: grid; min-width: 0; }
+[data-look="club"] .tr-who b { font-size: 15.5px; }
+[data-look="club"] .tr-who small { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-look="club"] .tr-meta { display: grid; justify-items: end; }
+[data-look="club"] .tr-meta small { font-size: 12px; color: var(--muted); }
+[data-look="club"] .tr-star { color: #b45309; font-weight: 700; font-size: 14px; white-space: nowrap; }
+[data-look="club"] .tr-nostar { color: #98a2b3; }
+[data-look="club"] .tr-st { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #eef1f4; color: #475467; white-space: nowrap; }
+[data-look="club"] .tr-st.sl { background: #e8eefc; color: #1e40af; }
+[data-look="club"] .tr-st.of { background: #fff1db; color: #8a4b00; }
+[data-look="club"] .tr-st.ok { background: #e7f6ec; color: #166534; }
+[data-look="club"] .tr-st.no { background: #f3f4f6; color: #6b7280; }
+[data-look="club"] .tr-pick li { padding-left: 12px; }
+[data-look="club"] .tr-pick li.on { background: var(--accent-soft); }
+[data-look="club"] .tr-pick input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--brand); flex: none; }
+[data-look="club"] .tr-rank { width: 26px; text-align: center; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+[data-look="club"] .tr-bulk { position: sticky; bottom: 12px; margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #101828; color: #fff; padding: 10px 12px; border-radius: 14px; box-shadow: 0 8px 24px rgba(16, 24, 40, .25); z-index: 5; }
+[data-look="club"] .tr-bulk b { margin-right: auto; }
+[data-look="club"] .tr-night { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+[data-look="club"] .tr-night li { display: flex; align-items: center; gap: 8px; background: var(--card, #fff); border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px 6px 6px; }
+[data-look="club"] .tr-night li.here { border-color: #86c79b; background: #f3fbf5; }
+[data-look="club"] .tr-in { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: 0; font: inherit; color: inherit; text-align: left; padding: 6px; cursor: pointer; min-height: 48px; }
+[data-look="club"] .tr-box { width: 28px; height: 28px; border-radius: 8px; border: 2px solid #c4cad4; display: grid; place-items: center; font-weight: 800; flex: none; }
+[data-look="club"] .here .tr-box { background: #16a34a; border-color: #16a34a; color: #fff; }
+[data-look="club"] .tr-rate { display: flex; flex: none; }
+[data-look="club"] .tr-rate button { background: none; border: 0; font-size: 22px; line-height: 1; padding: 8px 3px; color: #d0d5dd; cursor: pointer; min-width: 30px; min-height: 44px; }
+[data-look="club"] .tr-rate button[aria-pressed="true"] { color: #e0901f; }
+[data-look="club"] .tr-more { background: none; border: 0; font-size: 20px; color: var(--muted); padding: 8px; cursor: pointer; min-width: 36px; min-height: 44px; }
+[data-look="club"] .tr-add { border: 1.5px dashed var(--line); background: transparent; border-radius: 12px; padding: 10px 12px; font: inherit; font-weight: 600; font-size: 14px; color: var(--accent-text); cursor: pointer; min-height: 44px; margin-top: 10px; }
+[data-look="club"] .tr-form { display: grid; gap: 14px; }
+[data-look="club"] .tr-form h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; color: #344054; }
+[data-look="club"] .tr-form p { margin: 0; }
+[data-look="club"] .tr-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+[data-look="club"] .tr-date { display: grid; grid-template-columns: 1.3fr 1fr 1fr 2fr auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+[data-look="club"] .tr-agree { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-bottom: 6px; align-items: start; }
+[data-look="club"] .tr-check { display: flex; gap: 10px; align-items: center; font-size: 14.5px; }
+[data-look="club"] .tr-check input { width: 18px; height: 18px; accent-color: var(--brand); }
+[data-look="club"] .tr-names { font-weight: 600; font-size: 14px; }
+[data-look="club"] .tr-drop { display: grid; place-items: center; gap: 4px; border: 2px dashed var(--line); border-radius: 16px; padding: 30px 16px; cursor: pointer; text-align: center; }
+[data-look="club"] .tr-drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+[data-look="club"] .tr-drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+[data-look="club"] .tr-drop b { color: var(--accent-text); font-size: 16px; }
+[data-look="club"] .tr-drop small { color: var(--muted); }
+[data-look="club"] .tr-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+[data-look="club"] .tr-map .field > span { font-size: 13px; }
+[data-look="club"] .tr-yn { font-size: 13.5px; background: #f6f7f9; border-radius: 10px; padding: 10px 12px; }
+[data-look="club"] .tr-yn ul { margin: 6px 0 0; padding-left: 18px; color: #475467; }
+[data-look="club"] .tr-app { display: grid; gap: 14px; }
+[data-look="club"] .tr-app h3 { font-size: 15px; margin: 0 0 8px; }
+[data-look="club"] .tr-app-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+[data-look="club"] .tr-app-top small { color: var(--muted); }
+[data-look="club"] .tr-dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 0; font-size: 14.5px; }
+[data-look="club"] .tr-dl dt { color: var(--muted); font-weight: 600; }
+[data-look="club"] .tr-dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+[data-look="club"] .tr-contact { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+[data-look="club"] .tr-contact a { color: var(--accent-text); font-weight: 600; text-decoration: none; }
+[data-look="club"] .tr-agreed { list-style: none; margin: 0; padding: 10px 12px; background: #f6f7f9; border-radius: 10px; font-size: 13px; display: grid; gap: 4px; }
+[data-look="club"] .tr-agreed .y { color: #166534; }
+[data-look="club"] .tr-agreed .n { color: #a3241b; }
+[data-look="club"] .tr-ratings { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+[data-look="club"] .tr-ratings li { font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; border-left: 3px solid var(--line); padding-left: 10px; }
+[data-look="club"] .tr-ratings p { margin: 0; width: 100%; color: #344054; }
+[data-look="club"] .tr-note { display: flex; gap: 8px; }
+[data-look="club"] .tr-ok { margin: 0; padding: 10px 12px; border-radius: 10px; background: #e7f6ec; color: #166534; font-weight: 600; font-size: 14px; }
+@media (max-width: 700px) {
+  [data-look="club"] .tr-stats b { font-size: 24px; }
+  [data-look="club"] .tr-rows li > button { grid-template-columns: 1fr auto; }
+  [data-look="club"] .tr-rows li > button .tr-st { grid-column: 2; }
+  [data-look="club"] .tr-rows li > button .tr-meta, [data-look="club"] .tr-pick li > button .tr-star, [data-look="club"] .tr-pick li > button .tr-nostar { grid-row: 1; grid-column: 2; }
+  [data-look="club"] .tr-date { grid-template-columns: 1fr 1fr; }
+  [data-look="club"] .tr-date input[aria-label="Date"], [data-look="club"] .tr-date input[aria-label="Where"] { grid-column: 1 / -1; }
+  [data-look="club"] .tr-date .icon-btn { grid-column: 2; justify-self: end; }
+  [data-look="club"] .tr-2, [data-look="club"] .tr-map { grid-template-columns: 1fr; }
+  [data-look="club"] .tr-rate button { font-size: 20px; min-width: 26px; padding: 8px 1px; }
+  [data-look="club"] .tr-who small { white-space: normal; }
+}
+
+/* ---------------------------------------------------------------- trials (public pages) */
+.tp { min-height: 100dvh; background: var(--brand); background-image: linear-gradient(170deg, var(--brand) 0%, var(--brand-2, var(--brand)) 60%); display: flex; flex-direction: column; align-items: center; padding: 0 16px 24px; }
+[data-look="club"].tp .tp-top { width: 100%; max-width: 640px; display: flex; align-items: center; gap: 12px; padding: 18px 0; color: var(--brand-ink); font-family: var(--display); font-size: 22px; }
+[data-look="club"].tp .tp-main { width: 100%; max-width: 640px; }
+[data-look="club"].tp .tp-foot { color: var(--brand-ink); opacity: .7; font-size: 12.5px; margin-top: 18px; }
+[data-look="club"] .tp-card { background: var(--surface, #fff); border-radius: 22px; padding: 22px 20px; display: grid; gap: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); }
+[data-look="club"] .tp-card h1 { font-family: var(--display); font-size: 32px; line-height: 1.05; margin: 0; }
+[data-look="club"] .tp-card p { margin: 0; line-height: 1.5; }
+[data-look="club"] .tp-kicker { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); }
+[data-look="club"] .tp-intro { white-space: pre-wrap; }
+[data-look="club"] .tp-muted { color: var(--muted); font-size: 14px; }
+[data-look="club"] .tp-dates { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+[data-look="club"] .tp-dates li { display: grid; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); border-left: 4px solid var(--accent); }
+[data-look="club"] .tp-dates b { font-size: 15px; }
+[data-look="club"] .tp-dates span { font-size: 14px; color: #344054; }
+[data-look="club"] .tp-card fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
+[data-look="club"] .tp-card legend { font-family: var(--display); font-size: 20px; font-weight: 700; margin-bottom: 10px; padding: 0; }
+[data-look="club"] .tp-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+[data-look="club"] .tp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+[data-look="club"] .tp-agree { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; font-size: 15px; line-height: 1.4; padding: 10px 12px; border-radius: 12px; background: #f6f7f9; cursor: pointer; }
+[data-look="club"] .tp-agree input { width: 22px; height: 22px; margin: 0; accent-color: var(--brand); }
+[data-look="club"] .tp-err { color: #a3241b; background: #fde4e2; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
+[data-look="club"] .tp-closed { padding: 12px; border-radius: 12px; background: #eef1f4; font-weight: 600; }
+[data-look="club"] .tp-send { min-height: 52px; font-size: 17px; justify-content: center; width: 100%; text-decoration: none; display: inline-flex; align-items: center; }
+[data-look="club"] .tp-privacy { text-align: center; font-size: 12.5px; }
+[data-look="club"] .tp-done { text-align: center; justify-items: center; }
+[data-look="club"] .tp-done .tp-dates { width: 100%; text-align: left; }
+[data-look="club"] .tp-tick { width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: #fff; display: grid; place-items: center; font-size: 34px; font-weight: 800; }
+[data-look="club"] .tp-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+[data-look="club"] .tp-acts .tp-send { flex: 1 1 220px; width: auto; }
+@media (max-width: 560px) { [data-look="club"] .tp-2 { grid-template-columns: 1fr; } [data-look="club"] .tp-card h1 { font-size: 28px; } }
