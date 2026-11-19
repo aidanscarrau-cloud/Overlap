@@ -114,9 +114,12 @@ export async function sendPending(siteUrl: string): Promise<Result> {
       const clubIds = [...new Set((pending as Pending[]).map((p) => p.club_id))];
       const [{ data: contacts }, { data: clubs }] = await Promise.all([
         db.rpc("notification_contacts", { ids: [...inbox.keys()] }),
-        db.from("clubs").select("id,name").in("id", clubIds),
+        db.from("clubs").select("id,name,logo_url,brand_primary,brand_accent").in("id", clubIds),
       ]);
-      const clubName = new Map(((clubs ?? []) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
+      // Before the club-colours update the brand columns don't exist: fall back to name and badge.
+      const clubRows = clubs ?? (await db.from("clubs").select("id,name,logo_url").in("id", clubIds)).data ?? [];
+      type ClubRow = { id: string; name: string; logo_url: string | null; brand_primary?: string; brand_accent?: string };
+      const clubOf = new Map((clubRows as ClubRow[]).map((c) => [c.id, c]));
       await Promise.all(
         ((contacts ?? []) as { user_id: string; email: string; full_name: string }[]).map(async (c) => {
           const items = inbox.get(c.user_id) ?? [];
@@ -125,7 +128,10 @@ export async function sendPending(siteUrl: string): Promise<Result> {
             await sendNotificationEmail({
               to: c.email,
               name: c.full_name,
-              clubName: clubsHere.length === 1 ? (clubName.get(clubsHere[0]) ?? "Your club") : "Your clubs",
+              club: (() => {
+                const c = clubsHere.length === 1 ? clubOf.get(clubsHere[0]) : undefined;
+                return c ? { name: c.name, logo: c.logo_url, primary: c.brand_primary, accent: c.brand_accent } : { name: clubsHere.length > 1 ? "Your clubs" : "Your club" };
+              })(),
               items: items.map((i): EmailItem => ({ title: i.title, body: i.body, url: i.url })),
               siteUrl,
             });
