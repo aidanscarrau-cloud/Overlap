@@ -98,9 +98,9 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("fitness_results").select("id,team_id,test_day_id,player_id,test_key,attempt,value,tested_on").eq("club_id", clubId).order("tested_on"),
       supabase.from("fitness_bands").select("test_key,age_group,typical_low,typical_high").eq("club_id", clubId),
       supabase.from("player_injuries").select("*").eq("club_id", clubId).order("occurred_on", { ascending: false }),
-      supabase.from("trials").select("id,club_id,team_id,title,intro,slug,status,closes_on,agreements,ask_player_contact,created_at").eq("club_id", clubId).order("created_at", { ascending: false }),
+      supabase.from("trials").select("*").eq("club_id", clubId).order("created_at", { ascending: false }),
       supabase.from("trial_dates").select("id,trial_id,date,start_time,end_time,location").eq("club_id", clubId).order("date"),
-      supabase.from("trial_applicants").select("id,trial_id,team_id,full_name,dob,current_club,positions,parent_name,parent_phone,parent_email,player_phone,player_email,agreed,notes,status,source,offered_at,responded_at,last_emailed,last_emailed_at,player_id,submitted_at").eq("club_id", clubId).order("full_name"),
+      supabase.from("trial_applicants").select("*").eq("club_id", clubId).order("full_name"),
       supabase.from("trial_attendance").select("applicant_id,date_id").eq("club_id", clubId),
       supabase.from("trial_ratings").select("id,applicant_id,date_id,rated_by,rated_by_name,rating,notes,updated_at").eq("club_id", clubId),
     ]);

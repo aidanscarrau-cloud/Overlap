@@ -166,3 +166,17 @@ export const tidyName = (s: string) => {
   if (t !== t.toLowerCase() && t !== t.toUpperCase()) return t;
   return t.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase());
 };
+
+export type TrialPos = "GK" | "DEF" | "MID" | "FWD";
+export const TRIAL_POS: TrialPos[] = ["GK", "DEF", "MID", "FWD"];
+export const POS_GROUP: Record<TrialPos, string> = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
+/** Their first-listed position, the same way the database decides when they join the squad. */
+export function guessPos(positions: string): TrialPos | null {
+  const p = positions.split(/[,/;&|]|\band\b|\bor\b/i)[0]?.trim().toLowerCase() ?? "";
+  if (!p) return null;
+  if (/(goal|keeper|gk)/.test(p)) return "GK";
+  if (/(def|back|\bcb\b|\blb\b|\brb\b|sweeper)/.test(p)) return "DEF";
+  if (/(strik|forward|wing|attack|\bfwd\b|\bcf\b|\bst\b)/.test(p)) return "FWD";
+  return "MID";
+}
+export const posOf = (a: { position?: string | null; positions: string }) => ((a.position as TrialPos | null | undefined) ?? guessPos(a.positions));

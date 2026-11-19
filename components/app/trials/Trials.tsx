@@ -5,8 +5,9 @@ import { useApp } from "../AppProvider";
 import { Modal } from "../fitness/Fitness";
 import { NoTeams } from "../views/Overview";
 import { Icon } from "@/components/ui";
+import { POS_COLOUR } from "../views/Squad";
 import { errMsg, fmtDay, fmtMon, fmtNum, todayIso } from "@/lib/format";
-import { DEFAULT_AGREEMENTS, FIELD_LABEL, TRIAL_STATUS, ageOn, guessColumns, parseCsv, parseDob, tidyName, time12, yesNoColumns, type ImportField } from "@/lib/trials";
+import { POS_GROUP, TRIAL_POS, posOf, type TrialPos, DEFAULT_AGREEMENTS, FIELD_LABEL, TRIAL_STATUS, ageOn, guessColumns, parseCsv, parseDob, tidyName, time12, yesNoColumns, type ImportField } from "@/lib/trials";
 import type { Trial, TrialApplicant, TrialDate, TrialStatus } from "@/lib/types";
 
 /* Trials: set up a sign-up form, import a spreadsheet, check in and rate on trial nights, send offers. */
@@ -549,64 +550,188 @@ function WalkIn({ trial, dateId, onClose }: { trial: Trial; dateId: string; onCl
 
 type Send = "offer" | "not_selected" | "details";
 const SEND_TITLE: Record<Send, string> = { offer: "Send offers", not_selected: "Send “not this time”", details: "Email trial details" };
+type Col = "applied" | "shortlisted" | "offered" | "accepted" | "out";
+const COLS: { k: Col; l: string; hint: string }[] = [
+  { k: "applied", l: "Unsure", hint: "Still deciding" },
+  { k: "shortlisted", l: "Shortlist", hint: "Likely picks" },
+  { k: "offered", l: "Offered", hint: "Waiting for the family" },
+  { k: "accepted", l: "Accepted", hint: "In the squad" },
+  { k: "out", l: "Not selected", hint: "Or declined" },
+];
+const colOf = (s: TrialStatus): Col => (s === "not_selected" || s === "declined" ? "out" : s);
+const initials = (n: string) =>
+  n
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+/** Everything a coach needs to compare triallists without opening each one. */
+function useDetail(trial: Trial) {
+  const { data } = useApp();
+  return useMemo(() => {
+    const dates = data.trialDates.filter((d) => d.trial_id === trial.id);
+    const m = new Map<string, { avg: number | null; nights: boolean[]; coaches: { who: string; avg: number }[]; note: string; n: number }>();
+    for (const a of data.trialApplicants.filter((x) => x.trial_id === trial.id)) {
+      const rs = data.trialRatings.filter((r) => r.applicant_id === a.id);
+      const by = new Map<string, number[]>();
+      for (const r of rs) if (r.rating != null) by.set(r.rated_by_name, [...(by.get(r.rated_by_name) ?? []), r.rating]);
+      const att = new Set(data.trialAttendance.filter((t) => t.applicant_id === a.id).map((t) => t.date_id));
+      const notes = rs.filter((r) => r.notes.trim()).sort((x, y) => y.updated_at.localeCompare(x.updated_at));
+      m.set(a.id, {
+        avg: avgOf(rs),
+        n: rs.filter((r) => r.rating != null).length,
+        nights: dates.map((d) => att.has(d.id)),
+        coaches: [...by.entries()].map(([who, v]) => ({ who, avg: v.reduce((s, x) => s + x, 0) / v.length })),
+        note: notes[0] ? `${notes[0].rated_by_name.split(" ")[0]}: ${notes[0].notes}` : a.notes,
+      });
+    }
+    return m;
+  }, [data.trialDates, data.trialApplicants, data.trialRatings, data.trialAttendance, trial.id]);
+}
 
 function Selection({ trial, apps, canRun, onOpen }: { trial: Trial; apps: TrialApplicant[]; canRun: boolean; onOpen: (id: string) => void }) {
   const { supabase, toast, patch, refresh } = useApp();
-  const scores = useScores(trial.id);
+  const detail = useDetail(trial);
+  const [view, setView] = useState<"groups" | "board">(() => {
+    try {
+      return (localStorage.getItem("overlap-trial-view") as "groups" | "board") || "groups";
+    } catch {
+      return "groups";
+    }
+  });
   const [sel, setSel] = useState<Set<string>>(new Set());
-  const [sending, setSending] = useState<Send | null>(null);
-  const ranked = [...apps].sort((a, b) => (scores.get(b.id)?.avg ?? -1) - (scores.get(a.id)?.avg ?? -1) || a.full_name.localeCompare(b.full_name));
+  const [sending, setSending] = useState<{ kind: Send; apps: TrialApplicant[] } | null>(null);
+  const [targets, setTargets] = useState(false);
   const pick = (id: string) => setSel((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set(s).add(id)));
-  const chosen = apps.filter((a) => sel.has(a.id));
+  const switchView = (v: "groups" | "board") => {
+    setView(v);
+    try {
+      localStorage.setItem("overlap-trial-view", v);
+    } catch {}
+  };
+  const score = (a: TrialApplicant) => detail.get(a.id)?.avg ?? -1;
+  const ranked = [...apps].sort((a, b) => score(b) - score(a) || a.full_name.localeCompare(b.full_name));
 
-  async function setStatus(status: TrialStatus) {
-    const ids = [...sel];
-    patch((x) => ({ ...x, trialApplicants: x.trialApplicants.map((a) => (sel.has(a.id) ? { ...a, status } : a)) }));
+  async function setStatus(ids: string[], status: TrialStatus, msg?: string) {
+    const set = new Set(ids);
+    patch((x) => ({ ...x, trialApplicants: x.trialApplicants.map((a) => (set.has(a.id) ? { ...a, status } : a)) }));
     const { error } = await supabase.from("trial_applicants").update({ status }).in("id", ids);
     if (error) toast(errMsg(error));
-    else toast(`${ids.length} ${status === "shortlisted" ? "shortlisted" : "moved back to signed up"}`);
-    setSel(new Set());
+    else if (msg) toast(msg);
     refresh();
   }
+  function move(a: TrialApplicant, to: Col) {
+    if (colOf(a.status) === to) return;
+    if (a.status === "accepted" || a.status === "declined") return toast(`${a.full_name.split(" ")[0]}'s family has already answered`);
+    if (to === "accepted") return toast("Families accept from the offer email. Move them to Offered to send it.");
+    if (to === "offered") return setSending({ kind: "offer", apps: [a] });
+    if (to === "out") return setSending({ kind: "not_selected", apps: [a] });
+    setStatus([a.id], to, `${a.full_name.split(" ")[0]} moved to ${COLS.find((c) => c.k === to)!.l}`);
+  }
 
+  const row = (a: TrialApplicant, rank: number | null) => {
+    const d = detail.get(a.id);
+    const locked = a.status === "accepted" || a.status === "declined";
+    return (
+      <li key={a.id} className={sel.has(a.id) ? "on" : ""}>
+        {canRun && <input type="checkbox" aria-label={`Select ${a.full_name}`} checked={sel.has(a.id)} onChange={() => pick(a.id)} />}
+        <span className="tr-rank">{rank ?? ""}</span>
+        <button type="button" className="sl-main" onClick={() => onOpen(a.id)}>
+          <span className="sl-name">
+            <b>{a.full_name}</b>
+            <small>{[ageText(a.dob), a.positions, a.current_club].filter(Boolean).join(" · ")}</small>
+          </span>
+          <span className="sl-detail">
+            {d && d.nights.length > 0 && (
+              <span className="sl-nights" title={`At ${d.nights.filter(Boolean).length} of ${d.nights.length} trial nights`}>
+                {d.nights.map((h, i) => (
+                  <i key={i} className={h ? "y" : ""} />
+                ))}
+              </span>
+            )}
+            {d?.coaches.map((c) => (
+              <span key={c.who} className="sl-coach" title={`${c.who}: ${c.avg.toFixed(1)} stars`}>
+                {initials(c.who)} <b>★{c.avg.toFixed(c.avg % 1 ? 1 : 0)}</b>
+              </span>
+            ))}
+            {!a.parent_email && <span className="sl-warn">No email</span>}
+          </span>
+          {d?.note && <span className="sl-note">&ldquo;{d.note}&rdquo;</span>}
+        </button>
+        <span className="sl-side">
+          <Stars v={d?.avg ?? null} />
+          {canRun && (a.status === "applied" || a.status === "shortlisted") ? null : <span className={`tr-st ${STATUS_CLASS[a.status]}`}>{TRIAL_STATUS[a.status]}</span>}
+          {canRun && !locked && (a.status === "applied" || a.status === "shortlisted") && (
+            <button type="button" className={`sl-pin${a.status === "shortlisted" ? " on" : ""}`} onClick={() => setStatus([a.id], a.status === "shortlisted" ? "applied" : "shortlisted")}>
+              {a.status === "shortlisted" ? "✓ Shortlisted" : "+ Shortlist"}
+            </button>
+          )}
+        </span>
+      </li>
+    );
+  };
+
+  const groups: (TrialPos | "none")[] = [...TRIAL_POS, "none"];
   return (
-    <section>
-      <p className="tr-count">Ranked by average rating across all trial nights and coaches. Tick players, then choose what to do.</p>
-      <ul className="tr-rows tr-pick">
-        {ranked.map((a, i) => {
-          const s = scores.get(a.id);
+    <section className="sl">
+      <TargetBar trial={trial} apps={apps} canRun={canRun} onEdit={() => setTargets(true)} />
+      <div className="sl-bar">
+        <div className="seg sl-view" role="tablist" aria-label="Layout">
+          <button type="button" role="tab" aria-selected={view === "groups"} onClick={() => switchView("groups")}>
+            By position
+          </button>
+          <button type="button" role="tab" aria-selected={view === "board"} onClick={() => switchView("board")}>
+            Board
+          </button>
+        </div>
+        <span className="fl-note">{view === "groups" ? "Ranked by average rating within each position." : canRun ? "Drag a player to another column, or use Move." : ""}</span>
+      </div>
+
+      {view === "groups" ? (
+        groups.map((g) => {
+          const list = ranked.filter((a) => (posOf(a) ?? "none") === g);
+          if (!list.length) return null;
+          const committed = list.filter((a) => a.status === "offered" || a.status === "accepted").length;
+          const target = g !== "none" ? trial.position_targets?.[g] : undefined;
+          let r = 0;
           return (
-            <li key={a.id} className={sel.has(a.id) ? "on" : ""}>
-              {canRun && <input type="checkbox" aria-label={`Select ${a.full_name}`} checked={sel.has(a.id)} onChange={() => pick(a.id)} />}
-              <span className="tr-rank">{s?.avg != null ? i + 1 : ""}</span>
-              <button type="button" onClick={() => onOpen(a.id)}>
-                <span className="tr-who">
-                  <b>{a.full_name}</b>
-                  <small>
-                    {[a.positions, `${s?.nights ?? 0} night${s?.nights === 1 ? "" : "s"}`, s?.n ? `${s.n} rating${s.n === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")}
-                    {!a.parent_email ? " · no email" : ""}
-                  </small>
-                </span>
-                <Stars v={s?.avg ?? null} />
-                <span className={`tr-st ${STATUS_CLASS[a.status]}`}>{TRIAL_STATUS[a.status]}</span>
-              </button>
-            </li>
+            <div key={g} className="sl-grp">
+              <h3>
+                <i style={{ background: g === "none" ? "#98a2b3" : POS_COLOUR[g] }} />
+                {g === "none" ? "Position not given" : POS_GROUP[g]}
+                <small>
+                  {list.length} trialling · {committed}
+                  {target ? ` of ${target}` : ""} offered
+                </small>
+              </h3>
+              <ul className="tr-rows sl-rows">{list.map((a) => row(a, detail.get(a.id)?.avg != null ? ++r : null))}</ul>
+            </div>
           );
-        })}
-      </ul>
+        })
+      ) : (
+        <Board apps={ranked} detail={detail} canRun={canRun} onMove={move} onOpen={onOpen} />
+      )}
+
       {canRun && sel.size > 0 && (
         <div className="tr-bulk" role="toolbar" aria-label="Selected players">
           <b>{sel.size} selected</b>
-          <button className="btn sm" onClick={() => setStatus("shortlisted")}>
+          <button
+            className="btn sm"
+            onClick={() => {
+              setStatus([...sel], "shortlisted", `${sel.size} shortlisted`);
+              setSel(new Set());
+            }}
+          >
             Shortlist
           </button>
-          <button className="btn sm primary" onClick={() => setSending("offer")}>
+          <button className="btn sm primary" onClick={() => setSending({ kind: "offer", apps: apps.filter((a) => sel.has(a.id)) })}>
             Send offer
           </button>
-          <button className="btn sm" onClick={() => setSending("not_selected")}>
+          <button className="btn sm" onClick={() => setSending({ kind: "not_selected", apps: apps.filter((a) => sel.has(a.id)) })}>
             Not this time
           </button>
-          <button className="btn sm" onClick={() => setSending("details")}>
+          <button className="btn sm" onClick={() => setSending({ kind: "details", apps: apps.filter((a) => sel.has(a.id)) })}>
             Email details
           </button>
           <button className="btn sm" onClick={() => setSel(new Set())}>
@@ -616,8 +741,8 @@ function Selection({ trial, apps, canRun, onOpen }: { trial: Trial; apps: TrialA
       )}
       {sending && (
         <SendSheet
-          kind={sending}
-          apps={chosen}
+          kind={sending.kind}
+          apps={sending.apps}
           onClose={() => setSending(null)}
           onSent={() => {
             setSel(new Set());
@@ -625,19 +750,225 @@ function Selection({ trial, apps, canRun, onOpen }: { trial: Trial; apps: TrialA
           }}
         />
       )}
+      {targets && <TargetSheet trial={trial} onClose={() => setTargets(false)} />}
     </section>
   );
 }
 
+/** How many places are filled against what the coach wants, overall and by position. */
+function TargetBar({ trial, apps, canRun, onEdit }: { trial: Trial; apps: TrialApplicant[]; canRun: boolean; onEdit: () => void }) {
+  const offered = apps.filter((a) => a.status === "offered").length;
+  const accepted = apps.filter((a) => a.status === "accepted").length;
+  const target = trial.squad_target ?? null;
+  const pt = trial.position_targets ?? {};
+  const committed = offered + accepted;
+  return (
+    <div className="sl-target">
+      <div className="sl-target-main">
+        <span className="sl-big">
+          <b>{committed}</b>
+          {target ? <span>/ {target}</span> : null}
+        </span>
+        <span className="sl-target-txt">
+          <b>{target ? (committed >= target ? (committed > target ? `${committed - target} over your squad target` : "Squad target reached") : `${target - committed} place${target - committed === 1 ? "" : "s"} left`) : "Places offered"}</b>
+          <small>
+            {accepted} accepted · {offered} waiting for an answer
+          </small>
+        </span>
+        {canRun && (
+          <button className="btn sm" onClick={onEdit}>
+            {target ? "Edit targets" : "Set a squad target"}
+          </button>
+        )}
+      </div>
+      {target ? (
+        <span className="sl-meter" aria-hidden="true">
+          <i className="acc" style={{ width: `${Math.min(100, (accepted / target) * 100)}%` }} />
+          <i className="off" style={{ width: `${Math.min(100 - Math.min(100, (accepted / target) * 100), (offered / target) * 100)}%` }} />
+        </span>
+      ) : null}
+      {TRIAL_POS.some((p) => pt[p]) && (
+        <div className="sl-pos">
+          {TRIAL_POS.map((p) => {
+            const n = apps.filter((a) => posOf(a) === p && (a.status === "offered" || a.status === "accepted")).length;
+            const t = pt[p];
+            if (!t) return null;
+            return (
+              <span key={p} className={n >= t ? "full" : ""}>
+                <i style={{ background: POS_COLOUR[p] }} />
+                {p} <b>{n}</b>/{t}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TargetSheet({ trial, onClose }: { trial: Trial; onClose: () => void }) {
+  const { supabase, toast, patch, refresh } = useApp();
+  const [size, setSize] = useState(String(trial.squad_target ?? ""));
+  const [pt, setPt] = useState<Record<TrialPos, string>>(() => Object.fromEntries(TRIAL_POS.map((p) => [p, String(trial.position_targets?.[p] ?? "")])) as Record<TrialPos, string>);
+  const sum = TRIAL_POS.reduce((s, p) => s + (Number(pt[p]) || 0), 0);
+  async function save() {
+    const position_targets = Object.fromEntries(TRIAL_POS.filter((p) => Number(pt[p]) > 0).map((p) => [p, Math.min(40, Number(pt[p]))]));
+    const squad_target = Number(size) > 0 ? Math.min(40, Number(size)) : sum || null;
+    const { error } = await supabase.from("trials").update({ squad_target, position_targets }).eq("id", trial.id);
+    if (error) return toast(/column/.test(error.message) ? "Run database update 30 in Supabase first, then try again." : errMsg(error));
+    patch((x) => ({ ...x, trials: x.trials.map((t) => (t.id === trial.id ? { ...t, squad_target, position_targets } : t)) }));
+    toast("Targets saved");
+    refresh();
+    onClose();
+  }
+  return (
+    <Modal
+      title="Squad targets"
+      onClose={onClose}
+      foot={
+        <>
+          <span className="spacer" />
+          <button className="btn primary" onClick={save}>
+            Save targets
+          </button>
+        </>
+      }
+    >
+      <div className="tr-form">
+        <p>How many players do you want from these trials? Position targets are optional.</p>
+        <label className="field">
+          <span>Squad size</span>
+          <input className="input" type="number" inputMode="numeric" min={1} max={40} value={size} onChange={(e) => setSize(e.target.value)} placeholder={sum ? String(sum) : "e.g. 18"} />
+        </label>
+        <div className="sl-tgrid">
+          {TRIAL_POS.map((p) => (
+            <label key={p} className="field">
+              <span>{POS_GROUP[p]}</span>
+              <input className="input" type="number" inputMode="numeric" min={0} max={40} value={pt[p]} onChange={(e) => setPt((x) => ({ ...x, [p]: e.target.value }))} />
+            </label>
+          ))}
+        </div>
+        {sum > 0 && Number(size) > 0 && sum !== Number(size) && <p className="fg-small">Positions add up to {sum}, squad size is {size}.</p>}
+      </div>
+    </Modal>
+  );
+}
+
+type Detail = ReturnType<typeof useDetail>;
+function Board({ apps, detail, canRun, onMove, onOpen }: { apps: TrialApplicant[]; detail: Detail; canRun: boolean; onMove: (a: TrialApplicant, to: Col) => void; onOpen: (id: string) => void }) {
+  const [drag, setDrag] = useState<string | null>(null);
+  const [over, setOver] = useState<Col | null>(null);
+  return (
+    <div className="sl-board">
+      {COLS.map((c) => {
+        const list = apps.filter((a) => colOf(a.status) === c.k);
+        return (
+          <section
+            key={c.k}
+            className={`sl-col ${c.k}${over === c.k ? " over" : ""}`}
+            aria-label={c.l}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setOver(c.k);
+            }}
+            onDragLeave={() => setOver((o) => (o === c.k ? null : o))}
+            onDrop={(e) => {
+              e.preventDefault();
+              const id = e.dataTransfer.getData("text/plain") || drag;
+              const a = apps.find((x) => x.id === id);
+              setDrag(null);
+              setOver(null);
+              if (a) onMove(a, c.k);
+            }}
+          >
+            <header>
+              <b>{c.l}</b>
+              <span>{list.length}</span>
+              <small>{c.hint}</small>
+            </header>
+            {list.map((a) => {
+              const d = detail.get(a.id);
+              const p = posOf(a);
+              const locked = a.status === "accepted" || a.status === "declined";
+              return (
+                <article
+                  key={a.id}
+                  className={`sl-card${drag === a.id ? " drag" : ""}`}
+                  draggable={canRun && !locked}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${a.full_name}, open details`}
+                  onClick={() => onOpen(a.id)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget && (e.preventDefault(), onOpen(a.id))} onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", a.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    setDrag(a.id);
+                  }} onDragEnd={() => setDrag(null)}>
+                  <div className="sl-card-in">
+                    <span className="sl-card-top">
+                      {p && (
+                        <span className="sl-pos-b" style={{ background: POS_COLOUR[p] }}>
+                          {p}
+                        </span>
+                      )}
+                      <b>{a.full_name}</b>
+                    </span>
+                    <span className="sl-card-meta">
+                      <Stars v={d?.avg ?? null} />
+                      {d && d.nights.length > 0 && (
+                        <small>
+                          {d.nights.filter(Boolean).length}/{d.nights.length} nights
+                        </small>
+                      )}
+                      {a.status === "declined" && <small className="sl-warn">Declined</small>}
+                    </span>
+                  </div>
+                  {canRun && !locked && (
+                    <select className="sl-move" aria-label={`Move ${a.full_name}`} value="" onClick={(e) => e.stopPropagation()} onChange={(e) => e.target.value && onMove(a, e.target.value as Col)}>
+                      <option value="">Move…</option>
+                      {COLS.filter((x) => x.k !== c.k && x.k !== "accepted").map((x) => (
+                        <option key={x.k} value={x.k}>
+                          {x.k === "offered" ? "Send offer" : x.k === "out" ? "Not selected" : x.l}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </article>
+              );
+            })}
+            {!list.length && <p className="sl-empty">{canRun ? "Drop players here" : "No one yet"}</p>}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function SendSheet({ kind, apps, onClose, onSent }: { kind: Send; apps: TrialApplicant[]; onClose: () => void; onSent: () => void }) {
-  const { toast, refresh } = useApp();
+  const { supabase, toast, refresh, patch } = useApp();
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState(true);
   const noEmail = apps.filter((a) => !a.parent_email);
   const done = kind !== "details" ? apps.filter((a) => a.status === "accepted" || a.status === "declined") : [];
   const go = apps.filter((a) => a.parent_email && !done.includes(a));
+  const silent = kind === "not_selected" && !email;
   async function send() {
     setBusy(true);
+    if (silent) {
+      const ids = apps.filter((a) => !done.includes(a)).map((a) => a.id);
+      const { error } = await supabase.from("trial_applicants").update({ status: "not_selected" }).in("id", ids);
+      if (error) toast(errMsg(error));
+      else {
+        patch((x) => ({ ...x, trialApplicants: x.trialApplicants.map((a) => (ids.includes(a.id) ? { ...a, status: "not_selected" } : a)) }));
+        toast(`${ids.length} marked not selected. No emails sent.`);
+        onSent();
+      }
+      setBusy(false);
+      refresh();
+      return;
+    }
     try {
       const r = await fetch("/api/trials/email", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ids: go.map((a) => a.id), kind, message: msg }) });
       const j = (await r.json()) as { ok: boolean; error?: string; sent?: number; failed?: string[] };
@@ -652,6 +983,7 @@ function SendSheet({ kind, apps, onClose, onSent }: { kind: Send; apps: TrialApp
     setBusy(false);
     refresh();
   }
+  const count = silent ? apps.length - done.length : go.length;
   return (
     <Modal
       title={SEND_TITLE[kind]}
@@ -659,8 +991,8 @@ function SendSheet({ kind, apps, onClose, onSent }: { kind: Send; apps: TrialApp
       foot={
         <>
           <span className="spacer" />
-          <button className="btn primary" disabled={busy || !go.length} onClick={send}>
-            {busy ? "Sending…" : `Send to ${go.length} famil${go.length === 1 ? "y" : "ies"}`}
+          <button className="btn primary" disabled={busy || !count} onClick={send}>
+            {busy ? "Sending…" : silent ? `Mark ${count} not selected` : `Send to ${count} famil${count === 1 ? "y" : "ies"}`}
           </button>
         </>
       }
@@ -673,13 +1005,21 @@ function SendSheet({ kind, apps, onClose, onSent }: { kind: Send; apps: TrialApp
               ? "Each family gets a kind thank-you email letting them know there isn't a place this time."
               : "Each family gets an email with the trial dates and times."}
         </p>
-        <p className="tr-names">{go.map((a) => a.full_name).join(", ")}</p>
-        {noEmail.length > 0 && <p className="inj-warn">No parent email for {noEmail.map((a) => a.full_name).join(", ")}. They won&apos;t be emailed.</p>}
+        <p className="tr-names">{(silent ? apps.filter((a) => !done.includes(a)) : go).map((a) => a.full_name).join(", ")}</p>
+        {kind === "not_selected" && (
+          <label className="tr-check">
+            <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} />
+            Email the family (untick if you&apos;ve told them in person)
+          </label>
+        )}
+        {!silent && noEmail.length > 0 && <p className="inj-warn">No parent email for {noEmail.map((a) => a.full_name).join(", ")}. They won&apos;t be emailed. Add one from their details first.</p>}
         {done.length > 0 && <p className="fg-small">Skipping {done.map((a) => a.full_name).join(", ")} (already answered).</p>}
-        <label className="field">
-          <span>Add a personal message (optional)</span>
-          <textarea className="input" rows={3} value={msg} onChange={(e) => setMsg(e.target.value)} maxLength={1500} placeholder={kind === "offer" ? "e.g. Pre-season starts Monday 12 January at 6pm." : ""} />
-        </label>
+        {!silent && (
+          <label className="field">
+            <span>Add a personal message (optional)</span>
+            <textarea className="input" rows={3} value={msg} onChange={(e) => setMsg(e.target.value)} maxLength={1500} placeholder={kind === "offer" ? "e.g. Pre-season starts Monday 12 January at 6pm." : ""} />
+          </label>
+        )}
       </div>
     </Modal>
   );
@@ -712,6 +1052,13 @@ function ApplicantSheet({ a, trial, canRun, onClose }: { a: TrialApplicant; tria
     setMyNote("");
     toast("Note added");
     refresh();
+  }
+  const [contact, setContact] = useState({ parent_email: a.parent_email, parent_phone: a.parent_phone });
+  async function saveField(row: Partial<TrialApplicant>, msg: string) {
+    const { error } = await supabase.from("trial_applicants").update(row).eq("id", a.id);
+    if (error) return toast(/column/.test(error.message) ? "Run database update 30 in Supabase first, then try again." : errMsg(error));
+    patch((x) => ({ ...x, trialApplicants: x.trialApplicants.map((y) => (y.id === a.id ? { ...y, ...row } : y)) }));
+    toast(msg);
   }
   async function setStatus(status: TrialStatus) {
     const { error } = await supabase.from("trial_applicants").update({ status }).eq("id", a.id);
@@ -768,12 +1115,22 @@ function ApplicantSheet({ a, trial, canRun, onClose }: { a: TrialApplicant; tria
               </dd>
             </>
           )}
-          {a.positions && (
-            <>
-              <dt>Positions</dt>
-              <dd>{a.positions}</dd>
-            </>
-          )}
+          <dt>Position</dt>
+          <dd className="tr-posrow">
+            {canRun ? (
+              <select className="input tr-filter" aria-label="Position in the squad" value={posOf(a) ?? ""} onChange={(e) => saveField({ position: (e.target.value || null) as TrialApplicant["position"] }, "Position saved")}>
+                <option value="">Not sure</option>
+                {TRIAL_POS.map((p) => (
+                  <option key={p} value={p}>
+                    {POS_GROUP[p].slice(0, -1)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{posOf(a) ? POS_GROUP[posOf(a)!].slice(0, -1) : "Not sure"}</span>
+            )}
+            {a.positions && <small>They said: {a.positions}</small>}
+          </dd>
           {a.current_club && (
             <>
               <dt>Current club</dt>
@@ -783,6 +1140,16 @@ function ApplicantSheet({ a, trial, canRun, onClose }: { a: TrialApplicant; tria
           <dt>Parent</dt>
           <dd>
             {a.parent_name || "–"}
+            {canRun && (!a.parent_email || !a.parent_phone) && (
+              <span className="tr-fix">
+                {!a.parent_email && (
+                  <input className="input" type="email" placeholder="Add parent's email" value={contact.parent_email} onChange={(e) => setContact((c) => ({ ...c, parent_email: e.target.value }))} onBlur={() => contact.parent_email.includes("@") && saveField({ parent_email: contact.parent_email.trim().toLowerCase() }, "Email saved")} />
+                )}
+                {!a.parent_phone && (
+                  <input className="input" type="tel" placeholder="Add parent's mobile" value={contact.parent_phone} onChange={(e) => setContact((c) => ({ ...c, parent_phone: e.target.value }))} onBlur={() => contact.parent_phone.trim() && saveField({ parent_phone: contact.parent_phone.trim() }, "Mobile saved")} />
+                )}
+              </span>
+            )}
             <span className="tr-contact">
               {a.parent_phone && <a href={`tel:${a.parent_phone.replace(/[^\d+]/g, "")}`}>{a.parent_phone}</a>}
               {a.parent_email && <a href={`mailto:${a.parent_email}`}>{a.parent_email}</a>}

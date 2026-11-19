@@ -210,7 +210,7 @@ export type FitnessResult = { id: string; team_id: string; test_day_id: string |
 export type FitnessBand = { test_key: string; age_group: "u10" | "u12" | "u14" | "u16" | "open"; typical_low: number; typical_high: number };
 
 export type TrialStatus = "applied" | "shortlisted" | "offered" | "accepted" | "declined" | "not_selected";
-export type Trial = { id: string; club_id: string; team_id: string; title: string; intro: string; slug: string; status: "open" | "closed" | "done"; closes_on: string | null; agreements: string[]; ask_player_contact: boolean; created_at: string };
+export type Trial = { id: string; club_id: string; team_id: string; title: string; intro: string; slug: string; status: "open" | "closed" | "done"; closes_on: string | null; agreements: string[]; ask_player_contact: boolean; created_at: string; squad_target?: number | null; position_targets?: Partial<Record<"GK" | "DEF" | "MID" | "FWD", number>> };
 export type TrialDate = { id: string; trial_id: string; date: string; start_time: string; end_time: string | null; location: string };
 export type TrialApplicant = {
   id: string;
@@ -220,6 +220,8 @@ export type TrialApplicant = {
   dob: string | null;
   current_club: string;
   positions: string;
+  /** Set by a coach; otherwise guessed from `positions`. */
+  position?: "GK" | "DEF" | "MID" | "FWD" | null;
   parent_name: string;
   parent_phone: string;
   parent_email: string;
