@@ -53,8 +53,11 @@ export function InsightsPage() {
   const n = players.length;
   const all = sessionsOf(team.id).filter((s) => s.date >= from);
   const past = all.filter((s) => s.date < today || s.date === today);
-  // Sessions where attendance was actually taken.
-  const taken = past.filter((s) => attendedSet(s.id).size > 0);
+  // Only sessions where a register was really taken (a few ticks don't count), so players
+  // aren't marked absent for sessions where the coach just didn't tick anyone.
+  const minTicks = Math.max(2, Math.ceil(n * 0.25));
+  const taken = past.filter((s) => attendedSet(s.id).size >= minTicks);
+  const untaken = past.length - taken.length;
 
   // Weekly attendance % (attended ÷ squad size, averaged over the week's sessions).
   const weeks = new Map<string, { a: number; s: number; d: string }>();
@@ -101,22 +104,29 @@ export function InsightsPage() {
       : null;
     let streak = 0;
     for (let i = seq.length - 1; i >= 0 && !seq[i]; i--) streak++;
+    // A run of misses only matters if they used to come.
+    const cameBefore = seq.slice(0, seq.length - streak).some(Boolean);
     return {
       p,
       rate: seq.length ? pct(seq.filter(Boolean).length, seq.length) : null,
       rRate,
       bRate,
       streak,
+      cameBefore,
+      seen: seq.some(Boolean),
+      n: seq.length,
       replied: repliedBy(p),
     };
   });
   const dropping = rows
     .filter(
       (r) =>
-        r.streak >= 3 ||
-        (r.rRate !== null && r.bRate !== null && r.bRate - r.rRate >= 30),
+        (r.streak >= 3 && r.cameBefore) ||
+        (r.rRate !== null && r.bRate !== null && r.bRate >= 50 && r.bRate - r.rRate >= 30),
     )
     .sort((a, b) => b.streak - a.streak);
+  // Never ticked at a register in this range: could be new, injured, or not on the register yet.
+  const notSeen = rows.filter((r) => r.n >= 3 && !r.seen);
   const quiet =
     asked.length >= 2
       ? rows
@@ -211,7 +221,7 @@ export function InsightsPage() {
           <small>Attendance</small>
           <b>{attAvg === null ? "–" : `${attAvg}%`}</b>
           <span>
-            {taken.length} session{taken.length === 1 ? "" : "s"} recorded
+            register taken at {taken.length} of {past.length} session{past.length === 1 ? "" : "s"}
           </span>
         </div>
         <div>
@@ -284,8 +294,8 @@ export function InsightsPage() {
                 <li key={r.p.id}>
                   {who(r.p)}
                   <span>
-                    {r.streak >= 3
-                      ? `Missed the last ${r.streak} sessions`
+                    {r.streak >= 3 && r.cameBefore
+                      ? `Hasn't been for ${r.streak} sessions`
                       : `${r.bRate}% → ${r.rRate}% in the last 4`}
                   </span>
                 </li>
@@ -293,6 +303,16 @@ export function InsightsPage() {
             </ul>
           ) : (
             <p className="md-muted">Nobody is dropping off. Nice.</p>
+          )}
+          {notSeen.length > 0 && (
+            <p className="in-foot">
+              Not ticked at any register in this range: {notSeen.map((r) => r.p.full_name.split(" ")[0]).join(", ")}. New, injured, or missed off the register?
+            </p>
+          )}
+          {untaken > 0 && (
+            <p className="in-foot">
+              Registers weren&apos;t taken at {untaken} of {past.length} past session{past.length === 1 ? "" : "s"}, so those are left out.
+            </p>
           )}
         </section>
 

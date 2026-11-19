@@ -105,9 +105,21 @@ function CoachHome() {
     const t = tally(next);
     if (t.wait > 0) needs.push({ key: "reply", text: `${t.wait} haven't replied`, sub: `${next.kind === "match" ? next.title : next.title} · ${dayWord(next.date, next.time)}`, act: () => open({ kind: next.kind, id: next.id }) });
   }
+  // Sessions with no plan yet: one line, however many there are.
+  const unplanned = evs.filter((x) => x.date <= weekEnd && x.kind === "session" && canEdit && x.s && x.s.plan.length === 0);
+  if (unplanned.length === 1) {
+    const e = unplanned[0];
+    needs.push({ key: "plan", text: `Plan ${fmtDay(e.date)}'s session`, sub: "No drills yet", act: () => open({ kind: "session", id: e.id }) });
+  } else if (unplanned.length > 1) {
+    const days = [...new Set(unplanned.map((e) => `${fmtDay(e.date)} ${fmtNum(e.date)}`))];
+    needs.push({
+      key: "plan",
+      text: `${unplanned.length} sessions have no plan yet`,
+      sub: `${days.slice(0, 3).join(", ")}${days.length > 3 ? "…" : ""} · start with the first`,
+      act: () => open({ kind: "session", id: unplanned[0].id }),
+    });
+  }
   for (const e of evs.filter((x) => x.date <= weekEnd)) {
-    if (e.kind === "session" && canEdit && e.s && e.s.plan.length === 0)
-      needs.push({ key: "plan" + e.id, text: `Plan ${fmtDay(e.date)}'s session`, sub: "No drills yet", act: () => open({ kind: "session", id: e.id }) });
     if (e.kind === "match" && canMatch && squadOf(e.id).length === 0)
       needs.push({ key: "squad" + e.id, text: `Pick the squad ${e.title}`, sub: `${fmtDay(e.date)} ${fmtNum(e.date)} · ${time12(e.time)}`, act: () => open({ kind: "match", id: e.id }) });
   }
