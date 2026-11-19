@@ -34,9 +34,36 @@ export function ClubPage() {
         {isAdmin && <RolesCard />}
         {(isAdmin || can("invites.create")) && <InvitesCard />}
         {(isAdmin || can("members.view")) && <MembersCard />}
+        {isAdmin && <DataCard />}
         <AccountCard />
       </div>
     </>
+  );
+}
+
+/** Admins can take everything out at any time; links to how it's looked after. */
+function DataCard() {
+  const { data } = useApp();
+  return (
+    <section className="card">
+      <div className="card-h">
+        <h2>Your club&apos;s data</h2>
+      </div>
+      <div className="card-b data-card">
+        <p>Download everything {data.club.name} has in Overlap (teams, players, members, sessions, attendance, matches, development, fitness, injuries and trials) as spreadsheets in one file. Private chat messages aren&apos;t included.</p>
+        <div className="data-acts">
+          <a className="btn primary" href="/api/club/export" download>
+            Download all club data
+          </a>
+          <a className="btn" href="/privacy" target="_blank" rel="noreferrer">
+            Privacy &amp; child safety
+          </a>
+          <a className="btn" href="/help" target="_blank" rel="noreferrer">
+            Help &amp; support
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
 

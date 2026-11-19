@@ -200,6 +200,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </button>
             </form>
             <ThemeToggle compact />
+            <span className="side-help">
+              <Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link>
+            </span>
           </div>
         </div>
         {data.clubs.length === 1 && (
@@ -268,6 +271,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   short: "",
                   icon: "i-bell",
                 },
+                { href: "/help", label: "Help", short: "", icon: "i-help" },
                 ...(standalone
                   ? []
                   : [

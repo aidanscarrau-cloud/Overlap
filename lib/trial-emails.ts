@@ -66,10 +66,13 @@ export function welcomeEmail(
     team: string;
     code: string;
     test?: boolean;
+    /** "invite": the club is moving the family onto Overlap (not a trial offer). */
+    mode?: "trial" | "invite";
   },
 ) {
   const first = o.player.split(" ")[0];
   const join = `${o.siteUrl}/join/${o.code}`;
+  const invite = o.mode === "invite";
   return {
     to: o.to,
     club: o.club,
@@ -77,11 +80,11 @@ export function welcomeEmail(
     banner: o.test
       ? "TEST: this is the email families get after they accept. The code below is a sample and won't work."
       : undefined,
-    kicker: "Welcome to the club",
-    subject: `${o.test ? "[Test] " : ""}Welcome to ${o.club.name}: set up your account`,
+    kicker: invite ? "You're invited" : "Welcome to the club",
+    subject: invite ? `${o.club.name}: join ${first}'s team on Overlap` : `${o.test ? "[Test] " : ""}Welcome to ${o.club.name}: set up your account`,
     greeting: `Hi ${o.parentName.split(" ")[0] || "there"},`,
     paragraphs: [
-      `Great news: ${first} is now part of ${o.team}!`,
+      invite ? `${o.club.name} is moving ${o.team} onto Overlap, and ${first} is already in the squad.` : `Great news: ${first} is now part of ${o.team}!`,
       `${o.club.name} uses Overlap for training times, matches, team chat and ${first}'s development. It takes about a minute to set up.`,
     ],
     code: { label: "Your club code", value: o.code },
@@ -110,6 +113,6 @@ export function welcomeEmail(
         },
       },
     ],
-    footer: `You're getting this because you accepted a place with ${o.club.name}. The code works for 60 days.`,
+    footer: invite ? `You're getting this because ${o.club.name} added ${first} to ${o.team} on Overlap. The code works for 60 days.` : `You're getting this because you accepted a place with ${o.club.name}. The code works for 60 days.`,
   };
 }

@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export function ContactForm() {
-  const [f, setF] = useState({ name: "", club: "", email: "", phone: "", teams: "", message: "", website: "" });
+const TOPICS = ["Help using Overlap", "Something isn't working", "Privacy request", "Billing or my club's account", "Something else"];
+
+/** "Book a demo" on the front page, or kind="support" for the help page. Goes to Overlap by email; no address is shown. */
+export function ContactForm({ kind = "demo" }: { kind?: "demo" | "support" }) {
+  const support = kind === "support";
+  const [f, setF] = useState({ name: "", club: "", email: "", phone: "", teams: "", message: "", website: "", topic: TOPICS[0] });
+  useEffect(() => {
+    if (support && /privacy/i.test(window.location.hash + window.location.search)) setF((x) => ({ ...x, topic: "Privacy request" }));
+  }, [support]);
   const [state, setState] = useState<{ busy?: boolean; ok?: boolean; err?: string }>({});
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
   async function send(e: React.FormEvent) {
     e.preventDefault();
     setState({ busy: true });
     try {
-      const r = await fetch("/api/contact", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
+      const r = await fetch("/api/contact", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, kind }) });
       const j = (await r.json()) as { ok: boolean; error?: string };
       setState(j.ok ? { ok: true } : { err: j.error ?? "Something went wrong. Please try again." });
     } catch {
@@ -20,8 +27,8 @@ export function ContactForm() {
   if (state.ok)
     return (
       <div className="lp-form lp-sent" role="status">
-        <b>Thanks, we&apos;ll be in touch soon.</b>
-        <p>We usually reply within a day.</p>
+        <b>{support ? "Thanks, we've got your message." : "Thanks, we'll be in touch soon."}</b>
+        <p>We usually reply by email within a day.</p>
       </div>
     );
   return (
@@ -32,8 +39,8 @@ export function ContactForm() {
           <input className="input" required maxLength={80} autoComplete="name" value={f.name} onChange={set("name")} />
         </label>
         <label className="field">
-          <span>Club</span>
-          <input className="input" required maxLength={100} autoComplete="organization" value={f.club} onChange={set("club")} />
+          <span>Club{support ? " (optional)" : ""}</span>
+          <input className="input" required={!support} maxLength={100} autoComplete="organization" value={f.club} onChange={set("club")} />
         </label>
       </div>
       <div className="lp-2">
@@ -46,13 +53,24 @@ export function ContactForm() {
           <input className="input" type="tel" maxLength={30} autoComplete="tel" value={f.phone} onChange={set("phone")} />
         </label>
       </div>
+      {support ? (
+        <label className="field">
+          <span>What&apos;s it about?</span>
+          <select className="input" value={f.topic} onChange={(e) => setF((x) => ({ ...x, topic: e.target.value }))}>
+            {TOPICS.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <label className="field">
+          <span>Roughly how many teams? (optional)</span>
+          <input className="input" maxLength={40} value={f.teams} onChange={set("teams")} placeholder="e.g. 12 junior, 3 senior" />
+        </label>
+      )}
       <label className="field">
-        <span>Roughly how many teams? (optional)</span>
-        <input className="input" maxLength={40} value={f.teams} onChange={set("teams")} placeholder="e.g. 12 junior, 3 senior" />
-      </label>
-      <label className="field">
-        <span>Anything you&apos;d like to know? (optional)</span>
-        <textarea className="input" rows={3} maxLength={2000} value={f.message} onChange={set("message")} />
+        <span>{support ? "Your message" : "Anything you'd like to know? (optional)"}</span>
+        <textarea className="input" rows={support ? 5 : 3} required={support} maxLength={2000} value={f.message} onChange={set("message")} />
       </label>
       {/* Left empty by people; filled in by spam bots. */}
       <input className="lp-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={set("website")} />
@@ -62,7 +80,7 @@ export function ContactForm() {
         </p>
       )}
       <button className="btn primary lp-big" disabled={state.busy}>
-        {state.busy ? "Sending…" : "Book a demo"}
+        {state.busy ? "Sending…" : support ? "Send message" : "Book a demo"}
       </button>
     </form>
   );

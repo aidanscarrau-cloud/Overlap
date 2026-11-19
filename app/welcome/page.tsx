@@ -153,7 +153,7 @@ export default function Welcome() {
             <b>Calendar links</b>Sessions and matches in everyone&apos;s phone calendar.
           </li>
           <li>
-            <b>Safe by design</b>Each club&apos;s data is private to that club; roles decide who sees what.
+            <b>Safe by design</b>Each club&apos;s data is private to that club; roles decide who sees what. <Link href="/privacy">How we protect children&apos;s information</Link>.
           </li>
         </ul>
       </section>
@@ -191,7 +191,7 @@ export default function Welcome() {
           <b>Overlap</b> · made in Australia for grassroots football
         </span>
         <span>
-          <Link href="/login">Sign in</Link> · <Link href="/get-app">Get the app</Link>
+          <Link href="/help">Help</Link> · <Link href="/privacy">Privacy &amp; child safety</Link> · <Link href="/get-app">Get the app</Link> · <Link href="/login">Sign in</Link>
         </span>
       </footer>
     </div>

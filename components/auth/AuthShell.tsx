@@ -43,7 +43,12 @@ export function AuthShell({ children, club: given }: { children: React.ReactNode
         )}
       </header>
 
-      <main className="auth2-main">{children}</main>
+      <main className="auth2-main">
+        {children}
+        <p className="auth2-links">
+          <a href="/help">Help</a> · <a href="/privacy">Privacy</a>
+        </p>
+      </main>
 
       <aside className="auth2-art">
         <PitchLines />

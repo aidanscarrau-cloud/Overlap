@@ -1844,3 +1844,40 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .theme-seg button { white-space: nowrap; }
 
 [data-look="club"] .in-reg { display: grid; gap: 8px; justify-items: start; }
+
+/* ---------------------------------------------------------------- help & privacy */
+[data-look="club"] .ip-main { max-width: 780px; margin: 0 auto; padding: 40px 16px 56px; }
+[data-look="club"] .ip-main h1 { font-size: clamp(34px, 5vw, 48px); line-height: 1.05; margin: 8px 0 6px; }
+[data-look="club"] .ip-updated { color: #555f6d; font-size: 14px; margin: 0 0 24px; }
+[data-look="club"] .ip-main section { margin: 0 0 30px; }
+[data-look="club"] .ip-main h2 { font-size: 26px; margin: 0 0 10px; }
+[data-look="club"] .ip-main p, [data-look="club"] .ip-main li { font-size: 16.5px; line-height: 1.65; color: #2b313a; }
+[data-look="club"] .ip-main ul { padding-left: 22px; margin: 0 0 10px; }
+[data-look="club"] .ip-main a { color: #b45a14; font-weight: 600; }
+[data-look="club"] .ip-ticks { list-style: none; padding: 16px 18px !important; background: #fff; border: 1px solid #e3e6eb; border-radius: 14px; }
+[data-look="club"] .ip-ticks li::before { content: "✓"; color: #16a34a; font-weight: 800; margin-right: 8px; }
+[data-look="club"] .ip-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e3e6eb; border-radius: 14px; overflow: hidden; }
+[data-look="club"] .ip-table th, [data-look="club"] .ip-table td { text-align: left; vertical-align: top; padding: 12px 14px; border-top: 1px solid #e3e6eb; font-size: 15.5px; line-height: 1.55; }
+[data-look="club"] .ip-table tr:first-child th, [data-look="club"] .ip-table tr:first-child td { border-top: 0; }
+[data-look="club"] .ip-table th { width: 30%; color: #14161a; }
+[data-look="club"] .ip-table td { color: #2b313a; }
+[data-look="club"] .ip-faq { display: grid; gap: 8px; }
+[data-look="club"] .ip-faq details { background: #fff; border: 1px solid #e3e6eb; border-radius: 12px; padding: 0 16px; }
+[data-look="club"] .ip-faq summary { cursor: pointer; font-weight: 700; font-size: 16.5px; padding: 14px 0; min-height: 48px; list-style: none; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+[data-look="club"] .ip-faq summary::after { content: "+"; font-size: 22px; color: #b45a14; }
+[data-look="club"] .ip-faq details[open] summary::after { content: "–"; }
+[data-look="club"] .ip-faq details p { margin: 0 0 14px; }
+[data-look="club"] .ip .lp-form { background: #fff; border: 1px solid #e3e6eb; border-radius: 16px; padding: 18px; }
+@media (max-width: 600px) { [data-look="club"] .ip-table th { width: 38%; } [data-look="club"] .ip .lp-nav nav a:not(.lp-signin) { display: inline; font-size: 14px; } }
+[data-look="club"] .auth2-links { text-align: center; font-size: 14px; color: var(--muted); margin: 18px 0 0; } [data-look="club"] .auth2-links a { color: var(--muted); }
+[data-look="club"] .side-help { font-size: 12.5px; color: var(--on-navy-muted); margin-top: 4px; } [data-look="club"] .side-help a { color: var(--on-navy-muted); }
+[data-look="club"] .data-card p { margin: 0 0 12px; color: var(--ink-2); } [data-look="club"] .data-acts { display: flex; flex-wrap: wrap; gap: 8px; } [data-look="club"] .data-acts a { text-decoration: none; }
+[data-look="club"] .sq-head-acts { display: flex; gap: 8px; align-items: center; }
+@media (max-width: 760px) { [data-look="club"] .sq-import { display: none; } }
+[data-look="club"] .dempty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+[data-look="club"] .imp-teams { display: grid; gap: 6px; }
+[data-look="club"] .imp-team { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; font-weight: 600; font-size: 14.5px; }
+[data-look="club"] .imp-sum { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14.5px; }
+[data-look="club"] .imp-sum b { font-size: 18px; }
+[data-look="club"] .imp-done b { font-family: var(--display); font-size: 26px; }
+[data-look="club"] .imp-done ul { margin: 8px 0 0; padding-left: 20px; line-height: 1.7; color: var(--ink-2); }

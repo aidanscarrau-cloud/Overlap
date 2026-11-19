@@ -160,12 +160,15 @@ export function parseDob(s: string): string | null {
   }
 }
 
-/** Collapse spaces; fix names typed all in lower or upper case ("JACK SMITH" → "Jack Smith"). */
-export const tidyName = (s: string) => {
-  const t = s.trim().replace(/\s+/g, " ");
-  if (t !== t.toLowerCase() && t !== t.toUpperCase()) return t;
-  return t.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase());
-};
+/** Collapse spaces and fix names typed in the wrong case, word by word ("harry KANE" → "Harry Kane"),
+ *  while leaving mixed-case words alone ("McDonald", "O'Brien", "van Dijk" typed by hand). */
+export const tidyName = (s: string) =>
+  s
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((w) => (w === w.toLowerCase() || w === w.toUpperCase() ? w.toLowerCase().replace(/(^|['-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase()) : w))
+    .join(" ");
 
 export type TrialPos = "GK" | "DEF" | "MID" | "FWD";
 export const TRIAL_POS: TrialPos[] = ["GK", "DEF", "MID", "FWD"];

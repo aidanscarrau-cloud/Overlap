@@ -8,6 +8,7 @@ import { NoTeams } from "./Overview";
 import { LineupPitch } from "../squad/LineupPitch";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
 import { InjuryBoard } from "../injuries/Injuries";
+import { ImportPlayers } from "../squad/ImportPlayers";
 import { fmtDay, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
 import type { Player, Position } from "@/lib/types";
@@ -29,6 +30,7 @@ const REPLY = { y: { t: "✓", c: "#16a34a", bg: "#e8f6ee", w: "Coming" }, n: { 
 function SquadPage() {
   const { data, team, squad, playerRate, can, canDo, isAdmin, open, sessionsOf, repliesFor, evaluationsOf } = useApp();
   const [view, setView] = useState<"pitch" | "list">("pitch");
+  const [importing, setImporting] = useState(false);
   const [filter, setFilter] = useState<"all" | "coming" | "noreply" | "out" | "low">("all");
   const [q, setQ] = useState("");
   useEffect(() => {
@@ -173,9 +175,14 @@ function SquadPage() {
         <div className="dempty">
           <b>{all.length ? "No players match." : "No players yet."}</b>
           {!all.length && canEdit && (
-            <button className="btn primary" onClick={() => open({ kind: "player", id: null })}>
-              Add your first player
-            </button>
+            <span className="dempty-acts">
+              <button className="btn primary" onClick={() => setImporting(true)}>
+                Import from a spreadsheet
+              </button>
+              <button className="btn" onClick={() => open({ kind: "player", id: null })}>
+                Add one player
+              </button>
+            </span>
           )}
         </div>
       )}
@@ -192,12 +199,18 @@ function SquadPage() {
           <h1>Squad</h1>
         </div>
         {canEdit && (
-          <button className="btn primary sq-add" onClick={() => open({ kind: "player", id: null })} aria-label="Add player">
-            <Icon id="i-plus" />
-            <span>Add player</span>
-          </button>
+          <div className="sq-head-acts">
+            <button className="btn sq-import" onClick={() => setImporting(true)}>
+              Import players
+            </button>
+            <button className="btn primary sq-add" onClick={() => open({ kind: "player", id: null })} aria-label="Add player">
+              <Icon id="i-plus" />
+              <span>Add player</span>
+            </button>
+          </div>
         )}
       </div>
+      {importing && <ImportPlayers team={team} onClose={() => setImporting(false)} />}
       <div className="seg sq-seg" role="tablist" aria-label="View">
         <button role="tab" aria-selected={view === "pitch"} onClick={() => pickView("pitch")}>
           Pitch

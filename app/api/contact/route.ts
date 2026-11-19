@@ -20,8 +20,11 @@ export async function POST(request: NextRequest) {
   }
   const s = (k: string, n: number) => String(b[k] ?? "").replace(/[\r\n]+/g, k === "message" ? "\n" : " ").trim().slice(0, n);
   if (s("website", 200)) return NextResponse.json({ ok: true }); // a bot filled in the hidden field
+  const support = b.kind === "support";
+  const topic = s("topic", 60);
   const name = s("name", 80), club = s("club", 100), email = s("email", 120), phone = s("phone", 30), teams = s("teams", 40), message = s("message", 2000);
-  if (name.length < 2 || club.length < 2) return NextResponse.json({ ok: false, error: "Please add your name and club." });
+  if (name.length < 2 || (!support && club.length < 2)) return NextResponse.json({ ok: false, error: support ? "Please add your name." : "Please add your name and club." });
+  if (support && message.length < 5) return NextResponse.json({ ok: false, error: "Please tell us what you need help with." });
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ ok: false, error: "Please check your email address." });
 
   const t = mailer();
@@ -34,8 +37,8 @@ export async function POST(request: NextRequest) {
       from: `"Overlap website" <${fromAddr}>`,
       to,
       replyTo: `"${name.replace(/["<>]/g, "")}" <${email}>`,
-      subject: `Demo request: ${club}`.slice(0, 150),
-      text: [`Name: ${name}`, `Club: ${club}`, `Email: ${email}`, phone && `Phone: ${phone}`, teams && `Teams: ${teams}`, "", message || "(no message)", "", "Reply to this email to answer them directly."].filter((x) => x !== "").join("\n"),
+      subject: (support ? `Support: ${topic || "Help"}${club ? ` (${club})` : ""}` : `Demo request: ${club}`).slice(0, 150),
+      text: [support ? `Topic: ${topic}` : "", `Name: ${name}`, club && `Club: ${club}`, `Email: ${email}`, phone && `Phone: ${phone}`, teams && `Teams: ${teams}`, "", message || "(no message)", "", "Reply to this email to answer them directly."].filter((x) => x !== "").join("\n"),
     });
   } catch {
     return NextResponse.json({ ok: false, error: "Couldn't send right now. Please try again in a minute." });
