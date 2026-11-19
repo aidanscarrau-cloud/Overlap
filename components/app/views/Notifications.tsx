@@ -167,9 +167,9 @@ export function PushCard() {
     setBusy(true);
     try {
       const r = await fetch("/api/push/test", { method: "POST" });
-      const j = (await r.json()) as { ok: boolean; sent?: number; error?: string };
+      const j = (await r.json()) as { ok: boolean; sent?: number; error?: string; problems?: string[] };
       if (!j.ok) toast(j.error ?? "Couldn't send");
-      else if (!j.sent) toast("Your device didn't accept it. Turn notifications off and on again, then retry.");
+      else if (!j.sent) toast(`Not delivered. ${j.problems?.join(" · ") || "Turn notifications off and on again, then retry."}`);
       else toast(`Sent to ${j.sent} device${j.sent === 1 ? "" : "s"}. It should pop up in a few seconds${isStandalone() ? "" : " (if the app is in the background, check your notifications)"}.`);
     } catch {
       toast("Couldn't reach the server. Try again.");

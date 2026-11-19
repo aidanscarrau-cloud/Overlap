@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages and files that work without signing in. The daily job checks its own secret.
-const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/api/calendar", "/t/", "/api/trials/public", "/get-app"];
+const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/api/calendar", "/t/", "/api/trials/public", "/get-app", "/welcome", "/api/contact"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -36,6 +36,12 @@ export async function middleware(request: NextRequest) {
   const user = data?.claims?.sub ? data.claims : null;
 
   const path = request.nextUrl.pathname;
+  // Visitors who aren't signed in see the public front page at the main address.
+  if (!user && path === "/") {
+    const welcome = request.nextUrl.clone();
+    welcome.pathname = "/welcome";
+    return NextResponse.rewrite(welcome);
+  }
   if (!user && !PUBLIC_PATHS.some((p) => path.startsWith(p))) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";

@@ -20,7 +20,11 @@ function setupVapid() {
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (!pub || !priv) return false;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:notifications@overlap.example", pub, priv);
+  // Apple rejects notifications whose sender ("subject") is a made-up address, so fall back to the site's own https address.
+  const site = (process.env.SITE_URL || "").replace(/\/$/, "");
+  const given = (process.env.VAPID_SUBJECT || "").trim();
+  const subject = /^mailto:[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(given) && !/\.(example|test|local|invalid)$/i.test(given) ? given : /^https:\/\//.test(given) ? given : /^https:\/\//.test(site) ? site : "https://overlap-three-pi.vercel.app";
+  webpush.setVapidDetails(subject, pub, priv);
   vapidReady = true;
   return true;
 }
@@ -162,17 +166,22 @@ export async function sendTestPush(userId: string, clubName: string) {
   const payload = JSON.stringify({ title: `Test from ${clubName}`, body: "Notifications are working on this device. 🎉", url: "/notifications", tag: "test" });
   let sent = 0;
   const dead: string[] = [];
+  const problems: string[] = [];
   await Promise.all(
     (subs as { endpoint: string; p256dh: string; auth: string }[]).map(async (s) => {
+      const where = /apple/.test(s.endpoint) ? "iPhone/iPad/Mac" : /fcm|google/.test(s.endpoint) ? "Android/Chrome" : /mozilla/.test(s.endpoint) ? "Firefox" : /windows|notify\.windows/.test(s.endpoint) ? "Edge" : "device";
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 600 });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 600, urgency: "high" });
         sent++;
       } catch (e) {
-        const code = (e as { statusCode?: number }).statusCode;
-        if (code === 404 || code === 410) dead.push(s.endpoint);
+        const err = e as { statusCode?: number; body?: string };
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          dead.push(s.endpoint);
+          problems.push(`${where}: that device's notification sign-up had expired, so it was removed. Turn notifications on again there.`);
+        } else problems.push(`${where}: rejected (${err.statusCode ?? "no response"}${err.body ? ` ${String(err.body).slice(0, 80)}` : ""})`);
       }
     }),
   );
   if (dead.length) await db.from("push_subscriptions").delete().in("endpoint", dead);
-  return { ok: true as const, sent, removed: dead.length };
+  return { ok: true as const, sent, devices: subs.length, removed: dead.length, problems };
 }

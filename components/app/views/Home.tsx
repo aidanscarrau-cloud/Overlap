@@ -23,10 +23,7 @@ import { LineupPitch } from "../squad/LineupPitch";
 export function Home() {
   const { data } = useApp();
   return (
-    <>
-      <InstallHint />
-      {isStaffRole(data.role) ? <CoachHome /> : <FamilyHome />}
-    </>
+    <>{isStaffRole(data.role) ? <CoachHome /> : <FamilyHome />}</>
   );
 }
 
@@ -198,6 +195,9 @@ function CoachHome() {
           </div>
         </section>
       )}
+
+      {/* After the next session, so its Yes/No and buttons stay on the first screen of small phones. */}
+      <InstallHint />
 
       <div className="md-cols">
         <section className="md-sec">
@@ -428,6 +428,8 @@ function FamilyHome() {
           </section>
         );
       })}
+
+      <InstallHint />
 
       <FamilyInjuries />
 
