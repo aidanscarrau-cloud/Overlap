@@ -151,3 +151,28 @@ export async function sendPending(siteUrl: string): Promise<Result> {
   if (dead.size) await db.from("push_subscriptions").delete().in("endpoint", [...dead]);
   return { sent, emailed, skipped, removed: dead.size, configured: true };
 }
+
+/** A test notification to every device this person has turned notifications on for. Nothing is saved. */
+export async function sendTestPush(userId: string, clubName: string) {
+  const db = serviceClient();
+  if (!db) return { ok: false as const, error: "Notifications aren't set up on the server yet (SUPABASE_SERVICE_ROLE_KEY in Vercel)." };
+  if (!setupVapid()) return { ok: false as const, error: "Notifications aren't set up on the server yet (the VAPID keys in Vercel)." };
+  const { data: subs } = await db.from("push_subscriptions").select("endpoint,p256dh,auth").eq("user_id", userId);
+  if (!subs?.length) return { ok: false as const, error: "Notifications aren't turned on for any of your devices yet. Turn them on first." };
+  const payload = JSON.stringify({ title: `Test from ${clubName}`, body: "Notifications are working on this device. 🎉", url: "/notifications", tag: "test" });
+  let sent = 0;
+  const dead: string[] = [];
+  await Promise.all(
+    (subs as { endpoint: string; p256dh: string; auth: string }[]).map(async (s) => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 600 });
+        sent++;
+      } catch (e) {
+        const code = (e as { statusCode?: number }).statusCode;
+        if (code === 404 || code === 410) dead.push(s.endpoint);
+      }
+    }),
+  );
+  if (dead.length) await db.from("push_subscriptions").delete().in("endpoint", dead);
+  return { ok: true as const, sent, removed: dead.length };
+}

@@ -14,16 +14,39 @@ export function mailer() {
   const pass = process.env.SMTP_PASS;
   if (!host || !user || !pass) return (transport = null);
   const port = Number(process.env.SMTP_PORT || 587);
-  transport = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass }, pool: true, maxConnections: 3 });
+  transport = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    pool: true,
+    maxConnections: 3,
+  });
   return transport;
 }
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const esc = (s: string) =>
+  s.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  );
 /** Email headers can't contain line breaks or the sender's name quotes. */
-const plainName = (s: string) => s.replace(/[\r\n"<>]/g, " ").trim().slice(0, 80);
+const plainName = (s: string) =>
+  s
+    .replace(/[\r\n"<>]/g, " ")
+    .trim()
+    .slice(0, 80);
 
 export type EmailItem = { title: string; body: string; url: string };
-export type EmailClub = { name: string; logo?: string | null; primary?: string | null; accent?: string | null };
+export type EmailClub = {
+  name: string;
+  logo?: string | null;
+  primary?: string | null;
+  accent?: string | null;
+};
 
 /** Just the address from EMAIL_FROM, which may be "Name <address>" or a bare address. */
 function senderAddress() {
@@ -32,24 +55,46 @@ function senderAddress() {
 }
 
 /** One email per person, listing everything new for them, in their club's colours with its badge. */
-export async function sendNotificationEmail(opts: { to: string; name: string; club: EmailClub; items: EmailItem[]; siteUrl: string }) {
+export async function sendNotificationEmail(opts: {
+  to: string;
+  name: string;
+  club: EmailClub;
+  items: EmailItem[];
+  siteUrl: string;
+}) {
   const t = mailer();
   if (!t) return false;
   const { to, name, club, items, siteUrl } = opts;
   const clubName = club.name;
   const v = brandVars(club.primary, club.accent);
-  const brand = v["--brand"], brand2 = v["--brand-2"], brandInk = v["--brand-ink"], accent = v["--accent"], accentInk = v["--accent-ink"];
-  const accentText = v["--accent-text"], kicker = v["--accent-on-brand"];
-  const logo = club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo) ? club.logo : `${siteUrl}/email/overlap-logo.png`;
+  const brand = v["--brand"],
+    brand2 = v["--brand-2"],
+    brandInk = v["--brand-ink"],
+    accent = v["--accent"],
+    accentInk = v["--accent-ink"];
+  const accentText = v["--accent-text"],
+    kicker = v["--accent-on-brand"];
+  const logo =
+    club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo)
+      ? club.logo
+      : `${siteUrl}/email/overlap-logo.png`;
   const link = (u: string) => siteUrl + (u.startsWith("/") ? u : "/");
   const first = name.split(" ")[0];
-  const subject = items.length === 1 ? items[0].title : `${items.length} updates from ${clubName}`;
+  const subject =
+    items.length === 1
+      ? items[0].title
+      : `${items.length} updates from ${clubName}`;
   const font = "Arial,Helvetica,sans-serif";
 
   const text = [
     first ? `Hi ${first},` : "Hi,",
     "",
-    ...items.flatMap((i) => [i.title, ...(i.body ? [i.body] : []), link(i.url), ""]),
+    ...items.flatMap((i) => [
+      i.title,
+      ...(i.body ? [i.body] : []),
+      link(i.url),
+      "",
+    ]),
     `Change what ${clubName} emails you: ${siteUrl}/notifications`,
   ].join("\n");
 
@@ -103,7 +148,13 @@ ${i.body ? `<div style="font:15px/22px ${font};color:#4b5563;margin-top:3px">${e
 </td></tr>
 </table></td></tr></table></body></html>`;
 
-  await t.sendMail({ from: `"${plainName(clubName)} via Overlap" <${senderAddress()}>`, to, subject: subject.slice(0, 200), text, html });
+  await t.sendMail({
+    from: `"${plainName(clubName)} via Overlap" <${senderAddress()}>`,
+    to,
+    subject: subject.slice(0, 200),
+    text,
+    html,
+  });
   return true;
 }
 
@@ -122,8 +173,12 @@ export async function sendClubMessage(opts: {
   greeting: string;
   paragraphs: string[];
   rows?: { label: string; value: string }[];
-  /** A numbered "what happens next" list under the main message. */
-  steps?: { heading: string; items: string[] };
+  /** Numbered lists under the main message ("what happens next", "get the app"), each with an optional link. */
+  steps?: {
+    heading: string;
+    items: string[];
+    link?: { label: string; url: string };
+  }[];
   /** A highlighted box, e.g. an invite code. */
   code?: { label: string; value: string };
   /** Shown above everything when this is a test send. */
@@ -136,9 +191,17 @@ export async function sendClubMessage(opts: {
   if (!t) return false;
   const { club, siteUrl } = opts;
   const v = brandVars(club.primary, club.accent);
-  const brand = v["--brand"], brand2 = v["--brand-2"], brandInk = v["--brand-ink"], accent = v["--accent"], accentInk = v["--accent-ink"];
-  const accentText = v["--accent-text"], kicker = v["--accent-on-brand"];
-  const logo = club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo) ? club.logo : `${siteUrl}/email/overlap-logo.png`;
+  const brand = v["--brand"],
+    brand2 = v["--brand-2"],
+    brandInk = v["--brand-ink"],
+    accent = v["--accent"],
+    accentInk = v["--accent-ink"];
+  const accentText = v["--accent-text"],
+    kicker = v["--accent-on-brand"];
+  const logo =
+    club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo)
+      ? club.logo
+      : `${siteUrl}/email/overlap-logo.png`;
   const font = "Arial,Helvetica,sans-serif";
   const text = [
     opts.greeting,
@@ -147,7 +210,12 @@ export async function sendClubMessage(opts: {
     ...(opts.rows ?? []).map((r) => `${r.label}: ${r.value}`),
     ...(opts.rows?.length ? [""] : []),
     ...(opts.code ? [`${opts.code.label}: ${opts.code.value}`, ""] : []),
-    ...(opts.steps ? [opts.steps.heading, ...opts.steps.items.map((x, i) => `${i + 1}. ${x}`), ""] : []),
+    ...(opts.steps ?? []).flatMap((b) => [
+      b.heading,
+      ...b.items.map((x, i) => `${i + 1}. ${x}`),
+      ...(b.link ? [`${b.link.label}: ${b.link.url}`] : []),
+      "",
+    ]),
     ...(opts.button ? [`${opts.button.label}: ${opts.button.url}`] : []),
     ...(opts.second ? [`${opts.second.label}: ${opts.second.url}`] : []),
     "",
@@ -155,7 +223,8 @@ export async function sendClubMessage(opts: {
   ].join("\n");
   const rows = (opts.rows ?? [])
     .map(
-      (r) => `<tr><td style="padding:6px 0;border-top:1px solid #e9ebef;font:13px/19px ${font};color:#6b7280;width:120px;vertical-align:top">${esc(r.label)}</td><td style="padding:6px 0 6px 10px;border-top:1px solid #e9ebef;font:bold 14px/19px ${font};color:#15171a">${esc(r.value)}</td></tr>`,
+      (r) =>
+        `<tr><td style="padding:6px 0;border-top:1px solid #e9ebef;font:13px/19px ${font};color:#6b7280;width:120px;vertical-align:top">${esc(r.label)}</td><td style="padding:6px 0 6px 10px;border-top:1px solid #e9ebef;font:bold 14px/19px ${font};color:#15171a">${esc(r.value)}</td></tr>`,
     )
     .join("");
   const btn = (b: { label: string; url: string }, primary: boolean) =>
@@ -185,16 +254,19 @@ ${opts.banner ? `<tr><td style="padding:0 0 10px"><div style="background:#fff4e5
 </td></tr>
 <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 22px 22px;padding:8px 26px 24px">
   ${opts.button || opts.second ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${opts.button ? btn(opts.button, true) : ""}${opts.second ? btn(opts.second, false) : ""}</tr></table>` : ""}
-  ${
-    opts.steps
-      ? `<div style="margin-top:22px;padding-top:18px;border-top:1px solid #e9ebef"><div style="font:bold 15px/20px ${font};color:#15171a;margin-bottom:10px">${esc(opts.steps.heading)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${opts.steps.items
+  ${(opts.steps ?? [])
+    .map(
+      (b) =>
+        `<div style="margin-top:22px;padding-top:18px;border-top:1px solid #e9ebef"><div style="font:bold 15px/20px ${font};color:#15171a;margin-bottom:10px">${esc(b.heading)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${b.items
           .map(
             (x, i) =>
               `<tr><td width="34" valign="top" style="width:34px;padding:0 0 10px"><div style="width:24px;height:24px;border-radius:12px;background:${accent};color:${accentInk};font:bold 13px/24px ${font};text-align:center">${i + 1}</div></td><td valign="top" style="padding:2px 0 10px;font:14px/21px ${font};color:#374151">${esc(x)}</td></tr>`,
           )
-          .join("")}</table></div>`
-      : ""
-  }
+          .join(
+            "",
+          )}</table>${b.link ? `<a href="${esc(b.link.url)}" style="display:inline-block;margin-top:2px;font:bold 14px/18px ${font};color:${accentText};text-decoration:none">${esc(b.link.label)} &rarr;</a>` : ""}</div>`,
+    )
+    .join("")}
 </td></tr>
 <tr><td align="center" style="padding:18px 16px 0;font:12px/18px ${font};color:#8b919c">${esc(opts.footer)}<br><b style="color:#5b6472">Overlap</b>, the club hub</td></tr>
 </table></td></tr></table></body></html>`;

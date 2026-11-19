@@ -1,12 +1,26 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "../AppProvider";
 import { timeAgo } from "./Announcements";
 import { errMsg } from "@/lib/format";
-import { isIos, isStandalone, pushState, subscribeDevice, unsubscribeDevice, type PushState } from "@/lib/push-client";
-import type { AppNotification, EmailPref, NotificationKind, NotificationPrefs } from "@/lib/types";
+import {
+  isIos,
+  isStandalone,
+  pushState,
+  subscribeDevice,
+  unsubscribeDevice,
+  type PushState,
+} from "@/lib/push-client";
+import type {
+  AppNotification,
+  EmailPref,
+  NotificationKind,
+  NotificationPrefs,
+} from "@/lib/types";
 
 const ICON: Record<NotificationKind, string> = {
   session_new: "i-cal",
@@ -33,15 +47,26 @@ export function Notifications() {
   const router = useRouter();
   const list = data.notifications;
   // Remember which were new when the page opened, so they stay highlighted while you read.
-  const [fresh] = useState(() => new Set(list.filter((n) => !n.read_at).map((n) => n.id)));
+  const [fresh] = useState(
+    () => new Set(list.filter((n) => !n.read_at).map((n) => n.id)),
+  );
 
   // Opening the inbox counts as reading it.
   useEffect(() => {
     const ids = list.filter((n) => !n.read_at).map((n) => n.id);
     if (!ids.length) return;
     const now = new Date().toISOString();
-    patch((d) => ({ ...d, notifications: d.notifications.map((n) => (ids.includes(n.id) ? { ...n, read_at: now } : n)) }));
-    supabase.from("notifications").update({ read_at: now }).in("id", ids).then(() => {});
+    patch((d) => ({
+      ...d,
+      notifications: d.notifications.map((n) =>
+        ids.includes(n.id) ? { ...n, read_at: now } : n,
+      ),
+    }));
+    supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .in("id", ids)
+      .then(() => {});
   }, [list, patch, supabase]);
 
   const clubName = (id: string) => data.clubs.find((c) => c.id === id)?.name;
@@ -68,12 +93,20 @@ export function Notifications() {
         <PushCard />
         <section aria-label="Inbox">
           {list.length === 0 ? (
-            <p className="notif-empty">Nothing yet. You&apos;ll see new sessions, changes, club news and reminders here.</p>
+            <p className="notif-empty">
+              Nothing yet. You&apos;ll see new sessions, changes, club news and
+              reminders here.
+            </p>
           ) : (
             <ul className="notif-list">
               {list.map((n) => (
                 <li key={n.id}>
-                  <button type="button" className="notif-item" data-new={fresh.has(n.id) || undefined} onClick={() => openItem(n)}>
+                  <button
+                    type="button"
+                    className="notif-item"
+                    data-new={fresh.has(n.id) || undefined}
+                    onClick={() => openItem(n)}
+                  >
                     <svg className="i" aria-hidden="true">
                       <use href={`#${ICON[n.kind] ?? "i-bell"}`} />
                     </svg>
@@ -82,10 +115,14 @@ export function Notifications() {
                       {n.body && <span>{n.body}</span>}
                       <small>
                         {timeAgo(n.created_at)}
-                        {multiClub && clubName(n.club_id) ? ` · ${clubName(n.club_id)}` : ""}
+                        {multiClub && clubName(n.club_id)
+                          ? ` · ${clubName(n.club_id)}`
+                          : ""}
                       </small>
                     </span>
-                    {fresh.has(n.id) && <span className="notif-dot" aria-label="New" />}
+                    {fresh.has(n.id) && (
+                      <span className="notif-dot" aria-label="New" />
+                    )}
                   </button>
                 </li>
               ))}
@@ -111,7 +148,12 @@ export function PushCard() {
     setBusy(true);
     try {
       const sub = await subscribeDevice();
-      const { error } = await supabase.rpc("save_push_subscription", { p_endpoint: sub.endpoint, p_p256dh: sub.p256dh, p_auth: sub.auth, p_user_agent: navigator.userAgent });
+      const { error } = await supabase.rpc("save_push_subscription", {
+        p_endpoint: sub.endpoint,
+        p_p256dh: sub.p256dh,
+        p_auth: sub.auth,
+        p_user_agent: navigator.userAgent,
+      });
       if (error) throw error;
       setState("on");
       toast("Notifications are on for this device");
@@ -121,10 +163,27 @@ export function PushCard() {
     }
     setBusy(false);
   }
+  async function test() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/push/test", { method: "POST" });
+      const j = (await r.json()) as { ok: boolean; sent?: number; error?: string };
+      if (!j.ok) toast(j.error ?? "Couldn't send");
+      else if (!j.sent) toast("Your device didn't accept it. Turn notifications off and on again, then retry.");
+      else toast(`Sent to ${j.sent} device${j.sent === 1 ? "" : "s"}. It should pop up in a few seconds${isStandalone() ? "" : " (if the app is in the background, check your notifications)"}.`);
+    } catch {
+      toast("Couldn't reach the server. Try again.");
+    }
+    setBusy(false);
+  }
   async function turnOff() {
     setBusy(true);
     const endpoint = await unsubscribeDevice().catch(() => null);
-    if (endpoint) await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    if (endpoint)
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("endpoint", endpoint);
     setState("off");
     setBusy(false);
     toast("Notifications are off for this device");
@@ -137,23 +196,37 @@ export function PushCard() {
         <>
           <b>Get notifications on your iPhone</b>
           <p>
-            First add Overlap to your home screen: tap the Share button <ShareGlyph /> at the bottom of Safari, then <b>Add to Home Screen</b>. Open Overlap from the new icon and
-            come back here to turn notifications on.
+            First add Overlap to your home screen: tap the Share button{" "}
+            <ShareGlyph /> at the bottom of Safari, then{" "}
+            <b>Add to Home Screen</b>. Open Overlap from the new icon and come
+            back here to turn notifications on.
           </p>
         </>
       )}
       {state === "denied" && (
         <>
           <b>Notifications are blocked</b>
-          <p>Your phone or browser is blocking them for Overlap. Allow notifications for this site in its settings, then reload this page.</p>
+          <p>
+            Your phone or browser is blocking them for Overlap. Allow
+            notifications for this site in its settings, then reload this page.
+          </p>
         </>
       )}
       {state === "off" && (
         <>
           <b>Get a notification when something changes</b>
-          <p>New and cancelled sessions, club news, and a reminder the evening before if you haven&apos;t replied. You&apos;ll also get these by email unless you change it below.</p>
+          <p>
+            New and cancelled sessions, club news, and a reminder the evening
+            before if you haven&apos;t replied. You&apos;ll also get these by
+            email unless you change it below.
+          </p>
           <div>
-            <button className="btn primary" type="button" disabled={busy} onClick={turnOn}>
+            <button
+              className="btn primary"
+              type="button"
+              disabled={busy}
+              onClick={turnOn}
+            >
               Turn on notifications
             </button>
           </div>
@@ -162,6 +235,9 @@ export function PushCard() {
       {state === "on" && (
         <div className="notif-on">
           <span>Notifications are on for this device.</span>
+          <button className="btn primary" type="button" disabled={busy} onClick={test}>
+            Send a test notification
+          </button>
           <button className="btn" type="button" disabled={busy} onClick={turnOff}>
             Turn off
           </button>
@@ -171,12 +247,39 @@ export function PushCard() {
   );
 }
 
-const PREF_ROWS: { key: Exclude<keyof NotificationPrefs, "email">; label: string; hint: string; staff?: boolean; family?: boolean }[] = [
-  { key: "sessions", label: "Sessions and matches", hint: "New, moved or cancelled sessions and matches, and squads" },
-  { key: "announcements", label: "Club news and results", hint: "New announcements and match results" },
-  { key: "reminders", label: "Reply reminders", hint: "The evening before, if you haven't said if you're coming", family: true },
-  { key: "development", label: "Development", hint: "New reviews, goals and self-review requests" },
-  { key: "messages", label: "Chat messages", hint: "New messages in your chats (at most one buzz every few minutes per chat; never by email)" },
+const PREF_ROWS: {
+  key: Exclude<keyof NotificationPrefs, "email">;
+  label: string;
+  hint: string;
+  staff?: boolean;
+  family?: boolean;
+}[] = [
+  {
+    key: "sessions",
+    label: "Sessions and matches",
+    hint: "New, moved or cancelled sessions and matches, and squads",
+  },
+  {
+    key: "announcements",
+    label: "Club news and results",
+    hint: "New announcements and match results",
+  },
+  {
+    key: "reminders",
+    label: "Reply reminders",
+    hint: "The evening before, if you haven't said if you're coming",
+    family: true,
+  },
+  {
+    key: "development",
+    label: "Development",
+    hint: "New reviews, goals and self-review requests",
+  },
+  {
+    key: "messages",
+    label: "Chat messages",
+    hint: "New messages in your chats (at most one buzz every few minutes per chat; never by email)",
+  },
 ];
 
 function PrefsCard() {
@@ -185,10 +288,17 @@ function PrefsCard() {
   const prefs = data.notificationPrefs;
   const rows = PREF_ROWS.filter((r) => !r.family || family);
 
-  const flip = (key: Exclude<keyof NotificationPrefs, "email">) => save({ ...prefs, [key]: !prefs[key] });
+  const flip = (key: Exclude<keyof NotificationPrefs, "email">) =>
+    save({ ...prefs, [key]: !prefs[key] });
   async function save(next: NotificationPrefs) {
     patch((d) => ({ ...d, notificationPrefs: next }));
-    const { error } = await supabase.from("notification_prefs").upsert({ user_id: data.userId, ...next, updated_at: new Date().toISOString() });
+    const { error } = await supabase
+      .from("notification_prefs")
+      .upsert({
+        user_id: data.userId,
+        ...next,
+        updated_at: new Date().toISOString(),
+      });
     if (error) {
       patch((d) => ({ ...d, notificationPrefs: prefs }));
       toast(errMsg(error));
@@ -198,7 +308,10 @@ function PrefsCard() {
   return (
     <section className="notif-prefs" aria-labelledby="notif-prefs-h">
       <h2 id="notif-prefs-h">What to send me</h2>
-      <p className="notif-muted">Everything still shows up in this list. These choose what reaches your phone and email.</p>
+      <p className="notif-muted">
+        Everything still shows up in this list. These choose what reaches your
+        phone and email.
+      </p>
       <ul>
         {rows.map((r) => (
           <li key={r.key}>
@@ -206,7 +319,14 @@ function PrefsCard() {
               <b id={`pref-${r.key}`}>{r.label}</b>
               <small>{r.hint}</small>
             </span>
-            <button type="button" className="switch" role="switch" aria-checked={prefs[r.key]} aria-labelledby={`pref-${r.key}`} onClick={() => flip(r.key)}>
+            <button
+              type="button"
+              className="switch"
+              role="switch"
+              aria-checked={prefs[r.key]}
+              aria-labelledby={`pref-${r.key}`}
+              onClick={() => flip(r.key)}
+            >
               <i />
             </button>
           </li>
@@ -217,7 +337,13 @@ function PrefsCard() {
           <b>Email me</b>
           <small>Sent to {data.myEmail || "your sign-in email"}</small>
         </span>
-        <select className="input" value={prefs.email} onChange={(e) => save({ ...prefs, email: e.target.value as EmailPref })}>
+        <select
+          className="input"
+          value={prefs.email}
+          onChange={(e) =>
+            save({ ...prefs, email: e.target.value as EmailPref })
+          }
+        >
           <option value="always">Every time</option>
           <option value="no_phone">Only if phone notifications are off</option>
           <option value="never">Never</option>
@@ -230,43 +356,83 @@ function PrefsCard() {
 
 function ShareGlyph() {
   return (
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-label="Share" style={{ verticalAlign: "-3px", fill: "none", stroke: "currentColor", strokeWidth: 1.8 }}>
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      aria-label="Share"
+      style={{
+        verticalAlign: "-3px",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: 1.8,
+      }}
+    >
       <path d="M12 3v12M8 7l4-4 4 4M6 11v9h12v-9" />
     </svg>
   );
 }
 
-/** A small, dismissible nudge on the home page for phones that haven't installed the app. */
+/** On phones that haven't installed Overlap: get the app (step-by-step guide). Once installed: turn on notifications. */
 export function InstallHint() {
-  const [show, setShow] = useState(false);
+  const [mode, setMode] = useState<"install" | "notify" | null>(null);
   useEffect(() => {
-    let dismissed = false;
+    let dismissed = "";
     try {
-      dismissed = localStorage.getItem("overlap-install-hint") === "no";
+      dismissed = localStorage.getItem("overlap-install-hint") ?? "";
     } catch {}
     const phone = window.matchMedia("(max-width: 860px)").matches;
-    setShow(phone && !isStandalone() && !dismissed);
+    if (isStandalone()) {
+      if (dismissed === "no-notify") return;
+      pushState().then((s) => s === "off" && setMode("notify"));
+    } else if (phone && dismissed !== "no") setMode("install");
   }, []);
-  if (!show) return null;
+  if (!mode) return null;
   function dismiss() {
     try {
-      localStorage.setItem("overlap-install-hint", "no");
+      localStorage.setItem(
+        "overlap-install-hint",
+        mode === "notify" ? "no-notify" : "no",
+      );
     } catch {}
-    setShow(false);
+    setMode(null);
   }
+  if (mode === "notify")
+    return (
+      <div className="install-wrap">
+        <PushCard />
+        <button
+          className="btn sm install-later"
+          type="button"
+          onClick={dismiss}
+        >
+          Not now
+        </button>
+      </div>
+    );
   return (
-    <aside className="notif-card install-hint" aria-label="Install Overlap">
-      <b>Add Overlap to your home screen</b>
+    <aside className="notif-card install-hint" aria-label="Get the app">
+      <span className="install-ic" aria-hidden="true">
+        <svg viewBox="0 0 40 40">
+          <rect width="40" height="40" rx="11" fill="#2d5bff" />
+          <path
+            d="M9 15c6 9 14 11 22 8M9 27c4-12 13-15 22-12"
+            stroke="#fff"
+            strokeWidth="3.4"
+            fill="none"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <b>Get the Overlap app. It&apos;s free</b>
       <p>
-        {isIos() ? (
-          <>
-            Tap Share <ShareGlyph /> in Safari, then <b>Add to Home Screen</b>. It opens like an app and can send you notifications.
-          </>
-        ) : (
-          <>Open your browser menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>. It opens like an app and can send you notifications.</>
-        )}
+        Add it to your home screen in 30 seconds. It opens like an app and tells
+        you when training changes.
       </p>
       <div>
+        <Link className="btn primary" href="/get-app">
+          Show me how
+        </Link>
         <button className="btn" type="button" onClick={dismiss}>
           Not now
         </button>
@@ -277,24 +443,47 @@ export function InstallHint() {
 
 /** Sends yourself a sample club email, and says plainly what went wrong if it can't. */
 function TestEmail() {
-  const [state, setState] = useState<{ busy?: boolean; ok?: boolean; msg?: string }>({});
+  const [state, setState] = useState<{
+    busy?: boolean;
+    ok?: boolean;
+    msg?: string;
+  }>({});
   async function send() {
     setState({ busy: true });
     try {
       const r = await fetch("/api/email/test", { method: "POST" });
-      const j = (await r.json()) as { ok: boolean; to?: string; error?: string };
-      setState(j.ok ? { ok: true, msg: `Sent to ${j.to}. Check your inbox (and spam) in a minute.` } : { ok: false, msg: j.error ?? "Couldn't send." });
+      const j = (await r.json()) as {
+        ok: boolean;
+        to?: string;
+        error?: string;
+      };
+      setState(
+        j.ok
+          ? {
+              ok: true,
+              msg: `Sent to ${j.to}. Check your inbox (and spam) in a minute.`,
+            }
+          : { ok: false, msg: j.error ?? "Couldn't send." },
+      );
     } catch {
       setState({ ok: false, msg: "Couldn't reach the server. Try again." });
     }
   }
   return (
     <div className="notif-test">
-      <button type="button" className="btn" disabled={state.busy} onClick={send}>
+      <button
+        type="button"
+        className="btn"
+        disabled={state.busy}
+        onClick={send}
+      >
         {state.busy ? "Sending…" : "Send me a test email"}
       </button>
       {state.msg && (
-        <p className={`notif-test-msg${state.ok ? " ok" : " bad"}`} role="status">
+        <p
+          className={`notif-test-msg${state.ok ? " ok" : " bad"}`}
+          role="status"
+        >
           {state.msg}
         </p>
       )}

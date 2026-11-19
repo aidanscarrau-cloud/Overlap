@@ -8,6 +8,7 @@ import { SheetHost } from "./sheets/SheetHost";
 import { ROLES } from "@/lib/constants";
 import { initials } from "@/lib/format";
 import { Crest } from "@/components/ui";
+import { isStandalone } from "@/lib/push-client";
 
 const NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
@@ -45,6 +46,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isSchedule = path.startsWith("/sessions") || path.startsWith("/matches");
   const active = (href: string) => (href === "/" ? path === "/" : href === "/sessions" ? isSchedule : path.startsWith(href));
   const [more, setMore] = useState(false);
+  const [standalone, setStandalone] = useState(true);
+  useEffect(() => setStandalone(isStandalone()), []);
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
   // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
@@ -168,7 +171,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="more-grid">
-              {[...moreItems, { href: "/notifications", label: "Notifications", short: "", icon: "i-bell" }].map((n) => (
+              {[...moreItems, { href: "/notifications", label: "Notifications", short: "", icon: "i-bell" }, ...(standalone ? [] : [{ href: "/get-app", label: "Get the app", short: "", icon: "i-phone" }])].map((n) => (
                 <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined} onClick={() => setMore(false)}>
                   <span className="more-ic">
                     <svg className="i">

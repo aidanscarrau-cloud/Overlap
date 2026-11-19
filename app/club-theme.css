@@ -1643,3 +1643,39 @@ html { -webkit-text-size-adjust: 100%; }
   [data-look="club"] .sl-name small { width: 100%; }
 }
 [data-look="club"] .tp-preview { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff4e5; border: 1px solid #f5c98b; color: #7a3e00; font-weight: 700; font-size: 13.5px; text-align: left; }
+
+/* ---------------------------------------------------------------- get the app */
+[data-look="club"] .ga { display: grid; gap: 14px; }
+[data-look="club"] .ga-head { color: var(--brand-ink); display: grid; gap: 6px; padding: 4px 2px 6px; }
+[data-look="club"] .ga-head h1 { font-family: var(--display); font-size: 36px; line-height: 1.05; margin: 0; }
+[data-look="club"] .ga-head p { margin: 0; opacity: .9; line-height: 1.5; }
+[data-look="club"] .ga-kicker { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-on-brand, var(--accent)); }
+[data-look="club"] .ga-tabs { grid-template-columns: repeat(3, 1fr); max-width: none; background: rgba(255, 255, 255, .14); }
+[data-look="club"] .ga-tabs button { color: var(--brand-ink); }
+[data-look="club"] .ga-tabs button[aria-selected="true"] { color: var(--ink); }
+[data-look="club"] .ga-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+[data-look="club"] .ga-step, [data-look="club"] .ga-warn, [data-look="club"] .ga-quick { background: var(--surface, #fff); border-radius: 18px; padding: 16px; display: grid; grid-template-columns: 34px 1fr; gap: 6px 12px; align-items: start; box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
+[data-look="club"] .ga-warn, [data-look="club"] .ga-quick { grid-template-columns: 1fr; gap: 10px; }
+[data-look="club"] .ga-warn { background: #fff4e5; }
+[data-look="club"] .ga-warn p, [data-look="club"] .ga-quick p { margin: 0; }
+[data-look="club"] .ga-n { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink, #111); display: grid; place-items: center; font-weight: 800; font-size: 16px; }
+[data-look="club"] .ga-step b { font-size: 17px; display: block; margin-top: 5px; }
+[data-look="club"] .ga-step p { margin: 4px 0 0; color: #475467; line-height: 1.45; }
+[data-look="club"] .ga-pic { grid-column: 1 / -1; display: grid; place-items: center; background: #eef1f5; border-radius: 14px; padding: 12px; }
+[data-look="club"] .ga-pic svg { width: min(190px, 60%); height: auto; }
+[data-look="club"] .ga-card { background: var(--surface, #fff); border-radius: 18px; padding: 18px; box-shadow: 0 6px 20px rgba(0, 0, 0, .12); display: grid; gap: 8px; }
+[data-look="club"] .ga-card h2 { font-family: var(--display); font-size: 22px; margin: 0; }
+[data-look="club"] .ga-card p { margin: 0; }
+[data-look="club"] .ga-why ul { margin: 0; padding-left: 20px; line-height: 1.7; color: #344054; }
+[data-look="club"] .ga-ok { text-align: center; justify-items: center; }
+[data-look="club"] .ga-tick { width: 60px; height: 60px; border-radius: 50%; background: #16a34a; color: #fff; display: grid; place-items: center; font-size: 30px; font-weight: 800; }
+[data-look="club"] .ga-big { min-height: 52px; font-size: 17px; width: 100%; justify-content: center; text-decoration: none; display: inline-flex; align-items: center; }
+@media (min-width: 700px) { [data-look="club"] .ga-step { grid-template-columns: 34px 1fr 200px; } [data-look="club"] .ga-pic { grid-column: 3; grid-row: 1 / span 2; } [data-look="club"] .ga-pic svg { width: 150px; } }
+[data-look="club"] .install-hint { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; align-items: start; }
+[data-look="club"] .install-hint .install-ic { grid-row: span 2; }
+[data-look="club"] .install-hint .install-ic svg { width: 44px; height: 44px; display: block; }
+[data-look="club"] .install-hint > div { grid-column: 1 / -1; display: flex; gap: 8px; }
+[data-look="club"] .install-wrap { display: grid; gap: 6px; }
+[data-look="club"] .install-later { justify-self: end; }
+[data-look="club"] .notif-on { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+[data-look="club"] .notif-on span { flex: 1 1 100%; }
