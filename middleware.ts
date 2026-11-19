@@ -41,6 +41,8 @@ export async function middleware(request: NextRequest) {
     login.pathname = "/login";
     login.search = "";
     if (path !== "/") login.searchParams.set("next", path + request.nextUrl.search);
+    // Invite links are mostly for people who don't have an account yet.
+    if (path.startsWith("/join/")) login.searchParams.set("mode", "signup");
     return NextResponse.redirect(login);
   }
   return response;

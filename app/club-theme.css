@@ -1642,3 +1642,4 @@ html { -webkit-text-size-adjust: 100%; }
   [data-look="club"] .sl-side { flex: 1 1 100%; display: flex; gap: 10px; align-items: center; padding: 0 0 10px 52px; }
   [data-look="club"] .sl-name small { width: 100%; }
 }
+[data-look="club"] .tp-preview { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff4e5; border: 1px solid #f5c98b; color: #7a3e00; font-weight: 700; font-size: 13.5px; text-align: left; }

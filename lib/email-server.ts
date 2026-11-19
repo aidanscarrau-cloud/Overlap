@@ -122,6 +122,12 @@ export async function sendClubMessage(opts: {
   greeting: string;
   paragraphs: string[];
   rows?: { label: string; value: string }[];
+  /** A numbered "what happens next" list under the main message. */
+  steps?: { heading: string; items: string[] };
+  /** A highlighted box, e.g. an invite code. */
+  code?: { label: string; value: string };
+  /** Shown above everything when this is a test send. */
+  banner?: string;
   button?: { label: string; url: string };
   second?: { label: string; url: string };
   footer: string;
@@ -140,6 +146,8 @@ export async function sendClubMessage(opts: {
     ...opts.paragraphs.flatMap((p) => [p, ""]),
     ...(opts.rows ?? []).map((r) => `${r.label}: ${r.value}`),
     ...(opts.rows?.length ? [""] : []),
+    ...(opts.code ? [`${opts.code.label}: ${opts.code.value}`, ""] : []),
+    ...(opts.steps ? [opts.steps.heading, ...opts.steps.items.map((x, i) => `${i + 1}. ${x}`), ""] : []),
     ...(opts.button ? [`${opts.button.label}: ${opts.button.url}`] : []),
     ...(opts.second ? [`${opts.second.label}: ${opts.second.url}`] : []),
     "",
@@ -159,6 +167,7 @@ export async function sendClubMessage(opts: {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(opts.paragraphs[0] ?? "")}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eef0f3" style="background:#eef0f3"><tr><td align="center" style="padding:26px 12px 34px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:540px">
+${opts.banner ? `<tr><td style="padding:0 0 10px"><div style="background:#fff4e5;border:1px solid #f5c98b;border-radius:12px;padding:10px 14px;font:bold 13px/18px ${font};color:#7a3e00">${esc(opts.banner)}</div></td></tr>` : ""}
 <tr><td bgcolor="${brand}" style="background:${brand};background-image:linear-gradient(160deg,${brand} 0%,${brand2} 100%);border-radius:22px 22px 0 0;padding:22px 26px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
     <td width="60" valign="middle" style="width:60px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:14px;padding:5px;line-height:0">
@@ -172,9 +181,20 @@ export async function sendClubMessage(opts: {
   <p style="margin:0 0 14px;font:16px/24px ${font};color:#15171a">${esc(opts.greeting)}</p>
   ${opts.paragraphs.map((p) => `<p style="margin:0 0 14px;font:15px/23px ${font};color:#374151">${esc(p)}</p>`).join("")}
   ${rows ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 12px">${rows}</table>` : ""}
+  ${opts.code ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 16px"><tr><td bgcolor="#f6f7f9" style="background:#f6f7f9;border:2px dashed #d0d5dd;border-radius:14px;padding:12px 18px"><div style="font:bold 11px/14px ${font};letter-spacing:1.5px;text-transform:uppercase;color:#6b7280">${esc(opts.code.label)}</div><div style="font:bold 26px/32px 'Courier New',monospace;letter-spacing:4px;color:#15171a">${esc(opts.code.value)}</div></td></tr></table>` : ""}
 </td></tr>
 <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 22px 22px;padding:8px 26px 24px">
   ${opts.button || opts.second ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${opts.button ? btn(opts.button, true) : ""}${opts.second ? btn(opts.second, false) : ""}</tr></table>` : ""}
+  ${
+    opts.steps
+      ? `<div style="margin-top:22px;padding-top:18px;border-top:1px solid #e9ebef"><div style="font:bold 15px/20px ${font};color:#15171a;margin-bottom:10px">${esc(opts.steps.heading)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${opts.steps.items
+          .map(
+            (x, i) =>
+              `<tr><td width="34" valign="top" style="width:34px;padding:0 0 10px"><div style="width:24px;height:24px;border-radius:12px;background:${accent};color:${accentInk};font:bold 13px/24px ${font};text-align:center">${i + 1}</div></td><td valign="top" style="padding:2px 0 10px;font:14px/21px ${font};color:#374151">${esc(x)}</td></tr>`,
+          )
+          .join("")}</table></div>`
+      : ""
+  }
 </td></tr>
 <tr><td align="center" style="padding:18px 16px 0;font:12px/18px ${font};color:#8b919c">${esc(opts.footer)}<br><b style="color:#5b6472">Overlap</b>, the club hub</td></tr>
 </table></td></tr></table></body></html>`;

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendClubMessage } from "@/lib/email-server";
+import { welcomeEmail } from "@/lib/trial-emails";
 
 type Result = { status: "accepted" | "declined"; invite_code?: string; parent_email?: string; parent_name?: string; player?: string; player_email?: string; team?: string; already?: boolean };
 type Offer = { club: { name: string; logo: string | null; primary: string | null; accent: string | null } };
@@ -24,24 +25,8 @@ export async function POST(request: NextRequest) {
   if (r.status === "accepted" && !r.already && r.invite_code && r.parent_email && offer) {
     const siteUrl = (process.env.SITE_URL || request.nextUrl.origin).replace(/\/$/, "");
     const club = (offer as Offer).club;
-    const first = (r.player ?? "").split(" ")[0];
     try {
-      await sendClubMessage({
-        to: r.parent_email,
-        club,
-        siteUrl,
-        kicker: "Welcome to the club",
-        subject: `Welcome to ${club.name}: set up your account`,
-        greeting: `Hi ${(r.parent_name ?? "").split(" ")[0] || "there"},`,
-        paragraphs: [
-          `Great news: ${first} is now part of ${r.team}.`,
-          `${club.name} uses Overlap for training times, matches, team chat and ${first}'s development. Tap below to create your account. You'll be linked to ${first} straight away.`,
-          "A second parent or guardian can use the same link.",
-        ],
-        rows: [{ label: "Invite code", value: r.invite_code }],
-        button: { label: "Set up my account", url: `${siteUrl}/join/${r.invite_code}` },
-        footer: `You're getting this because you accepted a place with ${club.name}.`,
-      });
+      await sendClubMessage(welcomeEmail({ to: r.parent_email, club, siteUrl, player: r.player ?? "", parentName: r.parent_name ?? "", team: r.team ?? "", code: r.invite_code }));
     } catch {
       // The invite still shows on the page.
     }

@@ -224,6 +224,18 @@ function TrialView({ trial, canRun, onEdit }: { trial: Trial; canRun: boolean; o
   useEffect(() => setOrigin(window.location.origin), []);
   const link = `${origin}/t/${trial.slug}`;
   const counts = (s: TrialStatus) => apps.filter((a) => a.status === s).length;
+  const [testing, setTesting] = useState(false);
+  async function sendTest() {
+    setTesting(true);
+    try {
+      const r = await fetch("/api/trials/email", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "test", trial: trial.id }) });
+      const j = (await r.json()) as { ok: boolean; error?: string; to?: string };
+      toast(j.ok ? `Sent 2 test emails to ${j.to}: the offer, and the welcome email families get after accepting.` : (j.error ?? "Couldn't send"));
+    } catch {
+      toast("Couldn't send. Check your connection.");
+    }
+    setTesting(false);
+  }
   const openApp = apps.find((a) => a.id === open);
 
   return (
@@ -268,6 +280,9 @@ function TrialView({ trial, canRun, onEdit }: { trial: Trial; canRun: boolean; o
             <>
               <button className="btn sm" onClick={() => setImporting(true)}>
                 Import spreadsheet
+              </button>
+              <button className="btn sm" disabled={testing} onClick={sendTest}>
+                {testing ? "Sending…" : "Send me a test offer"}
               </button>
               <button className="btn sm" onClick={onEdit}>
                 Edit

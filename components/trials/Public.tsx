@@ -179,7 +179,7 @@ export function TrialSignup({ slug, trial }: { slug: string; trial: PublicTrial 
   );
 }
 
-export function OfferResponse({ token, offer, askDecline }: { token: string; offer: PublicOffer; askDecline: boolean }) {
+export function OfferResponse({ token, offer, askDecline, preview }: { token: string; offer: PublicOffer; askDecline: boolean; preview?: boolean }) {
   const [status, setStatus] = useState(offer.status);
   const [code, setCode] = useState(offer.invite_code);
   const [confirmDecline, setConfirmDecline] = useState(askDecline);
@@ -187,6 +187,11 @@ export function OfferResponse({ token, offer, askDecline }: { token: string; off
   const [err, setErr] = useState("");
 
   async function answer(accept: boolean) {
+    if (preview) {
+      setStatus(accept ? "accepted" : "declined");
+      setCode(accept ? "SAMPLE12" : null);
+      return;
+    }
     setBusy(true);
     setErr("");
     try {
@@ -203,9 +208,11 @@ export function OfferResponse({ token, offer, askDecline }: { token: string; off
     setBusy(false);
   }
 
+  const banner = preview ? <p className="tp-preview">Preview: this is what families see. Nothing is saved and no one is added to the squad.</p> : null;
   if (status === "accepted")
     return (
       <div className="tp-card tp-done">
+        {banner}
         <div className="tp-tick" aria-hidden="true">
           ✓
         </div>
@@ -215,7 +222,7 @@ export function OfferResponse({ token, offer, askDecline }: { token: string; off
         </p>
         {code && (
           <>
-            <a className="btn primary tp-send" href={`/join/${code}`}>
+            <a className="btn primary tp-send" href={preview ? undefined : `/join/${code}`} aria-disabled={preview || undefined}>
               Set up my account
             </a>
             <p className="tp-muted">
@@ -228,12 +235,14 @@ export function OfferResponse({ token, offer, askDecline }: { token: string; off
   if (status === "declined")
     return (
       <div className="tp-card">
+        {banner}
         <h1>Thanks for letting us know</h1>
         <p>We&apos;ve told the coaches {offer.player} won&apos;t be taking the place. All the best, and we hope to see you again.</p>
       </div>
     );
   return (
     <div className="tp-card">
+      {banner}
       <span className="tp-kicker">{offer.trial}</span>
       <h1>{offer.player} has been offered a place in {offer.team}</h1>
       <p>Congratulations! Please let {offer.club.name} know if you&apos;d like to take the place.</p>
