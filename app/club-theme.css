@@ -1176,3 +1176,7 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .lu-row .lu-auto { margin-left: 0; height: 46px; border-radius: 12px; }
 .auth2 .notice { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 14px; background: #e8f6ee; color: #14532d; border-left: 4px solid #16a34a; }
 .auth2 .notice.bad { background: #fdecec; color: #8a1f17; border-left-color: #c2372f; }
+[data-look="club"] .notif-test { display: grid; gap: 8px; margin-top: 12px; justify-items: start; }
+[data-look="club"] .notif-test-msg { margin: 0; padding: 8px 12px; border-radius: 10px; font-size: 14px; }
+[data-look="club"] .notif-test-msg.ok { background: #e8f6ee; color: #14532d; }
+[data-look="club"] .notif-test-msg.bad { background: #fdecec; color: #8a1f17; }

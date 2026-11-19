@@ -221,6 +221,7 @@ function PrefsCard() {
           <option value="never">Never</option>
         </select>
       </label>
+      <TestEmail />
     </section>
   );
 }
@@ -269,5 +270,32 @@ export function InstallHint() {
         </button>
       </div>
     </aside>
+  );
+}
+
+/** Sends yourself a sample club email, and says plainly what went wrong if it can't. */
+function TestEmail() {
+  const [state, setState] = useState<{ busy?: boolean; ok?: boolean; msg?: string }>({});
+  async function send() {
+    setState({ busy: true });
+    try {
+      const r = await fetch("/api/email/test", { method: "POST" });
+      const j = (await r.json()) as { ok: boolean; to?: string; error?: string };
+      setState(j.ok ? { ok: true, msg: `Sent to ${j.to}. Check your inbox (and spam) in a minute.` } : { ok: false, msg: j.error ?? "Couldn't send." });
+    } catch {
+      setState({ ok: false, msg: "Couldn't reach the server. Try again." });
+    }
+  }
+  return (
+    <div className="notif-test">
+      <button type="button" className="btn" disabled={state.busy} onClick={send}>
+        {state.busy ? "Sending…" : "Send me a test email"}
+      </button>
+      {state.msg && (
+        <p className={`notif-test-msg${state.ok ? " ok" : " bad"}`} role="status">
+          {state.msg}
+        </p>
+      )}
+    </div>
   );
 }
