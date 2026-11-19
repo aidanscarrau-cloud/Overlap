@@ -77,7 +77,14 @@ export function LoginForm({ next, initialError, startMode, clubName }: { next: s
       if (error) throw error;
       setInfo(`If ${email} has an account, a password reset link is on its way.`);
     } catch (err) {
-      setError(errMsg(err));
+      const m = errMsg(err);
+      setError(
+        /error sending|smtp|sending .*email/i.test(m)
+          ? "We couldn't send the email just now. Try again in a few minutes, or sign in with your password."
+          : /rate limit|too many/i.test(m)
+            ? "Too many emails sent in a short time. Wait a few minutes and try again."
+            : m,
+      );
     } finally {
       setBusy(false);
     }

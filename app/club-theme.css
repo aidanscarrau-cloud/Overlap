@@ -1174,3 +1174,5 @@ html { -webkit-text-size-adjust: 100%; }
   background: var(--surface-2, #f2f3f5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23344054' stroke-width='1.8' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center; }
 [data-look="club"] .lu-select select:focus { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); }
 [data-look="club"] .lu-row .lu-auto { margin-left: 0; height: 46px; border-radius: 12px; }
+.auth2 .notice { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 14px; background: #e8f6ee; color: #14532d; border-left: 4px solid #16a34a; }
+.auth2 .notice.bad { background: #fdecec; color: #8a1f17; border-left-color: #c2372f; }
