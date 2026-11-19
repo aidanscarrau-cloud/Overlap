@@ -14,8 +14,15 @@
 <!-- Header: the club ticket -->
 <tr><td bgcolor="#1d1d1f" style="background:#1d1d1f;background-image:linear-gradient(160deg,#2c2c30 0%,#0d0e10 100%);border-radius:22px 22px 0 0;padding:26px 28px 24px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td style="font:bold 12px/16px Arial,Helvetica,sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f29130">Welcome</td>
-    <td align="right" style="font:bold 12px/16px Arial,Helvetica,sans-serif;letter-spacing:1px;color:#8b919c">CLUB HUB</td>
+    <td width="64" valign="middle" style="width:64px">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="line-height:0">
+        <img src="{{ .SiteURL }}/email/overlap-logo.png" width="52" height="52" alt="Overlap" style="display:block;width:52px;height:52px;border:0;outline:none;border-radius:14px">
+      </td></tr></table>
+    </td>
+    <td valign="middle" style="padding-left:14px">
+      <div style="font:bold 11px/14px Arial,Helvetica,sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f29130">Welcome</div>
+      <div style="font:bold 20px/22px Arial,Helvetica,sans-serif;color:#ffffff;margin-top:2px">Overlap</div>
+    </td>
   </tr></table>
   <div style="height:14px;line-height:14px">&nbsp;</div>
   <div style="font:bold 32px/36px 'Arial Narrow',Arial,Helvetica,sans-serif;letter-spacing:-0.3px;color:#ffffff">Confirm your email</div>
@@ -47,7 +54,7 @@
 <!-- Footer -->
 <tr><td align="center" style="padding:20px 18px 0;font:12px/18px Arial,Helvetica,sans-serif;color:#8b919c">
   You got this because {{ .Email }} was used to create an Overlap account. If that wasn&rsquo;t you, you can ignore this email.<br>
-  Sent by your club through <b style="color:#5b6472">Overlap</b>, the club hub for training, matches and chat.
+  <b style="color:#5b6472">Overlap</b> &middot; the club hub for training, matches and chat.
 </td></tr>
 
 </table>
