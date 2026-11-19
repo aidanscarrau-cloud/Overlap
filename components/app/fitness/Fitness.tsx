@@ -49,7 +49,7 @@ export function Modal({ title, onClose, children, foot, wide }: { title: string;
     return () => document.removeEventListener("keydown", k);
   }, [onClose]);
   const ui = (
-    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="overlay modal-c" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`sheet${wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-head">
           <h2>{title}</h2>

@@ -1556,3 +1556,11 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .tp-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 [data-look="club"] .tp-acts .tp-send { flex: 1 1 220px; width: auto; }
 @media (max-width: 560px) { [data-look="club"] .tp-2 { grid-template-columns: 1fr; } [data-look="club"] .tp-card h1 { font-size: 28px; } }
+
+/* Pop-up forms on computers: a centred card with room above and below, so the buttons are never off-screen. */
+@media (min-width: 761px) {
+  [data-look="club"] .overlay.modal-c { justify-content: center; align-items: center; padding: 3vh 24px; }
+  [data-look="club"] .overlay.modal-c > .sheet { height: auto; max-height: 94vh; width: min(720px, 100%); border-radius: 20px; animation: club-fade 0.2s ease-out; }
+  [data-look="club"] .overlay.modal-c > .sheet.wide { width: min(980px, 100%); }
+  [data-look="club"] .overlay.modal-c .sheet-head { padding-top: 16px; }
+}
