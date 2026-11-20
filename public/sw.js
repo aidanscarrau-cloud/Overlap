@@ -18,7 +18,7 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/badge-96.png",
       tag: data.tag,
-      data: { url: data.url && data.url.startsWith("/") ? data.url : "/" },
+      data: { url: data.url && data.url.startsWith("/") && data.url !== "/" ? data.url : "/home" },
     }),
   );
 });

@@ -78,7 +78,8 @@ export async function sendNotificationEmail(opts: {
     club.logo && /^https:\/\/[^\s"'<>]+$/.test(club.logo)
       ? club.logo
       : `${siteUrl}/email/overlap-logo.png`;
-  const link = (u: string) => siteUrl + (u.startsWith("/") ? u : "/");
+  // The app lives at /home; "/" is the public front page.
+  const link = (u: string) => siteUrl + (u.startsWith("/") && u !== "/" ? u : "/home");
   const first = name.split(" ")[0];
   const subject =
     items.length === 1
@@ -138,7 +139,7 @@ ${i.body ? `<div style="font:15px/22px ${font};color:#4b5563;margin-top:3px">${e
 </td></tr>
 <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 22px 22px;padding:16px 26px 24px">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${accent}" style="border-radius:12px">
-    <a href="${esc(siteUrl)}/" style="display:inline-block;padding:13px 22px;font:bold 15px/18px ${font};color:${accentInk};text-decoration:none;border-radius:12px">Open ${esc(clubName)} &rarr;</a>
+    <a href="${esc(siteUrl)}/home" style="display:inline-block;padding:13px 22px;font:bold 15px/18px ${font};color:${accentInk};text-decoration:none;border-radius:12px">Open ${esc(clubName)} &rarr;</a>
   </td></tr></table>
 </td></tr>
 

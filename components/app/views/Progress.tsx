@@ -62,7 +62,7 @@ export function Progress({ playerId }: { playerId: string }) {
   if (!player || (!showAttendance && !showIdp))
     return (
       <div className="empty">
-        This progress report isn&apos;t available. <Link href="/">Back to home</Link>
+        This progress report isn&apos;t available. <Link href="/home">Back to home</Link>
       </div>
     );
 

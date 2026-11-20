@@ -77,7 +77,7 @@ export function Notifications() {
       document.cookie = `overlap-club=${n.club_id}; path=/; max-age=31536000; samesite=lax`;
       document.cookie = "overlap-team=; path=/; max-age=0";
     }
-    router.push(n.url);
+    router.push(n.url && n.url !== "/" ? n.url : "/home");
     if (n.club_id !== data.club.id) router.refresh();
   }
 

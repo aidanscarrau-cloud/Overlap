@@ -4,6 +4,7 @@ import { brandVars, DEFAULT_BRAND } from "@/lib/brand";
 import { ContactForm } from "@/components/landing/ContactForm";
 import { DrillDemo, type DemoDrill } from "@/components/landing/DrillDemo";
 import { StickyRegister } from "@/components/landing/StickyRegister";
+import { SignInLink } from "@/components/landing/SignInLink";
 import { LIBRARY_BY_KEY } from "@/lib/library-drills";
 
 export const metadata: Metadata = {
@@ -135,9 +136,7 @@ export default function Welcome() {
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Register interest</a>
-          <Link href="/login" className="lp-signin">
-            Sign in
-          </Link>
+          <SignInLink className="lp-signin" />
         </nav>
       </header>
 

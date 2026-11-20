@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Overlap",
     short_name: "Overlap",
     description: "Training, squads and messages for your football club.",
-    start_url: "/",
+    start_url: "/home",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",

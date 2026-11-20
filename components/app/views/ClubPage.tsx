@@ -890,7 +890,7 @@ function AccountCard() {
       .eq("id", data.me.id);
     if (error) return toast(errMsg(error));
     document.cookie = "overlap-club=; path=/; max-age=0";
-    router.replace("/");
+    router.replace("/home");
     router.refresh();
   }
   return (

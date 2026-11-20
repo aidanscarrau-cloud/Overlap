@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default function SetupPage() {
   const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
   const hasKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (hasUrl && hasKey) redirect("/");
+  if (hasUrl && hasKey) redirect("/home");
   return (
     <AuthShell>
       <div className="auth-card">

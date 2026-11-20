@@ -13,7 +13,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ProBadge } from "./Pro";
 
 const NAV = [
-  { href: "/", label: "Home", short: "Home", icon: "i-home" },
+  { href: "/home", label: "Home", short: "Home", icon: "i-home" },
   { href: "/sessions", label: "Schedule", short: "Schedule", icon: "i-cal" },
   { href: "/squad", label: "Squad", short: "Squad", icon: "i-squad" },
   { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
@@ -43,7 +43,7 @@ const DESK = ["/drills", "/trials", "/insights", "/club"];
 const PRO_PATHS = ["/development", "/fitness", "/trials", "/insights", "/drills"];
 
 const FAMILY_NAV = [
-  { href: "/", label: "Home", short: "Home", icon: "i-home" },
+  { href: "/home", label: "Home", short: "Home", icon: "i-home" },
   { href: "/sessions", label: "Schedule", short: "Schedule", icon: "i-cal" },
   {
     href: "/development",
@@ -77,8 +77,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isSchedule =
     path.startsWith("/sessions") || path.startsWith("/matches");
   const active = (href: string) =>
-    href === "/"
-      ? path === "/"
+    href === "/home"
+      ? path === "/home"
       : href === "/sessions"
         ? isSchedule
         : path.startsWith(href);
@@ -88,7 +88,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
   // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
-  const PHONE = ["/", "/sessions", family ? (lite ? "/announcements" : "/development") : "/squad", "/chat"];
+  const PHONE = ["/home", "/sessions", family ? (lite ? "/announcements" : "/development") : "/squad", "/chat"];
   const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {

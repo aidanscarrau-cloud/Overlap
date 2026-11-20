@@ -22,7 +22,7 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
   function goToClub(id: string) {
     document.cookie = `overlap-club=${id}; path=/; max-age=31536000; samesite=lax`;
     document.cookie = "overlap-team=; path=/; max-age=0";
-    router.replace("/");
+    router.replace("/home");
     router.refresh();
   }
 
@@ -150,7 +150,7 @@ export function OnboardingForm({ code: initialCode, name: initialName, email, ha
         </button>
       </form>
       {hasClub && (
-        <a className="linkbtn" href="/">
+        <a className="linkbtn" href="/home">
           Back to my club
         </a>
       )}

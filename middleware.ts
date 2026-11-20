@@ -36,17 +36,25 @@ export async function middleware(request: NextRequest) {
   const user = data?.claims?.sub ? data.claims : null;
 
   const path = request.nextUrl.pathname;
-  // Visitors who aren't signed in see the public front page at the main address.
-  if (!user && path === "/") {
+  // The main address is the public front page for everyone; the club app lives at /home.
+  if (path === "/") {
     const welcome = request.nextUrl.clone();
     welcome.pathname = "/welcome";
     return NextResponse.rewrite(welcome);
+  }
+  // Already signed in: the sign-in page goes straight to the club.
+  if (user && path === "/login") {
+    const next = request.nextUrl.searchParams.get("next");
+    const to = request.nextUrl.clone();
+    to.pathname = next && next.startsWith("/") && !next.startsWith("//") ? next.split("?")[0] : "/home";
+    to.search = next && next.includes("?") ? next.slice(next.indexOf("?")) : "";
+    return NextResponse.redirect(to);
   }
   if (!user && !PUBLIC_PATHS.some((p) => path.startsWith(p))) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
     login.search = "";
-    if (path !== "/") login.searchParams.set("next", path + request.nextUrl.search);
+    if (path !== "/home") login.searchParams.set("next", path + request.nextUrl.search);
     // Invite links are mostly for people who don't have an account yet.
     if (path.startsWith("/join/")) login.searchParams.set("mode", "signup");
     return NextResponse.redirect(login);

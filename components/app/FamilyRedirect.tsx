@@ -10,7 +10,7 @@ export function useFamilyRedirect() {
   const router = useRouter();
   const family = data.role === "player" || data.role === "parent";
   useEffect(() => {
-    if (family) router.replace("/");
+    if (family) router.replace("/home");
   }, [family, router]);
   return family;
 }
