@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "../AppProvider";
 import { Linkify } from "@/components/Linkify";
 import { pingPush } from "@/lib/push-client";
@@ -73,11 +74,50 @@ const ago = (iso: string | null) => {
   return d.toDateString() === new Date().toDateString() ? time(iso) : d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 };
 
+/**
+ * iPhones don't shrink the page when the keyboard opens; they slide it up, which pushes a full-screen chat's
+ * top bar off the screen and can hide the message box. Keep the open conversation exactly inside the part of
+ * the screen that's still visible, and stop the page behind it from scrolling.
+ */
+function useKeyboardSafe(ref: React.RefObject<HTMLElement | null>, active: boolean) {
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = ref.current;
+    if (!vv || !el || !active || !window.matchMedia("(max-width: 860px)").matches) return;
+    const html = document.documentElement;
+    const prev = html.style.overflow;
+    html.style.overflow = "hidden";
+    const fit = () => {
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+      el.style.bottom = "auto";
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+      el.style.height = "";
+      el.style.top = "";
+      el.style.bottom = "";
+      html.style.overflow = prev;
+    };
+  }, [ref, active]);
+}
+
 export function Chat() {
   const { data, supabase, patch } = useApp();
   const [chats, setChats] = useState<ChatSummary[]>(data.chats);
   useEffect(() => setChats(data.chats), [data.chats]);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Opened from a link (a player's "Message" button or a notification): start on that chat straight away,
+  // so the list doesn't flash first, and let Back return to where they came from.
+  const linked = useSearchParams().get("c");
+  const [openId, setOpenId] = useState<string | null>(linked);
+  const [linkedId] = useState(linked); // kept: the address is tidied to /chat once open
+  const router = useRouter();
+  const convRef = useRef<HTMLElement>(null);
+  useKeyboardSafe(convRef, !!openId);
   const [picking, setPicking] = useState(false);
   const [grouping, setGrouping] = useState(false);
   const [q, setQ] = useState("");
@@ -88,7 +128,6 @@ export function Chat() {
   useEffect(() => {
     const c = new URLSearchParams(window.location.search).get("c");
     if (c) {
-      setOpenId(c);
       window.history.replaceState(null, "", "/chat");
     } else if (window.matchMedia("(min-width: 861px)").matches && data.chats[0]) setOpenId(data.chats[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,12 +266,16 @@ export function Chat() {
           Keeping it safe: players can&apos;t send or receive private messages, team chats can be read by club admins, and coaches can remove messages.
         </p>
       </aside>
-      <section className="chat-conv" aria-label="Conversation">
+      <section className="chat-conv" aria-label="Conversation" ref={convRef}>
         {current ? (
           <Conversation
             key={current.id}
             chat={current}
-            onBack={() => setOpenId(null)}
+            onBack={() => {
+              // Came from a player's profile or a notification: go back there, like a phone's back button.
+              if (linkedId && current.id === linkedId && window.history.length > 1) router.back();
+              else setOpenId(null);
+            }}
             onChanged={reload}
             onLeft={async () => {
               setOpenId(null);

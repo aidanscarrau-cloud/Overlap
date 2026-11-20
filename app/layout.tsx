@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Overlap", statusBarStyle: "default" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
