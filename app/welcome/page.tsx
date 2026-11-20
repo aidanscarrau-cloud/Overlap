@@ -12,36 +12,75 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   {
-    img: "/landing/coach-home.webp",
+    img: "/landing/f-home.webp",
+    h: 713,
     tag: "For coaches",
+    bg: "#fff1db",
+    fg: "#8a4b00",
     title: "Know who's coming before you set out the cones",
-    text: "The next session front and centre with who's coming, who can't and who hasn't replied. Families get a reminder the night before. Take attendance in a tap.",
+    text: "The next session is front and centre, with who's coming, who can't and who hasn't replied.",
+    points: ["Families get a reminder the evening before", "Take the register in a few taps", "See what needs doing this week"],
   },
   {
-    img: "/landing/drills.webp",
+    img: "/landing/f-drills.webp",
+    h: 687,
     tag: "Session planning",
+    bg: "#e8eefc",
+    fg: "#1e40af",
     title: "Plan a session in minutes, with drills you can watch",
-    text: "A library of animated drills by age and theme. Build a session, drag to reorder, see it on the pitch and walk players through it on a tablet.",
+    text: "A library of animated drills by age and theme. Pick a focus, press Suggest, and the session builds itself.",
+    points: ["Drills play on the pitch so players get it", "Drag to reorder, change the minutes", "Walk the team through it on a tablet"],
   },
   {
-    img: "/landing/squad.webp",
+    img: "/landing/f-squad.webp",
+    h: 856,
     tag: "Squad & line-ups",
+    bg: "#e7f6ec",
+    fg: "#166534",
     title: "Line-ups, availability and injuries on one pitch",
-    text: "Drag players into any 11-a-side formation, see who's injured or unavailable, then share the line-up with families.",
+    text: "Drag players into any formation and see at a glance who's available, injured or hasn't replied.",
+    points: ["23 formations to choose from", "Share the line-up with families in one tap", "Injuries with return-to-play steps"],
   },
   {
-    img: "/landing/selection.webp",
+    img: "/landing/f-selection.webp",
+    h: 657,
     tag: "Trials",
+    bg: "#f3e8ff",
+    fg: "#6b21a8",
     title: "Run trials without the spreadsheet chaos",
-    text: "A sign-up link in your club's colours (or import your Google Form), check-in and star ratings on the night, then send offers. Accepting adds the player to the squad.",
+    text: "A sign-up link in your club's colours, or import the spreadsheet from your Google Form.",
+    points: ["Check players in and rate them on the night", "Rank by position against your squad targets", "Send offers; accepting adds them to the squad"],
   },
 ];
 
 const PHONES = [
   { img: "/landing/coach-phone.webp", title: "Who's coming, at a glance", text: "Coaches see replies the moment families tap Yes or No." },
-  { img: "/landing/chat.webp", title: "Team chat built in", text: "Replies, reactions, photos. Age-safe settings for younger players." },
-  { img: "/landing/plan.webp", title: "Player development", text: "Ratings, goals and progress families can actually see." },
+  { img: "/landing/chat.webp", title: "Team chat built in", text: "Replies, reactions and photos, with age-safe settings." },
+  { img: "/landing/plan.webp", title: "Player development", text: "Goals and progress families can actually see." },
   { img: "/landing/trial-night.webp", title: "Trial night on a phone", text: "Tick players in and rate them at the ground." },
+];
+
+const ROLES = [
+  { title: "Parents & players", icon: "i-people", bg: "#fff1db", fg: "#b45309", points: ["Reply Yes or No in one tap", "Schedule, chat and club news", "Report an injury, follow progress"] },
+  { title: "Coaches", icon: "i-board", bg: "#e8eefc", fg: "#1e40af", points: ["Plan sessions with animated drills", "Take the register, pick line-ups", "Fitness tests and development"] },
+  { title: "Club admins", icon: "i-squad", bg: "#e7f6ec", fg: "#166534", points: ["Every team in one place", "Trials, invites and announcements", "See who's dropping off"] },
+];
+
+const MORE = [
+  { title: "Matches & draw import", text: "Paste your fixtures, collect availability, record results and stats.", icon: "i-ball", bg: "#e7f6ec", fg: "#166534" },
+  { title: "Fitness testing", text: "Sprints, agility, Gacon 45-15 and more, with progress and leaderboards.", icon: "i-clock", bg: "#e8eefc", fg: "#1e40af" },
+  { title: "Injuries", text: "Six return-to-play steps, with a doctor's clearance for concussion.", icon: "i-squad", bg: "#fde4e2", fg: "#a3241b" },
+  { title: "Announcements", text: "News to the whole club or one team, by app and email.", icon: "i-megaphone", bg: "#fff1db", fg: "#8a4b00" },
+  { title: "Calendar links", text: "Sessions and matches in everyone's phone calendar, always up to date.", icon: "i-cal", bg: "#f3e8ff", fg: "#6b21a8" },
+  { title: "Insights", text: "Attendance trends, who's dropping off, replies and minutes played.", icon: "i-chart", bg: "#e0f2fe", fg: "#075985" },
+];
+
+const FAQ: [string, React.ReactNode][] = [
+  ["Is it safe for children?", <>Each club&apos;s data is private to that club, chat is off for younger players by default, and private messages are never open to players. <Link href="/privacy">Read how we protect children&apos;s information</Link>.</>],
+  ["Where is our data kept?", <>In Australia (Sydney). Admins can download all of the club&apos;s data at any time.</>],
+  ["Does it work with PlayHQ?", <>It sits alongside it: import your players from a registration export and paste your fixtures straight in.</>],
+  ["Do families have to pay or download anything?", <>No. It&apos;s free for families and works on any phone; they add it to their home screen in 30 seconds.</>],
+  ["What if we need help?", <>There&apos;s a <Link href="/help">help page</Link> and a support form, and we&apos;ll help set your club up.</>],
 ];
 
 export default function Welcome() {
@@ -119,41 +158,80 @@ export default function Welcome() {
         </div>
       </section>
 
-      <section className="lp-who">
-        <div>
-          <b>Parents &amp; players</b>
-          <p>Reply in one tap, see the schedule, chat with the team, report an injury and follow their development.</p>
-        </div>
-        <div>
-          <b>Coaches</b>
-          <p>Plan sessions with animated drills, take attendance, pick line-ups, track fitness and get return-to-play steps for injuries.</p>
-        </div>
-        <div>
-          <b>Club admins</b>
-          <p>Every team in one place: invites, roles, trials, announcements and club-branded emails, with insights on who&apos;s dropping off.</p>
-        </div>
-      </section>
-
-      <section id="features" className="lp-features">
-        {FEATURES.map((f, i) => (
-          <article key={f.title} className={i % 2 ? "rev" : ""}>
-            <div className="lp-f-txt">
-              <span className="lp-kicker">{f.tag}</span>
-              <h2>{f.title}</h2>
-              <p>{f.text}</p>
-            </div>
-            <img src={f.img} alt={`Overlap ${f.tag.toLowerCase()} screen`} loading="lazy" width={1440} height={900} />
+      <section className="lp-roles" aria-label="Who it's for">
+        {ROLES.map((r) => (
+          <article key={r.title}>
+            <span className="lp-ic" style={{ background: r.bg, color: r.fg }}>
+              <svg aria-hidden="true">
+                <use href={`#${r.icon}`} />
+              </svg>
+            </span>
+            <h2>{r.title}</h2>
+            <ul>
+              {r.points.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
           </article>
         ))}
       </section>
 
+      <section className="lp-steps" aria-label="How it works">
+        <span className="lp-kicker">How it works</span>
+        <h2>Up and running before the first training</h2>
+        <ol>
+          <li>
+            <b>Set up your club</b>
+            <p>Add your badge and colours, then bring every team in from your registration spreadsheet (PlayHQ works).</p>
+          </li>
+          <li>
+            <b>Families join in one tap</b>
+            <p>Each family gets an email invite already linked to their child. Overlap goes on their home screen in 30 seconds.</p>
+          </li>
+          <li>
+            <b>Run the season</b>
+            <p>Coaches plan sessions and pick line-ups, families reply and chat, and you can see the whole club at a glance.</p>
+          </li>
+        </ol>
+      </section>
+
+      <div id="features" className="lp-features">
+        {FEATURES.map((f, i) => (
+          <article key={f.title} className={i % 2 ? "rev" : ""}>
+            <div className="lp-f-txt">
+              <span className="lp-tag" style={{ background: f.bg, color: f.fg }}>
+                {f.tag}
+              </span>
+              <h2>{f.title}</h2>
+              <p>{f.text}</p>
+              <ul className="lp-points">
+                {f.points.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </div>
+            <figure className="lp-shot">
+              <span className="lp-chrome" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <img src={f.img} alt={`Overlap: ${f.tag.toLowerCase()}`} loading="lazy" width={1400} height={f.h} />
+            </figure>
+          </article>
+        ))}
+      </div>
+
       <section className="lp-phones">
+        <span className="lp-kicker">On every phone</span>
         <h2>Made for the phone in every parent&apos;s pocket</h2>
-        <p className="lp-sub">Families add Overlap to their home screen in 30 seconds and get notifications when training changes. Free for them, no app store.</p>
+        <p className="lp-sub">Families add Overlap to their home screen in 30 seconds and get a notification when training changes. Free for them, nothing to download from an app store.</p>
         <div className="lp-phone-row">
           {PHONES.map((p) => (
             <figure key={p.title}>
-              <img src={p.img} alt={p.title} loading="lazy" width={520} height={1126} />
+              <span className="lp-dev lp-dev-row">
+                <img src={p.img} alt={p.title} loading="lazy" width={780} height={1688} />
+              </span>
               <figcaption>
                 <b>{p.title}</b>
                 {p.text}
@@ -164,40 +242,24 @@ export default function Welcome() {
       </section>
 
       <section className="lp-more">
+        <span className="lp-kicker">And the rest</span>
         <h2>Everything else a club needs</h2>
         <ul>
-          <li>
-            <b>Matches &amp; draw import</b>Fixtures, availability, results and stats.
-          </li>
-          <li>
-            <b>Fitness testing</b>Sprint, agility, Gacon 45-15 and more, with leaderboards.
-          </li>
-          <li>
-            <b>Injuries</b>Six return-to-play steps, with concussion safeguards.
-          </li>
-          <li>
-            <b>Announcements</b>News to the whole club or one team, by app and email.
-          </li>
-          <li>
-            <b>Calendar links</b>Sessions and matches in everyone&apos;s phone calendar.
-          </li>
-          <li>
-            <b>Safe by design</b>Each club&apos;s data is private to that club; roles decide who sees what. <Link href="/privacy">How we protect children&apos;s information</Link>.
-          </li>
+          {MORE.map((m) => (
+            <li key={m.title}>
+              <span className="lp-ic sm" style={{ background: m.bg, color: m.fg }}>
+                <svg aria-hidden="true">
+                  <use href={`#${m.icon}`} />
+                </svg>
+              </span>
+              <b>{m.title}</b>
+              <p>{m.text}</p>
+            </li>
+          ))}
         </ul>
       </section>
 
       <section id="pricing" className="lp-pricing">
-        <div>
-          <span className="lp-kicker">Planned pricing</span>
-          <h2>One simple price per club</h2>
-          <p>Not per player, not per team. Every coach, player and parent in your club is included, along with every feature.</p>
-          <ul className="lp-ticks">
-            <li>Unlimited teams, players, parents and coaches</li>
-            <li>Every feature, including trials and the drill library</li>
-            <li>Help getting your club set up</li>
-          </ul>
-        </div>
         <div className="lp-price-card">
           <span className="lp-price-for">Planned price · whole club</span>
           <div className="lp-price">
@@ -205,28 +267,69 @@ export default function Welcome() {
             <span>per month</span>
           </div>
           <p>For your whole club, however many teams: $720 a year. A club with 100 players would pay about 60c per player a month. Prices in Australian dollars.</p>
+          <ul className="lp-ticks">
+            <li>Unlimited teams, players, parents and coaches</li>
+            <li>Every feature, including trials and the drill library</li>
+            <li>Help getting your club set up</li>
+          </ul>
           <p className="lp-pilot">We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
           <a href="#contact" className="btn primary lp-big">
             Register interest
           </a>
         </div>
+        <div className="lp-faq">
+          <span className="lp-kicker">Questions committees ask</span>
+          <h2>The fine print, in plain English</h2>
+          {FAQ.map(([q, a]) => (
+            <details key={q}>
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       <section id="contact" className="lp-contact">
-        <div>
+        <div className="lp-contact-txt">
+          <span className="lp-kicker">Get in early</span>
           <h2>Register your club&apos;s interest</h2>
-          <p>We&apos;re trialling Overlap with our own club this season before opening it up. Tell us about your club and we&apos;ll be in touch, or ask us anything.</p>
+          <p>We&apos;re trialling Overlap with our own club this season before opening it up. Tell us about your club and we&apos;ll be in touch.</p>
+          <ul className="lp-ticks">
+            <li>No cost or commitment to register</li>
+            <li>First in line when we open to more clubs</li>
+            <li>We&apos;ll help set your club up, players and all</li>
+          </ul>
         </div>
         <ContactForm />
       </section>
 
-      <footer className="lp-foot">
-        <span>
-          <b>Overlap</b> · made in Australia for grassroots football
-        </span>
-        <span>
-          <Link href="/help">Help</Link> · <Link href="/privacy">Privacy &amp; child safety</Link> · <Link href="/get-app">Get the app</Link> · <Link href="/login">Sign in</Link>
-        </span>
+      <footer className="lp-footer">
+        <div>
+          <span className="lp-logo">
+            <svg aria-hidden="true">
+              <use href="#logo" />
+            </svg>
+            Overlap
+          </span>
+          <p>The club app for grassroots football. Made in Australia.</p>
+        </div>
+        <nav aria-label="Footer">
+          <b>Product</b>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <Link href="/get-app">Get the app</Link>
+        </nav>
+        <nav aria-label="Support">
+          <b>Support</b>
+          <Link href="/help">Help</Link>
+          <Link href="/help#contact">Contact us</Link>
+          <Link href="/privacy">Privacy &amp; child safety</Link>
+        </nav>
+        <nav aria-label="Account">
+          <b>Members</b>
+          <Link href="/login">Sign in</Link>
+          <Link href="/get-app">Install on your phone</Link>
+        </nav>
       </footer>
     </div>
   );
