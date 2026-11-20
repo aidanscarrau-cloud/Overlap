@@ -38,8 +38,8 @@ const FEATURES = [
     bg: "#e7f6ec",
     fg: "#166534",
     title: "Line-ups, availability and injuries on one pitch",
-    text: "Drag players into any formation and see at a glance who's available, injured or hasn't replied.",
-    points: ["23 formations to choose from", "Share the line-up with families in one tap", "Injuries with return-to-play steps"],
+    text: "Drag players into an 11-a-side formation and see at a glance who's available, injured or hasn't replied.",
+    points: ["23 eleven-a-side formations", "Share the line-up with families in one tap", "Injuries with return-to-play steps"],
   },
   {
     img: "/landing/f-selection.webp",
