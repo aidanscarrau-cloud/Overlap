@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brandVars, DEFAULT_BRAND } from "@/lib/brand";
 import { ContactForm } from "@/components/landing/ContactForm";
+import { DrillDemo, type DemoDrill } from "@/components/landing/DrillDemo";
+import { StickyRegister } from "@/components/landing/StickyRegister";
+import { LIBRARY_BY_KEY } from "@/lib/library-drills";
 
 export const metadata: Metadata = {
   title: { absolute: "Overlap · The club app for grassroots football" },
@@ -14,6 +17,7 @@ const FEATURES = [
   {
     img: "/landing/f-home.webp",
     h: 713,
+    phone: "/landing/coach-phone.webp",
     tag: "For coaches",
     bg: "#fff1db",
     fg: "#8a4b00",
@@ -24,6 +28,8 @@ const FEATURES = [
   {
     img: "/landing/f-drills.webp",
     h: 687,
+    phone: "",
+    demo: true,
     tag: "Session planning",
     bg: "#e8eefc",
     fg: "#1e40af",
@@ -34,6 +40,7 @@ const FEATURES = [
   {
     img: "/landing/f-squad.webp",
     h: 856,
+    phone: "/landing/lineup-phone.webp",
     tag: "Squad & line-ups",
     bg: "#e7f6ec",
     fg: "#166534",
@@ -44,6 +51,7 @@ const FEATURES = [
   {
     img: "/landing/f-selection.webp",
     h: 657,
+    phone: "/landing/trial-night.webp",
     tag: "Trials",
     bg: "#f3e8ff",
     fg: "#6b21a8",
@@ -75,11 +83,18 @@ const MORE = [
   { title: "Insights", text: "Attendance trends, who's dropping off, replies and minutes played.", icon: "i-chart", bg: "#e0f2fe", fg: "#075985" },
 ];
 
+// Three real drills from the library for the live demo (only these are sent to the browser).
+const DEMO: DemoDrill[] = ["third-man-lines", "wall-pass-relay", "six-second-win-back"].flatMap((k) => {
+  const d = LIBRARY_BY_KEY.get(k);
+  return d ? [{ key: d.key, name: d.name, minutes: d.minutes, players: d.player_count, area: d.area, points: d.points, diagram: d.diagram }] : [];
+});
+
 const FAQ: [string, React.ReactNode][] = [
   ["Is it safe for children?", <>Each club&apos;s data is private to that club, chat is off for younger players by default, and private messages are never open to players. <Link href="/privacy">Read how we protect children&apos;s information</Link>.</>],
   ["Where is our data kept?", <>In Australia (Sydney). Admins can download all of the club&apos;s data at any time.</>],
   ["Does it work with PlayHQ?", <>It sits alongside it: import your players from a registration export and paste your fixtures straight in.</>],
   ["Do families have to pay or download anything?", <>No. It&apos;s free for families and works on any phone; they add it to their home screen in 30 seconds.</>],
+  ["We already use TeamApp or Spond. How do we switch?", <>Import your players from your registration spreadsheet and Overlap emails every family an invite linked to their child. Many clubs run both for a couple of weeks, then switch off the old app once families are replying in Overlap.</>],
   ["What if we need help?", <>There&apos;s a <Link href="/help">help page</Link> and a support form, and we&apos;ll help set your club up.</>],
 ];
 
@@ -210,14 +225,23 @@ export default function Welcome() {
                 ))}
               </ul>
             </div>
-            <figure className="lp-shot">
-              <span className="lp-chrome" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <img src={f.img} alt={`Overlap: ${f.tag.toLowerCase()}`} loading="lazy" width={1400} height={f.h} />
-            </figure>
+            {"demo" in f && f.demo ? (
+              <DrillDemo drills={DEMO} />
+            ) : (
+              <>
+                <figure className="lp-shot lp-desk-only">
+                  <span className="lp-chrome" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <img src={f.img} alt={`Overlap: ${f.tag.toLowerCase()}`} loading="lazy" width={1400} height={f.h} />
+                </figure>
+                <span className="lp-dev lp-dev-row lp-phone-only">
+                  <img src={f.phone} alt={`Overlap on a phone: ${f.tag.toLowerCase()}`} loading="lazy" width={780} height={1688} />
+                </span>
+              </>
+            )}
           </article>
         ))}
       </div>
@@ -302,6 +326,8 @@ export default function Welcome() {
         </div>
         <ContactForm />
       </section>
+
+      <StickyRegister />
 
       <footer className="lp-footer">
         <div>
