@@ -38,7 +38,7 @@ const FEATURES = [
 ];
 
 const PHONES = [
-  { img: "/landing/family-home.webp", title: "Yes or no in one tap", text: "Parents see the next session and reply straight away." },
+  { img: "/landing/coach-phone.webp", title: "Who's coming, at a glance", text: "Coaches see replies the moment families tap Yes or No." },
   { img: "/landing/chat.webp", title: "Team chat built in", text: "Replies, reactions, photos. Age-safe settings for younger players." },
   { img: "/landing/plan.webp", title: "Player development", text: "Ratings, goals and progress families can actually see." },
   { img: "/landing/trial-night.webp", title: "Trial night on a phone", text: "Tick players in and rate them at the ground." },
@@ -85,9 +85,37 @@ export default function Welcome() {
             <li>Made in Australia</li>
           </ul>
         </div>
-        <div className="lp-hero-pics" aria-hidden="true">
-          <img className="lp-desk" src="/landing/coach-home.webp" alt="" width={1440} height={900} />
-          <img className="lp-phone" src="/landing/family-home.webp" alt="" width={520} height={1126} />
+        <div className="lp-stage" aria-hidden="true">
+          <div className="lp-dev lp-dev-l">
+            <img src="/landing/coach-phone.webp" alt="" width={780} height={1688} />
+          </div>
+          <div className="lp-dev lp-dev-r">
+            <img src="/landing/lineup-phone.webp" alt="" width={780} height={1688} />
+          </div>
+          <div className="lp-dev lp-dev-c">
+            <img src="/landing/family-home.webp" alt="" width={780} height={1688} />
+          </div>
+          <span className="lp-chip lp-chip-1">
+            <i className="ok">✓</i>
+            <span>
+              <b>Leo&apos;s coming</b>
+              <small>Tuesday training</small>
+            </span>
+          </span>
+          <span className="lp-chip lp-chip-2">
+            <i>9</i>
+            <span>
+              <b>coming Tuesday</b>
+              <small>2 haven&apos;t replied</small>
+            </span>
+          </span>
+          <span className="lp-chip lp-chip-3">
+            <i>⚽</i>
+            <span>
+              <b>Line-up shared</b>
+              <small>with families</small>
+            </span>
+          </span>
         </div>
       </section>
 

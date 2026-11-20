@@ -1887,3 +1887,38 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .lp-price span { font-size: 18px; color: #c9ccd3; }
 [data-look="club"] .lp-price-alt { color: #fff; font-weight: 600; text-decoration: none; text-align: center; font-size: 15px; }
 [data-look="club"] .lp-pilot { background: rgba(255,255,255,.08); border-radius: 12px; padding: 10px 12px; color: #e6e8ec !important; font-size: 15px; }
+
+/* Front page hero: three phones fanned out, with small "live" notes. */
+[data-look="club"] .lp-hero { background: radial-gradient(900px 500px at 78% 40%, rgba(255, 138, 31, 0.16), transparent 60%), radial-gradient(700px 500px at 10% 100%, rgba(45, 91, 255, 0.18), transparent 60%), #17181c; padding-top: 48px; padding-bottom: 56px; grid-template-columns: 1fr 1fr; min-height: 0; }
+[data-look="club"] .lp-stage { position: relative; height: 560px; }
+[data-look="club"] .lp-dev { position: absolute; width: 238px; aspect-ratio: 390 / 820; border-radius: 34px; border: 7px solid #0b0c0e; background: #0b0c0e; overflow: hidden; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+[data-look="club"] .lp-dev img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 26px; }
+[data-look="club"] .lp-dev-c { left: 50%; top: 10px; transform: translateX(-50%); z-index: 3; width: 258px; }
+[data-look="club"] .lp-dev-l { left: 4%; top: 64px; transform: rotate(-7deg); z-index: 1; opacity: 0.9; }
+[data-look="club"] .lp-dev-r { right: 4%; top: 64px; transform: rotate(7deg); z-index: 1; opacity: 0.9; }
+[data-look="club"] .lp-chip { position: absolute; z-index: 4; display: flex; align-items: center; gap: 10px; background: #fff; color: #14161a; border-radius: 14px; padding: 9px 14px 9px 9px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35); }
+[data-look="club"] .lp-chip i { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 17px; background: #fff1db; color: #8a4b00; flex: none; }
+[data-look="club"] .lp-chip i.ok { background: #16a34a; color: #fff; }
+[data-look="club"] .lp-chip span { display: grid; line-height: 1.2; }
+[data-look="club"] .lp-chip b { font-size: 14.5px; }
+[data-look="club"] .lp-chip small { font-size: 12.5px; color: #555f6d; }
+[data-look="club"] .lp-chip-1 { left: 0; top: 300px; }
+[data-look="club"] .lp-chip-2 { right: 0; top: 150px; }
+[data-look="club"] .lp-chip-3 { right: 6%; bottom: 40px; }
+[data-look="club"] .lp-hero-txt h1 { margin-top: 12px; }
+@media (max-width: 1100px) { [data-look="club"] .lp-dev { width: 200px; } [data-look="club"] .lp-dev-c { width: 222px; } [data-look="club"] .lp-stage { height: 500px; } }
+@media (max-width: 900px) {
+  [data-look="club"] .lp-hero { grid-template-columns: 1fr; padding-top: 32px; }
+  [data-look="club"] .lp-stage { height: 470px; margin-top: 8px; }
+  [data-look="club"] .lp-dev { width: 170px; border-radius: 26px; border-width: 5px; }
+  [data-look="club"] .lp-dev img { border-radius: 21px; }
+  [data-look="club"] .lp-dev-c { width: 200px; }
+  [data-look="club"] .lp-dev-l { left: -2%; top: 50px; }
+  [data-look="club"] .lp-dev-r { right: -2%; top: 50px; }
+  [data-look="club"] .lp-chip { padding: 7px 10px 7px 7px; }
+  [data-look="club"] .lp-chip i { width: 28px; height: 28px; font-size: 14px; }
+  [data-look="club"] .lp-chip b { font-size: 13px; }
+  [data-look="club"] .lp-chip-1 { left: 0; top: 270px; }
+  [data-look="club"] .lp-chip-2 { right: 0; top: 120px; }
+  [data-look="club"] .lp-chip-3 { display: none; }
+}
