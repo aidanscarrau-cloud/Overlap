@@ -2050,3 +2050,23 @@ html { -webkit-text-size-adjust: 100%; }
 @media (max-width: 900px) { [data-look="club"] .lp-dev.lp-dev-row.lp-phone-only { width: min(250px, 70%); margin: 0 auto; } }
 [data-look="club"] .lp-price-year { margin: -6px 0 0 !important; color: #e6e8ec !important; font-size: 16px; } [data-look="club"] .lp-price-year b { color: #fff; }
 [data-look="club"].lp [id] { scroll-margin-top: 76px; } html:has(.lp) { scroll-behavior: smooth; } @media (prefers-reduced-motion: reduce) { html:has(.lp) { scroll-behavior: auto; } }
+
+/* Small phones: shorter intro, buttons side by side, and a peek at the app on the first screen */
+[data-look="club"] .lp-short, [data-look="club"] .lp-peek { display: none; }
+@media (max-width: 600px) {
+  [data-look="club"] .lp-hero { padding-top: 22px; gap: 0; }
+  [data-look="club"] .lp-hero .lp-kicker { font-size: 11.5px; letter-spacing: 0.08em; }
+  [data-look="club"] .lp-hero h1 { font-size: 40px; margin: 8px 0 10px; }
+  [data-look="club"] .lp-hero p { font-size: 16.5px; margin-bottom: 16px; }
+  [data-look="club"] .lp-long { display: none; }
+  [data-look="club"] .lp-short { display: inline; }
+  [data-look="club"] .lp-ctas { flex-wrap: nowrap; gap: 8px; }
+  [data-look="club"] .lp-ctas .lp-big { flex: 1 1 0; min-height: 48px; padding: 0 10px; font-size: 15.5px; white-space: nowrap; }
+  [data-look="club"] .lp-peek { display: block; position: relative; height: 250px; margin: 20px -16px 0; overflow: hidden; -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); }
+  [data-look="club"] .lp-peek-dev { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 250px; aspect-ratio: 390 / 820; border-radius: 30px; border: 6px solid #0b0c0e; background: #0b0c0e; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  [data-look="club"] .lp-peek-dev img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 24px; }
+  [data-look="club"] .lp-peek-chip { left: auto; right: 6px; top: 96px; }
+  [data-look="club"] .lp-stage { display: none; }
+  [data-look="club"] .lp-hero .lp-ticks { margin-top: 8px; }
+}
+@media (max-width: 360px) { [data-look="club"] .lp-ctas .lp-big { font-size: 14px; } [data-look="club"] .lp-hero h1 { font-size: 36px; } }

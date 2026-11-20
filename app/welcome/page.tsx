@@ -125,7 +125,10 @@ export default function Welcome() {
         <div className="lp-hero-txt">
           <span className="lp-kicker">The club app for grassroots football</span>
           <h1>Your whole club, in one simple app</h1>
-          <p>Training, matches, team chat, trials, line-ups and player development, for coaches, players and parents. Set up in an afternoon. Works on any phone, no app store needed.</p>
+          <p>
+            <span className="lp-long">Training, matches, team chat, trials, line-ups and player development, for coaches, players and parents. Set up in an afternoon. Works on any phone, no app store needed.</span>
+            <span className="lp-short">Training, matches, chat, trials and line-ups for coaches, players and parents. Works on any phone.</span>
+          </p>
           <div className="lp-ctas">
             <a href="#contact" className="btn primary lp-big">
               Register interest
@@ -133,6 +136,19 @@ export default function Welcome() {
             <a href="#features" className="btn lp-big lp-ghost">
               See how it works
             </a>
+          </div>
+          {/* Small phones: a peek at the app on the first screen (the three-phone picture is hidden there). */}
+          <div className="lp-peek" aria-hidden="true">
+            <span className="lp-peek-dev">
+              <img src="/landing/family-home.webp" alt="" width={780} height={1688} />
+            </span>
+            <span className="lp-chip lp-peek-chip">
+              <i className="ok">✓</i>
+              <span>
+                <b>Leo&apos;s coming</b>
+                <small>Tuesday training</small>
+              </span>
+            </span>
           </div>
           <ul className="lp-ticks">
             <li>Opening to more clubs soon</li>
