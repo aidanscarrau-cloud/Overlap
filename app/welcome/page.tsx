@@ -95,6 +95,8 @@ const FAQ: [string, React.ReactNode][] = [
   ["Does it work with PlayHQ?", <>It sits alongside it: import your players from a registration export and paste your fixtures straight in.</>],
   ["Do families have to pay or download anything?", <>No. It&apos;s free for families and works on any phone; they add it to their home screen in 30 seconds.</>],
   ["We already use TeamApp or Spond. How do we switch?", <>Import your players from your registration spreadsheet and Overlap emails every family an invite linked to their child. Many clubs run both for a couple of weeks, then switch off the old app once families are replying in Overlap.</>],
+  ["How does paying work?", <>$60 a month, or $600 a year (two months free), for the whole club. Pay monthly and cancel any time. Overlap isn&apos;t registered for GST, so there&apos;s no GST added, and you&apos;ll get an invoice your treasurer can file.</>],
+  ["Who runs Overlap?", <>Overlap is built and run by Aidan Scarr in Newcastle, Australia. You can reach him through the <Link href="/help#contact">contact form</Link>.</>],
   ["What if we need help?", <>There&apos;s a <Link href="/help">help page</Link> and a support form, and we&apos;ll help set your club up.</>],
 ];
 
@@ -290,11 +292,15 @@ export default function Welcome() {
             <b>$60</b>
             <span>per month</span>
           </div>
-          <p>For your whole club, however many teams: $720 a year. A club with 100 players would pay about 60c per player a month. Prices in Australian dollars.</p>
+          <p className="lp-price-year">
+            or <b>$600 a year</b>, two months free
+          </p>
+          <p>For your whole club, however many teams. A club with 100 players would pay about 60c per player a month. Australian dollars, no GST added.</p>
           <ul className="lp-ticks">
             <li>Unlimited teams, players, parents and coaches</li>
             <li>Every feature, including trials and the drill library</li>
             <li>Help getting your club set up</li>
+            <li>Pay monthly and cancel any time</li>
           </ul>
           <p className="lp-pilot">We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
           <a href="#contact" className="btn primary lp-big">
@@ -337,7 +343,7 @@ export default function Welcome() {
             </svg>
             Overlap
           </span>
-          <p>The club app for grassroots football. Made in Australia.</p>
+          <p>The club app for grassroots football. Built and run by Aidan Scarr in Newcastle, Australia.</p>
         </div>
         <nav aria-label="Footer">
           <b>Product</b>

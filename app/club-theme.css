@@ -2048,3 +2048,4 @@ html { -webkit-text-size-adjust: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { [data-look="club"] .lp-sticky { transition: none; } }
 @media (max-width: 900px) { [data-look="club"] .lp-dev.lp-dev-row.lp-phone-only { width: min(250px, 70%); margin: 0 auto; } }
+[data-look="club"] .lp-price-year { margin: -6px 0 0 !important; color: #e6e8ec !important; font-size: 16px; } [data-look="club"] .lp-price-year b { color: #fff; }

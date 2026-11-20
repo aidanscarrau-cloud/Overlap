@@ -29,7 +29,7 @@ export function InfoShell({ kicker, title, updated, children }: { kicker: string
       </main>
       <footer className="lp-foot">
         <span>
-          <b>Overlap</b> · made in Australia for grassroots football
+          <b>Overlap</b> · built and run by Aidan Scarr in Newcastle, Australia
         </span>
         <span>
           <Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/login">Sign in</Link>

@@ -24,7 +24,7 @@ export default function Privacy() {
       <section>
         <h2>Who we are</h2>
         <p>
-          Overlap is a club app for grassroots football. The club that invites you decides who joins and what they can do; Overlap provides and looks after the app. If you have a question about your own information, you can ask your
+          Overlap is a club app for grassroots football, built and run by Aidan Scarr in Newcastle, Australia. The club that invites you decides who joins and what they can do; Overlap provides and looks after the app. If you have a question about your own information, you can ask your
           club, or contact us using the <Link href="/help#contact">contact form</Link> (choose &ldquo;Privacy request&rdquo;).
         </p>
       </section>
