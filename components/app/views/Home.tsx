@@ -1,6 +1,7 @@
 "use client";
 
 import { FamilyInjuries } from "../injuries/Injuries";
+import { usePro } from "../Pro";
 import Link from "next/link";
 import { useApp } from "../AppProvider";
 import { ReplyBadge, ReplyButtons } from "../Replies";
@@ -344,6 +345,7 @@ function ClubNews() {
 
 function FamilyHome() {
   const { data, myPlayers, kidName, goalsOf, repliesFor, squadOf } = useApp();
+  const pro = usePro();
   const parent = data.role === "parent";
   const greeting = greet();
   const first = (data.myName || "").split(" ")[0];
@@ -443,7 +445,7 @@ function FamilyHome() {
 
       <InstallHint />
 
-      <FamilyInjuries />
+      {pro && <FamilyInjuries />}
 
       {nextMatch && !shownMatch.has(nextMatch.id) && (
         <section className="md-match">
@@ -526,7 +528,7 @@ function FamilyHome() {
 
       {myPlayers.map((p) => {
         const goals = goalsOf(p.id).filter((g) => g.status === "active");
-        if (!goals.length) return null;
+        if (!goals.length || !pro) return null;
         return (
           <section key={"g" + p.id} className="md-sec">
             <div className="md-sec-h">
@@ -550,7 +552,7 @@ function FamilyHome() {
         );
       })}
 
-      <FamilyLineups />
+      {pro && <FamilyLineups />}
 
       <ClubNews />
 

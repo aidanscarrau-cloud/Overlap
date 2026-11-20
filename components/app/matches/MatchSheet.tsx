@@ -1,5 +1,6 @@
 "use client";
 
+import { Upgrade, usePro } from "../Pro";
 import { useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
 import { ConfirmButton, SheetFrame } from "../sheets/SheetFrame";
@@ -193,6 +194,7 @@ function DetailsForm({ match, date, onDone }: { match: Match | null; date?: stri
 type Pick = { role: "start" | "bench"; slot: number | null };
 
 function SquadPicker({ match }: { match: Match }) {
+  const pro = usePro();
   const { data, squad, squadOf, matchRepliesFor, supabase, refresh, toast } = useApp();
   const saved = squadOf(match.id);
   const [formationName, setFormationName] = useState(formationFor("11", match.formation).name);
@@ -347,7 +349,7 @@ function SquadPicker({ match }: { match: Match }) {
               ))}
             </select>
           </label>
-          <Pitch formation={formation} bySlot={bySlot} selected={selected} onPick={pickSlot} />
+          {pro ? <Pitch formation={formation} bySlot={bySlot} selected={selected} onPick={pickSlot} /> : <Upgrade compact feature="Line-ups" blurb="Place your squad on the pitch and share the line-up with families." />}
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
             {selected !== null
               ? `Choose a player for ${formation.slots[selected].pos}, or tap another spot to swap them.`
@@ -572,6 +574,7 @@ function ResultForm({ match }: { match: Match }) {
 /* ================================================================ everyone else */
 
 export function MatchView({ match }: { match: Match }) {
+  const pro = usePro();
   const { data, myPlayers, squadOf, kidName } = useApp();
   const teamName = data.teams.find((t) => t.id === match.team_id)?.name ?? "";
   const mine = myPlayers.filter((p) => p.team_ids.includes(match.team_id));
@@ -626,7 +629,7 @@ export function MatchView({ match }: { match: Match }) {
                 </p>
               );
             })}
-            <Pitch formation={formation} bySlot={bySlot} highlight={new Set(mine.map((p) => p.id))} />
+            {pro && <Pitch formation={formation} bySlot={bySlot} highlight={new Set(mine.map((p) => p.id))} />}
             {bench.length > 0 && <p className="muted">Bench: {bench.map((p) => p.full_name).join(", ")}</p>}
           </>
         ) : (

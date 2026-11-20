@@ -10,6 +10,7 @@ import { initials } from "@/lib/format";
 import { Crest } from "@/components/ui";
 import { isStandalone } from "@/lib/push-client";
 import { ThemeToggle } from "./ThemeToggle";
+import { ProBadge } from "./Pro";
 
 const NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
@@ -38,6 +39,8 @@ const NAV = [
 // Players and parents get a short, plain menu; nothing they don't need.
 // Bigger tools that work on a phone but are easier on a computer.
 const DESK = ["/drills", "/trials", "/insights", "/club"];
+// Sections that need Overlap Pro.
+const PRO_PATHS = ["/development", "/fitness", "/trials", "/insights", "/drills"];
 
 const FAMILY_NAV = [
   { href: "/", label: "Home", short: "Home", icon: "i-home" },
@@ -60,9 +63,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
   // Plain words for families: "Leo's progress" for a parent of one, "My progress" for a player.
   const progress = data.role === "player" ? "My progress" : myPlayers.length === 1 ? `${kidName(myPlayers[0])}'s progress` : "Progress";
   // Player accounts under the club's chat age don't get chat at all.
+  // Lite clubs: families don't see Pro sections at all; staff see them marked PRO (they lead to an upgrade screen).
+  const lite = data.club.plan === "lite";
   const nav = (family ? FAMILY_NAV.map((n) => (n.href === "/development" ? { ...n, label: progress } : n)) : NAV).filter(
-    (n) => n.href !== "/chat" || data.chatAllowed,
+    (n) => (n.href !== "/chat" || data.chatAllowed) && !(lite && family && PRO_PATHS.includes(n.href)),
   );
+  const proMark = (href: string) => (lite && PRO_PATHS.includes(href) ? <ProBadge /> : null);
   const chatUnread = data.chats
     .filter((c) => !c.muted)
     .reduce((s, c) => s + c.unread, 0);
@@ -82,7 +88,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setMore(false), [path]);
   // Phone menu: the four places people use most, the rest under More.
   // Families reach Account from the avatar at the top; coaches find Development and the rest under More.
-  const PHONE = ["/", "/sessions", family ? "/development" : "/squad", "/chat"];
+  const PHONE = ["/", "/sessions", family ? (lite ? "/announcements" : "/development") : "/squad", "/chat"];
   const moreItems = nav.filter((n) => !PHONE.includes(n.href));
 
   function switchClub(id: string) {
@@ -174,6 +180,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <use href={`#${n.icon}`} />
               </svg>
               {n.label}
+              {proMark(n.href) && <span className="nav-pro">{proMark(n.href)}</span>}
               {n.href === "/chat" && chatUnread > 0 && (
                 <span className="nbadge">
                   {chatUnread > 99 ? "99+" : chatUnread}
@@ -301,6 +308,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     </svg>
                   </span>
                   {n.label}
+                  {proMark(n.href)}
                 </Link>
               );
               return (

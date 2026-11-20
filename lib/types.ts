@@ -4,7 +4,7 @@ export type Status = "available" | "injured" | "unavailable";
 export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";
 
-export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null };
+export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro" };
 export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null };
 export type Player = {
   id: string;

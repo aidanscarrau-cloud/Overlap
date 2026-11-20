@@ -103,6 +103,7 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("trial_applicants").select("*").eq("club_id", clubId).order("full_name"),
       supabase.from("trial_attendance").select("applicant_id,date_id").eq("club_id", clubId),
       supabase.from("trial_ratings").select("id,applicant_id,date_id,rated_by,rated_by_name,rating,notes,updated_at").eq("club_id", clubId),
+      supabase.from("clubs").select("plan").eq("id", clubId).maybeSingle(),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -113,7 +114,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -167,6 +168,8 @@ export async function getClubData(): Promise<ClubData> {
       ...(one(mine.clubs) ?? { id: clubId, name: "Your club", logo_url: null }),
       // Before update 0023 there are no club colours yet; the defaults are used.
       ...(brand.error || !brand.data ? {} : (brand.data as { brand_primary: string; brand_accent: string })),
+      // Before update 31 there's no plan column: everything stays on, as before.
+      plan: planRow.error || !planRow.data ? "pro" : ((planRow.data as { plan: "lite" | "pro" }).plan ?? "pro"),
     },
     clubs: mems.map((m) => one(m.clubs)).filter(Boolean) as Club[],
     role: mine.role,

@@ -9,6 +9,8 @@ import { LineupPitch } from "../squad/LineupPitch";
 import { POS, POSNAME, STATUS } from "@/lib/constants";
 import { InjuryBoard } from "../injuries/Injuries";
 import { ImportPlayers } from "../squad/ImportPlayers";
+import { ProBadge, Upgrade, usePro } from "../Pro";
+import { Modal } from "../fitness/Fitness";
 import { fmtDay, todayIso } from "@/lib/format";
 import { overall } from "@/lib/idp";
 import type { Player, Position } from "@/lib/types";
@@ -31,6 +33,7 @@ function SquadPage() {
   const { data, team, squad, playerRate, can, canDo, isAdmin, open, sessionsOf, repliesFor, evaluationsOf } = useApp();
   const [view, setView] = useState<"pitch" | "list">("pitch");
   const [importing, setImporting] = useState(false);
+  const pro = usePro();
   const [filter, setFilter] = useState<"all" | "coming" | "noreply" | "out" | "low">("all");
   const [q, setQ] = useState("");
   useEffect(() => {
@@ -72,7 +75,11 @@ function SquadPage() {
         (filter === "low" && (rate(p) ?? 100) < 75)),
   );
 
-  const pitch = <LineupPitch key={team.id} team={team} players={all} replyOf={replyOf} canEdit={canEdit} rate={rate} day={day} />;
+  const pitch = pro ? (
+    <LineupPitch key={team.id} team={team} players={all} replyOf={replyOf} canEdit={canEdit} rate={rate} day={day} />
+  ) : (
+    <Upgrade compact feature="Line-ups" blurb="Drag players into an 11-a-side formation and share the line-up with families." />
+  );
 
   const list = (
     <section className="sq-list-wrap" aria-label="Squad list">
@@ -121,7 +128,7 @@ function SquadPage() {
             </button>
           ))}
       </div>
-      {filter !== "all" || q ? null : <InjuryBoard players={all} />}
+      {filter !== "all" || q || !pro ? null : <InjuryBoard players={all} />}
       {shown.length ? (
         POS.map((pos) => {
           const g = shown.filter((p) => p.position === pos);
@@ -201,7 +208,7 @@ function SquadPage() {
         {canEdit && (
           <div className="sq-head-acts">
             <button className="btn sq-import" onClick={() => setImporting(true)}>
-              Import players
+              Import players {!pro && <ProBadge />}
             </button>
             <button className="btn primary sq-add" onClick={() => open({ kind: "player", id: null })} aria-label="Add player">
               <Icon id="i-plus" />
@@ -210,7 +217,14 @@ function SquadPage() {
           </div>
         )}
       </div>
-      {importing && <ImportPlayers team={team} onClose={() => setImporting(false)} />}
+      {importing &&
+        (pro ? (
+          <ImportPlayers team={team} onClose={() => setImporting(false)} />
+        ) : (
+          <Modal title="Import players" onClose={() => setImporting(false)}>
+            <Upgrade compact feature="Importing players" blurb="Bring every team in from your registration spreadsheet and email each family an invite." />
+          </Modal>
+        ))}
       <div className="seg sq-seg" role="tablist" aria-label="View">
         <button role="tab" aria-selected={view === "pitch"} onClick={() => pickView("pitch")}>
           Pitch

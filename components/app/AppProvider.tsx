@@ -212,7 +212,7 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
   return (
     <AppCtx.Provider value={value}>
       {/* Coaches and admins get the dense "pro" look; players and parents the "calm" one. */}
-      <div className="look-root" data-look="club" data-app="" data-role={isStaffRole(data.role) ? "staff" : "family"} style={brandVars(data.club.brand_primary, data.club.brand_accent) as React.CSSProperties}>
+      <div className="look-root" data-look="club" data-app="" data-role={isStaffRole(data.role) ? "staff" : "family"} style={(data.club.plan === "lite" ? brandVars(null, null) : brandVars(data.club.brand_primary, data.club.brand_accent)) as React.CSSProperties}>
       {children}
       {toastMsg && (
         <div className="toast" role="status">

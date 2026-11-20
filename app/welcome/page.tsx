@@ -89,13 +89,33 @@ const DEMO: DemoDrill[] = ["third-man-lines", "wall-pass-relay", "six-second-win
   return d ? [{ key: d.key, name: d.name, minutes: d.minutes, players: d.player_count, area: d.area, points: d.points, diagram: d.diagram }] : [];
 });
 
+const LITE = [
+  "Training and match schedule",
+  "Yes / No replies and reminders",
+  "Team chat and announcements",
+  "Phone app and notifications",
+  "Squad list and the register",
+  "Calendar links, help and data export",
+];
+const PRO = [
+  "Animated drill library and session planner",
+  "Line-ups shared with families",
+  "Trials, from sign-up to offers",
+  "Player development and fitness testing",
+  "Injuries with return-to-play steps",
+  "Coach insights",
+  "Your club's colours and badge",
+  "Import every player from a spreadsheet",
+];
+
 const FAQ: [string, React.ReactNode][] = [
   ["Is it safe for children?", <>Each club&apos;s data is private to that club, chat is off for younger players by default, and private messages are never open to players. <Link href="/privacy">Read how we protect children&apos;s information</Link>.</>],
   ["Where is our data kept?", <>In Australia (Sydney). Admins can download all of the club&apos;s data at any time.</>],
   ["Does it work with PlayHQ?", <>It sits alongside it: import your players from a registration export and paste your fixtures straight in.</>],
   ["Do families have to pay or download anything?", <>No. It&apos;s free for families and works on any phone; they add it to their home screen in 30 seconds.</>],
   ["We already use TeamApp or Spond. How do we switch?", <>Import your players from your registration spreadsheet and Overlap emails every family an invite linked to their child. Many clubs run both for a couple of weeks, then switch off the old app once families are replying in Overlap.</>],
-  ["How does paying work?", <>$60 a month, or $600 a year (two months free), for the whole club. Pay monthly and cancel any time. Overlap isn&apos;t registered for GST, so there&apos;s no GST added, and you&apos;ll get an invoice your treasurer can file.</>],
+  ["What's free and what's Pro?", <>Lite is free for every club with no team limit: schedule, replies, chat, announcements, the phone app and the register. Pro adds the coaching and club tools: drills and session plans, line-ups, trials, development, fitness, injuries, insights, your colours and badge, and player import.</>],
+  ["How does paying for Pro work?", <>$60 a month, or $600 a year (two months free), for the whole club. Pay monthly and cancel any time; you keep Lite for free. Overlap isn&apos;t registered for GST, so there&apos;s no GST added, and you&apos;ll get an invoice your treasurer can file.</>],
   ["Who runs Overlap?", <>Overlap is built and run by Aidan Scarr in Newcastle, Australia. You can reach him through the <Link href="/help#contact">contact form</Link>.</>],
   ["What if we need help?", <>There&apos;s a <Link href="/help">help page</Link> and a support form, and we&apos;ll help set your club up.</>],
 ];
@@ -151,7 +171,7 @@ export default function Welcome() {
             </span>
           </div>
           <ul className="lp-ticks">
-            <li>Opening to more clubs soon</li>
+            <li>Free Lite plan for every club</li>
             <li>Unlimited teams, players and parents</li>
             <li>Your club&apos;s badge and colours</li>
             <li>Made in Australia</li>
@@ -301,28 +321,52 @@ export default function Welcome() {
         </ul>
       </section>
 
-      <section id="pricing" className="lp-pricing">
-        <div className="lp-price-card">
-          <span className="lp-price-for">Planned price · whole club</span>
-          <div className="lp-price">
-            <b>$60</b>
-            <span>per month</span>
-          </div>
-          <p className="lp-price-year">
-            or <b>$600 a year</b>, two months free
-          </p>
-          <p>For your whole club, however many teams. A club with 100 players would pay about 60c per player a month. Australian dollars, no GST added.</p>
-          <ul className="lp-ticks">
-            <li>Unlimited teams, players, parents and coaches</li>
-            <li>Every feature, including trials and the drill library</li>
-            <li>Help getting your club set up</li>
-            <li>Pay monthly and cancel any time</li>
-          </ul>
-          <p className="lp-pilot">We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
+      <section id="pricing" className="lp-plans">
+        <span className="lp-kicker">Planned pricing</span>
+        <h2>Free to start. Pro when you&apos;re ready.</h2>
+        <p className="lp-plans-sub">Both plans cover your whole club: every team, coach, player and parent. Australian dollars, no GST added.</p>
+        <div className="lp-plan-row">
+          <article className="lp-plan">
+            <span className="lp-plan-name">Lite</span>
+            <div className="lp-price">
+              <b>Free</b>
+            </div>
+            <p>Everything a club needs to stay organised.</p>
+            <ul className="lp-ticks">
+              {LITE.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </article>
+          <article className="lp-plan pro">
+            <span className="lp-plan-name">
+              Pro <span className="pro-badge">MOST POPULAR</span>
+            </span>
+            <div className="lp-price">
+              <b>$60</b>
+              <span>per month</span>
+            </div>
+            <p className="lp-price-year">
+              or <b>$600 a year</b>, two months free
+            </p>
+            <p>Everything in Lite, plus the coaching and club tools:</p>
+            <ul className="lp-ticks">
+              {PRO.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+            <p className="lp-plan-small">Pay monthly and cancel any time. A club with 100 players pays about 60c per player a month.</p>
+          </article>
+        </div>
+        <div className="lp-plan-cta">
+          <p>We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
           <a href="#contact" className="btn primary lp-big">
             Register interest
           </a>
         </div>
+      </section>
+
+      <section className="lp-faq-wrap">
         <div className="lp-faq">
           <span className="lp-kicker">Questions committees ask</span>
           <h2>The fine print, in plain English</h2>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Upgrade, usePro } from "../Pro";
 import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
@@ -61,7 +62,8 @@ export function SessionSheet({ id, date, copyFrom, tab: startTab }: { id: string
   const canPlan = canDo("sessions.edit", existing?.team_id ?? (team && canDo("sessions.edit", team.id) ? team.id : planTeams[0]?.id));
   const canAttend = canDo("attendance.edit", existing?.team_id ?? team?.id);
   const seeNotes = can("sessions.view_notes");
-  const [tab, setTab] = useState<"plan" | "attendance" | "notes">(startTab ?? (canPlan ? "plan" : "attendance"));
+  const pro = usePro();
+  const [tab, setTab] = useState<"plan" | "attendance" | "notes">(startTab ?? (canPlan && pro ? "plan" : "attendance"));
   const [busy, setBusy] = useState(false);
   const [walk, setWalk] = useState<number | null>(null);
   const [edit, setEdit] = useState<null | "when" | "where" | "focus" | "repeat" | "team">(null);
@@ -189,7 +191,7 @@ export function SessionSheet({ id, date, copyFrom, tab: startTab }: { id: string
     </button>
   );
   const FOCUS_IDEAS = ["Pressing", "Build-up", "Possession", "1v1", "Finishing", "Transition", "Passing", "Defending"];
-  const wide = canPlan && tab === "plan";
+  const wide = canPlan && pro && tab === "plan";
 
   return (
     <SheetFrame
@@ -353,7 +355,10 @@ export function SessionSheet({ id, date, copyFrom, tab: startTab }: { id: string
               ))}
           </div>
 
-          {tab === "plan" && (
+          {tab === "plan" && !pro && (
+            <Upgrade compact feature="Session planning" blurb="Build sessions from the animated drill library and walk players through them." />
+          )}
+          {tab === "plan" && pro && (
             <div className="sp-plan">
               <PlanSummary plan={d.plan} start={d.start_time} drillMap={drillMap} />
               {walkItems(d.plan).length > 0 && <WalkButton count={walkItems(d.plan).length} onClick={() => setWalk(0)} />}

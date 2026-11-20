@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "../AppProvider";
+import { Upgrade, usePro } from "../Pro";
 import { ConfirmButton } from "../sheets/SheetFrame";
 import { Crest, Icon } from "@/components/ui";
 import { LogoPicker } from "../LogoPicker";
@@ -13,7 +14,12 @@ import { ROLES, ROLES_PLURAL, ROLE_HELP } from "@/lib/constants";
 import { BRAND_PRESETS, DEFAULT_BRAND, brandVars } from "@/lib/brand";
 import { errMsg, initials } from "@/lib/format";
 import type { Invite, Member, Role } from "@/lib/types";
-import { CONFIGURABLE_ROLES, PERMS, defaultPerm, type Perm } from "@/lib/permissions";
+import {
+  CONFIGURABLE_ROLES,
+  PERMS,
+  defaultPerm,
+  type Perm,
+} from "@/lib/permissions";
 
 export function ClubPage() {
   const { data, isAdmin, can } = useApp();
@@ -24,7 +30,11 @@ export function ClubPage() {
           <div className="eyebrow">
             {ROLES[data.role]} · {data.club.name}
           </div>
-          <h1>{data.role === "player" || data.role === "parent" ? "Your account" : "Club & members"}</h1>
+          <h1>
+            {data.role === "player" || data.role === "parent"
+              ? "Your account"
+              : "Club & members"}
+          </h1>
         </div>
       </div>
       <div style={{ display: "grid", gap: 16 }}>
@@ -50,7 +60,12 @@ function DataCard() {
         <h2>Your club&apos;s data</h2>
       </div>
       <div className="card-b data-card">
-        <p>Download everything {data.club.name} has in Overlap (teams, players, members, sessions, attendance, matches, development, fitness, injuries and trials) as spreadsheets in one file. Private chat messages aren&apos;t included.</p>
+        <p>
+          Download everything {data.club.name} has in Overlap (teams, players,
+          members, sessions, attendance, matches, development, fitness, injuries
+          and trials) as spreadsheets in one file. Private chat messages
+          aren&apos;t included.
+        </p>
         <div className="data-acts">
           <a className="btn primary" href="/api/club/export" download>
             Download all club data
@@ -69,13 +84,17 @@ function DataCard() {
 
 function ClubSettings() {
   const { data, supabase, refresh, toast } = useApp();
+  const pro = usePro();
   const [name, setName] = useState(data.club.name);
   const [busy, setBusy] = useState(false);
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
-    const { error } = await supabase.from("clubs").update({ name: name.trim() }).eq("id", data.club.id);
+    const { error } = await supabase
+      .from("clubs")
+      .update({ name: name.trim() })
+      .eq("id", data.club.id);
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast("Club renamed");
@@ -86,10 +105,25 @@ function ClubSettings() {
       <div className="card-h">
         <h2>Club</h2>
       </div>
-      <form className="card-b" onSubmit={save} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+      <form
+        className="card-b"
+        onSubmit={save}
+        style={{
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+        }}
+      >
         <label className="field" style={{ flex: "1 1 260px" }}>
           <span>Club name</span>
-          <input className="input" id="club-name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            className="input"
+            id="club-name"
+            maxLength={80}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </label>
         {name.trim() !== data.club.name && (
           <button className="btn primary" type="submit" disabled={busy}>
@@ -97,30 +131,53 @@ function ClubSettings() {
           </button>
         )}
       </form>
-      <BrandColours />
       <ChatAgeSetting />
-      <div className="card-b" style={{ paddingTop: 0 }}>
-        <LogoPicker
-          url={data.club.logo_url}
-          label="Club logo"
-          help="Shown in the sidebar and on team cards. PNG, JPG or WebP; square with a transparent background looks best. You can also drag an image here."
-          onPick={async (file) => {
-            const url = await uploadLogo(supabase, data.club.id, "club", file);
-            const { error } = await supabase.from("clubs").update({ logo_url: url }).eq("id", data.club.id);
-            if (error) throw error;
-            await removeLogoFile(supabase, data.club.logo_url);
-            toast("Club logo updated");
-            refresh();
-          }}
-          onRemove={async () => {
-            const { error } = await supabase.from("clubs").update({ logo_url: null }).eq("id", data.club.id);
-            if (error) throw error;
-            await removeLogoFile(supabase, data.club.logo_url);
-            toast("Club logo removed");
-            refresh();
-          }}
-        />
-      </div>
+      {pro ? (
+        <>
+          <BrandColours />
+          <div className="card-b" style={{ paddingTop: 0 }}>
+            <LogoPicker
+              url={data.club.logo_url}
+              label="Club logo"
+              help="Shown in the sidebar and on team cards. PNG, JPG or WebP; square with a transparent background looks best. You can also drag an image here."
+              onPick={async (file) => {
+                const url = await uploadLogo(
+                  supabase,
+                  data.club.id,
+                  "club",
+                  file,
+                );
+                const { error } = await supabase
+                  .from("clubs")
+                  .update({ logo_url: url })
+                  .eq("id", data.club.id);
+                if (error) throw error;
+                await removeLogoFile(supabase, data.club.logo_url);
+                toast("Club logo updated");
+                refresh();
+              }}
+              onRemove={async () => {
+                const { error } = await supabase
+                  .from("clubs")
+                  .update({ logo_url: null })
+                  .eq("id", data.club.id);
+                if (error) throw error;
+                await removeLogoFile(supabase, data.club.logo_url);
+                toast("Club logo removed");
+                refresh();
+              }}
+            />
+          </div>
+        </>
+      ) : (
+        <div className="card-b" style={{ paddingTop: 0 }}>
+          <Upgrade
+            compact
+            feature="Club branding"
+            blurb="Put your club's colours and badge on the app and every email."
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -131,7 +188,10 @@ function TeamsCard() {
     <section className="card">
       <div className="card-h">
         <h2>Teams</h2>
-        <button className="btn sm" onClick={() => open({ kind: "team", id: null })}>
+        <button
+          className="btn sm"
+          onClick={() => open({ kind: "team", id: null })}
+        >
           <Icon id="i-plus" />
           Add team
         </button>
@@ -139,12 +199,22 @@ function TeamsCard() {
       <div className="card-b rows">
         {data.teams.length ? (
           data.teams.map((t) => (
-            <button key={t.id} className="rowi" onClick={() => open({ kind: "team", id: t.id })}>
+            <button
+              key={t.id}
+              className="rowi"
+              onClick={() => open({ kind: "team", id: t.id })}
+            >
               <Crest url={t.logo_url ?? data.club.logo_url} size={32} />
               <span className="rt">
                 <b>{t.name}</b>
                 <span>
-                  {[t.age_group, t.coach_name && `Coach: ${t.coach_name}`, `${data.players.filter((p) => p.team_id === t.id).length} players`].filter(Boolean).join(" · ")}
+                  {[
+                    t.age_group,
+                    t.coach_name && `Coach: ${t.coach_name}`,
+                    `${data.players.filter((p) => p.team_id === t.id).length} players`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </span>
               <span className="btn sm">Edit</span>
@@ -161,11 +231,21 @@ function TeamsCard() {
 function InvitesCard() {
   const { data, isAdmin, team, supabase, toast } = useApp();
   // Admins invite anyone; head coaches can also bring in assistant coaches for their teams.
-  const allowed: Role[] = isAdmin ? ["coach", "assistant", "player", "parent", "admin"] : data.role === "coach" ? ["player", "parent", "assistant"] : ["player", "parent"];
+  const allowed: Role[] = isAdmin
+    ? ["coach", "assistant", "player", "parent", "admin"]
+    : data.role === "coach"
+      ? ["player", "parent", "assistant"]
+      : ["player", "parent"];
   const [invites, setInvites] = useState<Invite[] | null>(null);
   const [role, setRole] = useState<Role>(allowed[0]);
-  const inviteTeams = isAdmin ? data.teams : data.teams.filter((t) => data.myTeamIds.includes(t.id));
-  const [teamId, setTeamId] = useState((team && inviteTeams.some((t) => t.id === team.id) ? team.id : inviteTeams[0]?.id) ?? "");
+  const inviteTeams = isAdmin
+    ? data.teams
+    : data.teams.filter((t) => data.myTeamIds.includes(t.id));
+  const [teamId, setTeamId] = useState(
+    (team && inviteTeams.some((t) => t.id === team.id)
+      ? team.id
+      : inviteTeams[0]?.id) ?? "",
+  );
   // "__new" adds a new player to the squad when the person joins (the only choice for a team with no players yet).
   const [playerId, setPlayerId] = useState("__new");
   const [childName, setChildName] = useState("");
@@ -174,12 +254,16 @@ function InvitesCard() {
   const [origin, setOrigin] = useState("");
   const [loadError, setLoadError] = useState("");
   const linkable = role === "player" || role === "parent";
-  const teamPlayers = data.players.filter((p) => p.team_id === teamId).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const teamPlayers = data.players
+    .filter((p) => p.team_id === teamId)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   async function load() {
     const { data: rows, error } = await supabase
       .from("invites")
-      .select("code,role,team_id,player_id,create_player,new_player_name,expires_at,max_uses,uses")
+      .select(
+        "code,role,team_id,player_id,create_player,new_player_name,expires_at,max_uses,uses",
+      )
       .eq("club_id", data.club.id)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
@@ -187,7 +271,11 @@ function InvitesCard() {
     if (error) {
       // Show the reason on the card, not just in a toast, so it can be reported.
       const msg = errMsg(error);
-      setLoadError(/abort|timed? ?out/i.test(msg) ? "the server took too long to answer" : msg);
+      setLoadError(
+        /abort|timed? ?out/i.test(msg)
+          ? "the server took too long to answer"
+          : msg,
+      );
       setInvites([]);
       return;
     }
@@ -203,7 +291,8 @@ function InvitesCard() {
   async function create(e: React.FormEvent) {
     e.preventDefault();
     const isNew = linkable && !!teamId && playerId === "__new";
-    if (isNew && role === "parent" && !childName.trim()) return toast("Enter the child's name, so they're added to the squad.");
+    if (isNew && role === "parent" && !childName.trim())
+      return toast("Enter the child's name, so they're added to the squad.");
     const singleUse = linkable && !!playerId && !(isNew && role === "player");
     setBusy(true);
     const row = {
@@ -241,8 +330,10 @@ function InvitesCard() {
     }
   }
 
-  const teamName = (id: string | null) => data.teams.find((t) => t.id === id)?.name;
-  const playerName = (id: string | null) => data.players.find((p) => p.id === id)?.full_name;
+  const teamName = (id: string | null) =>
+    data.teams.find((t) => t.id === id)?.name;
+  const playerName = (id: string | null) =>
+    data.players.find((p) => p.id === id)?.full_name;
 
   return (
     <section className="card">
@@ -251,13 +342,22 @@ function InvitesCard() {
       </div>
       <div className="card-b" style={{ display: "grid", gap: 16 }}>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-          Create a code and send it, or its link, to the person. They sign up, enter the code and join with the role you chose. Codes last 14 days.
+          Create a code and send it, or its link, to the person. They sign up,
+          enter the code and join with the role you chose. Codes last 14 days.
         </p>
         <form onSubmit={create} style={{ display: "grid", gap: 12 }}>
           <div className="row2">
             <label className="field">
               <span>Role</span>
-              <select className="input" id="inv-role" value={role} onChange={(e) => (setRole(e.target.value as Role), setPlayerId("__new"))}>
+              <select
+                className="input"
+                id="inv-role"
+                value={role}
+                onChange={(e) => (
+                  setRole(e.target.value as Role),
+                  setPlayerId("__new")
+                )}
+              >
                 {allowed.map((r) => (
                   <option key={r} value={r}>
                     {ROLES[r]}
@@ -267,8 +367,22 @@ function InvitesCard() {
             </label>
             <label className="field">
               <span>Team</span>
-              <select className="input" id="inv-team" value={teamId} onChange={(e) => (setTeamId(e.target.value), setPlayerId("__new"))}>
-                {isAdmin && <option value="">{role === "coach" || role === "assistant" ? "Assign teams later" : "No team"}</option>}
+              <select
+                className="input"
+                id="inv-team"
+                value={teamId}
+                onChange={(e) => (
+                  setTeamId(e.target.value),
+                  setPlayerId("__new")
+                )}
+              >
+                {isAdmin && (
+                  <option value="">
+                    {role === "coach" || role === "assistant"
+                      ? "Assign teams later"
+                      : "No team"}
+                  </option>
+                )}
                 {inviteTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -278,9 +392,20 @@ function InvitesCard() {
             </label>
             {linkable && teamId && (
               <label className="field">
-                <span>{role === "parent" ? "Their child" : "Which player"}</span>
-                <select className="input" id="inv-player" value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-                  <option value="__new">{role === "parent" ? "New player: add their child to the squad" : "New player: add them to the squad"}</option>
+                <span>
+                  {role === "parent" ? "Their child" : "Which player"}
+                </span>
+                <select
+                  className="input"
+                  id="inv-player"
+                  value={playerId}
+                  onChange={(e) => setPlayerId(e.target.value)}
+                >
+                  <option value="__new">
+                    {role === "parent"
+                      ? "New player: add their child to the squad"
+                      : "New player: add them to the squad"}
+                  </option>
                   {teamPlayers.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.full_name}
@@ -290,15 +415,27 @@ function InvitesCard() {
                 </select>
               </label>
             )}
-            {linkable && teamId && playerId === "__new" && role === "parent" && (
-              <label className="field">
-                <span>Child&apos;s name</span>
-                <input className="input" id="inv-child" maxLength={80} value={childName} onChange={(e) => setChildName(e.target.value)} placeholder="e.g. Leo Smith" />
-              </label>
-            )}
+            {linkable &&
+              teamId &&
+              playerId === "__new" &&
+              role === "parent" && (
+                <label className="field">
+                  <span>Child&apos;s name</span>
+                  <input
+                    className="input"
+                    id="inv-child"
+                    maxLength={80}
+                    value={childName}
+                    onChange={(e) => setChildName(e.target.value)}
+                    placeholder="e.g. Leo Smith"
+                  />
+                </label>
+              )}
           </div>
           <span className="muted" style={{ fontSize: 13 }}>
-            {ROLE_HELP[role]}.{linkable && " Choose the player so they can reply to sessions and update availability."}
+            {ROLE_HELP[role]}.
+            {linkable &&
+              " Choose the player so they can reply to sessions and update availability."}
           </span>
           {linkable && teamId && playerId === "__new" && (
             <span className="muted" style={{ fontSize: 13 }}>
@@ -309,12 +446,22 @@ function InvitesCard() {
           )}
           {linkable && (!playerId || !teamId) && (
             <div className="notice bad" style={{ fontSize: 13.5 }}>
-              No player chosen. They&apos;ll be able to look around but can&apos;t reply to sessions until you link them to a player in the Members list.
+              No player chosen. They&apos;ll be able to look around but
+              can&apos;t reply to sessions until you link them to a player in
+              the Members list.
             </div>
           )}
-          {(!linkable || !playerId || !teamId || (playerId === "__new" && role === "player")) && (
+          {(!linkable ||
+            !playerId ||
+            !teamId ||
+            (playerId === "__new" && role === "player")) && (
             <label className="check">
-              <input type="checkbox" id="inv-multi" checked={multi} onChange={(e) => setMulti(e.target.checked)} />
+              <input
+                type="checkbox"
+                id="inv-multi"
+                checked={multi}
+                onChange={(e) => setMulti(e.target.checked)}
+              />
               <span>
                 {linkable && teamId && playerId === "__new"
                   ? "Let up to 50 players use this code: each one is added to the squad when they join (good for a team group chat)"
@@ -333,9 +480,17 @@ function InvitesCard() {
             Active invites
           </div>
           {loadError ? (
-            <div className="notice bad" role="alert" style={{ display: "grid", gap: 8, justifyItems: "start" }}>
+            <div
+              className="notice bad"
+              role="alert"
+              style={{ display: "grid", gap: 8, justifyItems: "start" }}
+            >
               <span>Couldn&apos;t load invites: {loadError}</span>
-              <button type="button" className="btn sm" onClick={() => (setInvites(null), load())}>
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => (setInvites(null), load())}
+              >
                 Try again
               </button>
             </div>
@@ -352,17 +507,38 @@ function InvitesCard() {
                       <b style={{ display: "block" }}>
                         {ROLES[i.role]}
                         {teamName(i.team_id) ? ` · ${teamName(i.team_id)}` : ""}
-                        {playerName(i.player_id) ? ` · for ${playerName(i.player_id)}` : i.create_player ? (i.new_player_name ? ` · adds ${i.new_player_name} to the squad` : " · adds them to the squad") : ""}
+                        {playerName(i.player_id)
+                          ? ` · for ${playerName(i.player_id)}`
+                          : i.create_player
+                            ? i.new_player_name
+                              ? ` · adds ${i.new_player_name} to the squad`
+                              : " · adds them to the squad"
+                            : ""}
                       </b>
-                      <span className="muted" style={{ fontSize: 13, wordBreak: "break-all" }}>
-                        {link} · {i.max_uses > 1 ? `${i.uses}/${i.max_uses} used · ` : ""}expires {new Date(i.expires_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                      <span
+                        className="muted"
+                        style={{ fontSize: 13, wordBreak: "break-all" }}
+                      >
+                        {link} ·{" "}
+                        {i.max_uses > 1
+                          ? `${i.uses}/${i.max_uses} used · `
+                          : ""}
+                        expires{" "}
+                        {new Date(i.expires_at).toLocaleDateString("en-AU", {
+                          day: "numeric",
+                          month: "short",
+                        })}
                       </span>
                     </span>
                     <span style={{ display: "flex", gap: 6 }}>
                       <button className="btn sm" onClick={() => copy(link)}>
                         Copy link
                       </button>
-                      <ConfirmButton className="btn sm danger" label="Cancel" onConfirm={() => remove(i.code)} />
+                      <ConfirmButton
+                        className="btn sm danger"
+                        label="Cancel"
+                        onConfirm={() => remove(i.code)}
+                      />
                     </span>
                   </div>
                 );
@@ -380,18 +556,27 @@ function InvitesCard() {
 function MembersCard() {
   const { data, isAdmin } = useApp();
   const order: Role[] = ["admin", "coach", "assistant", "player", "parent"];
-  const members = [...data.members].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || a.full_name.localeCompare(b.full_name));
+  const members = [...data.members].sort(
+    (a, b) =>
+      order.indexOf(a.role) - order.indexOf(b.role) ||
+      a.full_name.localeCompare(b.full_name),
+  );
   return (
     <section className="card">
       <div className="card-h">
         <h2>Members</h2>
         <span className="muted" style={{ fontSize: 13 }}>
-          {data.members.length} {data.members.length === 1 ? "person" : "people"}
+          {data.members.length}{" "}
+          {data.members.length === 1 ? "person" : "people"}
         </span>
       </div>
       <div className="card-b mlist">
         {members.map((m) => (
-          <MemberRow key={m.id} m={m} editable={isAdmin && m.user_id !== data.userId} />
+          <MemberRow
+            key={m.id}
+            m={m}
+            editable={isAdmin && m.user_id !== data.userId}
+          />
         ))}
       </div>
     </section>
@@ -401,7 +586,9 @@ function MembersCard() {
 function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
   const { data, supabase, refresh, toast } = useApp();
   const [busy, setBusy] = useState(false);
-  const teamNames = data.teams.filter((t) => m.team_ids.includes(t.id)).map((t) => t.name);
+  const teamNames = data.teams
+    .filter((t) => m.team_ids.includes(t.id))
+    .map((t) => t.name);
   const linkedPlayers = data.players.filter((p) => m.player_ids.includes(p.id));
   const linkedNames = linkedPlayers.map((p) => p.full_name).join(", ");
   const isMe = m.user_id === data.userId;
@@ -414,11 +601,29 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
     toast(msg);
     refresh();
   }
-  const setRole = (role: Role) => run(() => supabase.from("memberships").update({ role }).eq("id", m.id), "Role updated");
+  const setRole = (role: Role) =>
+    run(
+      () => supabase.from("memberships").update({ role }).eq("id", m.id),
+      "Role updated",
+    );
   const linkPlayer = (player_id: string) =>
-    run(() => supabase.from("member_players").insert({ membership_id: m.id, player_id }), "Player linked");
+    run(
+      () =>
+        supabase
+          .from("member_players")
+          .insert({ membership_id: m.id, player_id }),
+      "Player linked",
+    );
   const unlinkPlayer = (player_id: string) =>
-    run(() => supabase.from("member_players").delete().eq("membership_id", m.id).eq("player_id", player_id), "Player unlinked");
+    run(
+      () =>
+        supabase
+          .from("member_players")
+          .delete()
+          .eq("membership_id", m.id)
+          .eq("player_id", player_id),
+      "Player unlinked",
+    );
   const linkable = m.role === "player" || m.role === "parent";
   // Offer players from the member's teams first; if they have none, every player in the club.
   const playerOptions = data.players
@@ -428,12 +633,21 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
     run(
       () =>
         on
-          ? supabase.from("member_teams").insert({ membership_id: m.id, team_id: teamId })
-          : supabase.from("member_teams").delete().eq("membership_id", m.id).eq("team_id", teamId),
+          ? supabase
+              .from("member_teams")
+              .insert({ membership_id: m.id, team_id: teamId })
+          : supabase
+              .from("member_teams")
+              .delete()
+              .eq("membership_id", m.id)
+              .eq("team_id", teamId),
       on ? "Team added" : "Team removed",
     );
   async function remove() {
-    const { error } = await supabase.from("memberships").delete().eq("id", m.id);
+    const { error } = await supabase
+      .from("memberships")
+      .delete()
+      .eq("id", m.id);
     if (error) return toast(errMsg(error));
     toast(`${m.full_name} removed from the club`);
     refresh();
@@ -441,8 +655,16 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
 
   const summary = [
     !editable && ROLES[m.role],
-    m.role === "admin" ? "All teams" : teamNames.join(", ") || (m.role === "coach" || m.role === "assistant" ? "No teams assigned yet" : ""),
-    linkedNames && (m.role === "parent" ? `Parent of ${linkedNames}` : `Player: ${linkedNames}`),
+    m.role === "admin"
+      ? "All teams"
+      : teamNames.join(", ") ||
+        (m.role === "coach" || m.role === "assistant"
+          ? "No teams assigned yet"
+          : ""),
+    linkedNames &&
+      (m.role === "parent"
+        ? `Parent of ${linkedNames}`
+        : `Player: ${linkedNames}`),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -466,7 +688,12 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
             {linkedPlayers.map((p) => (
               <span key={p.id} className="link-chip">
                 {p.full_name}
-                <button type="button" aria-label={`Unlink ${p.full_name}`} disabled={busy} onClick={() => unlinkPlayer(p.id)}>
+                <button
+                  type="button"
+                  aria-label={`Unlink ${p.full_name}`}
+                  disabled={busy}
+                  onClick={() => unlinkPlayer(p.id)}
+                >
                   ✕
                 </button>
               </span>
@@ -480,24 +707,47 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
                 disabled={busy}
                 onChange={(e) => e.target.value && linkPlayer(e.target.value)}
               >
-                <option value="">{linkedPlayers.length ? "+ Add another child…" : m.role === "parent" ? "Choose their child…" : "Choose their player…"}</option>
+                <option value="">
+                  {linkedPlayers.length
+                    ? "+ Add another child…"
+                    : m.role === "parent"
+                      ? "Choose their child…"
+                      : "Choose their player…"}
+                </option>
                 {playerOptions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.full_name}
-                    {data.teams.length > 1 ? ` (${data.teams.find((t) => t.id === p.team_id)?.name ?? ""})` : ""}
+                    {data.teams.length > 1
+                      ? ` (${data.teams.find((t) => t.id === p.team_id)?.name ?? ""})`
+                      : ""}
                   </option>
                 ))}
               </select>
             )}
-            {!linkedPlayers.length && <span className="rbadge wait">Can&apos;t reply to sessions until linked</span>}
+            {!linkedPlayers.length && (
+              <span className="rbadge wait">
+                Can&apos;t reply to sessions until linked
+              </span>
+            )}
           </span>
         )}
         {editable && m.role !== "admin" && data.teams.length > 0 && (
-          <span className="chips" role="group" aria-label={`Teams for ${m.full_name}`}>
+          <span
+            className="chips"
+            role="group"
+            aria-label={`Teams for ${m.full_name}`}
+          >
             {data.teams.map((t) => {
               const on = m.team_ids.includes(t.id);
               return (
-                <button key={t.id} type="button" className="chip" aria-pressed={on} disabled={busy} onClick={() => toggleTeam(t.id, !on)}>
+                <button
+                  key={t.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={on}
+                  disabled={busy}
+                  onClick={() => toggleTeam(t.id, !on)}
+                >
                   {t.name}
                 </button>
               );
@@ -507,14 +757,24 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
       </span>
       {editable ? (
         <>
-          <select className="input" aria-label={`Role for ${m.full_name}`} value={m.role} disabled={busy} onChange={(e) => setRole(e.target.value as Role)}>
+          <select
+            className="input"
+            aria-label={`Role for ${m.full_name}`}
+            value={m.role}
+            disabled={busy}
+            onChange={(e) => setRole(e.target.value as Role)}
+          >
             {(Object.keys(ROLES) as Role[]).map((r) => (
               <option key={r} value={r}>
                 {ROLES[r]}
               </option>
             ))}
           </select>
-          <ConfirmButton className="btn sm danger" label="Remove" onConfirm={remove} />
+          <ConfirmButton
+            className="btn sm danger"
+            label="Remove"
+            onConfirm={remove}
+          />
         </>
       ) : (
         <span className="role-pill">{ROLES[m.role]}</span>
@@ -526,17 +786,24 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
 function RolesCard() {
   const { data, supabase, refresh, toast } = useApp();
   const [busy, setBusy] = useState("");
-  const value = (role: Exclude<Role, "admin">, perm: Perm) => data.rolePerms.find((r) => r.role === role && r.perm === perm)?.allowed ?? defaultPerm(role, perm);
+  const value = (role: Exclude<Role, "admin">, perm: Perm) =>
+    data.rolePerms.find((r) => r.role === role && r.perm === perm)?.allowed ??
+    defaultPerm(role, perm);
 
   async function toggle(role: Exclude<Role, "admin">, perm: Perm) {
     const key = role + perm;
     setBusy(key);
     const { error } = await supabase
       .from("role_permissions")
-      .upsert({ club_id: data.club.id, role, perm, allowed: !value(role, perm) }, { onConflict: "club_id,role,perm" });
+      .upsert(
+        { club_id: data.club.id, role, perm, allowed: !value(role, perm) },
+        { onConflict: "club_id,role,perm" },
+      );
     setBusy("");
     if (error) return toast(errMsg(error));
-    toast(`${ROLES_PLURAL[role]}: ${PERMS.find((p) => p.key === perm)!.label.toLowerCase()} ${!value(role, perm) ? "on" : "off"}`);
+    toast(
+      `${ROLES_PLURAL[role]}: ${PERMS.find((p) => p.key === perm)!.label.toLowerCase()} ${!value(role, perm) ? "on" : "off"}`,
+    );
     refresh();
   }
 
@@ -547,7 +814,9 @@ function RolesCard() {
       </div>
       <div className="card-b" style={{ display: "grid", gap: 12 }}>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-          Choose what each role can do. Coaches, players and parents only work with the teams they belong to (set below in Members), unless &quot;See all teams&quot; is on. Club admins can always do everything.
+          Choose what each role can do. Coaches, players and parents only work
+          with the teams they belong to (set below in Members), unless &quot;See
+          all teams&quot; is on. Club admins can always do everything.
         </p>
         <div className="perm-wrap">
           <table className="perm-table">
@@ -605,14 +874,20 @@ function AccountCard() {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({ full_name: name.trim() }).eq("id", data.userId);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: name.trim() })
+      .eq("id", data.userId);
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast("Name updated");
     refresh();
   }
   async function leave() {
-    const { error } = await supabase.from("memberships").delete().eq("id", data.me.id);
+    const { error } = await supabase
+      .from("memberships")
+      .delete()
+      .eq("id", data.me.id);
     if (error) return toast(errMsg(error));
     document.cookie = "overlap-club=; path=/; max-age=0";
     router.replace("/");
@@ -624,10 +899,24 @@ function AccountCard() {
         <h2>Your account</h2>
       </div>
       <div className="card-b" style={{ display: "grid", gap: 14 }}>
-        <form onSubmit={saveName} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <form
+          onSubmit={saveName}
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "flex-end",
+          }}
+        >
           <label className="field" style={{ flex: "1 1 240px" }}>
             <span>Your name (shown to your club)</span>
-            <input className="input" id="my-name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              className="input"
+              id="my-name"
+              maxLength={80}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </label>
           {name.trim() !== data.myName && (
             <button className="btn primary" type="submit" disabled={busy}>
@@ -647,7 +936,13 @@ function AccountCard() {
           <Link className="btn" href="/notifications">
             Notification settings
           </Link>
-          {data.role !== "admin" && <ConfirmButton className="btn danger" label={`Leave ${data.club.name}`} onConfirm={leave} />}
+          {data.role !== "admin" && (
+            <ConfirmButton
+              className="btn danger"
+              label={`Leave ${data.club.name}`}
+              onConfirm={leave}
+            />
+          )}
         </div>
       </div>
     </section>
@@ -665,43 +960,73 @@ function ChatAgeSetting() {
       .select("chat_min_age")
       .eq("id", data.club.id)
       .maybeSingle()
-      .then(({ data: row }) => setAge((row as { chat_min_age?: number } | null)?.chat_min_age ?? null));
+      .then(({ data: row }) =>
+        setAge((row as { chat_min_age?: number } | null)?.chat_min_age ?? null),
+      );
     // Separate request: works before update 0020 is in (the setting just doesn't show).
     supabase
       .from("clubs")
       .select("chat_young_access")
       .eq("id", data.club.id)
       .maybeSingle()
-      .then(({ data: row, error }) => !error && setYoung((row as { chat_young_access?: "none" | "read" | "write" } | null)?.chat_young_access ?? null));
+      .then(
+        ({ data: row, error }) =>
+          !error &&
+          setYoung(
+            (row as { chat_young_access?: "none" | "read" | "write" } | null)
+              ?.chat_young_access ?? null,
+          ),
+      );
   }, [supabase, data.club.id]);
   if (age === null) return null;
   async function changeYoung(v: "none" | "read" | "write") {
     const prev = young;
     setYoung(v);
-    const { error } = await supabase.from("clubs").update({ chat_young_access: v }).eq("id", data.club.id);
+    const { error } = await supabase
+      .from("clubs")
+      .update({ chat_young_access: v })
+      .eq("id", data.club.id);
     if (error) {
       setYoung(prev);
       return toast(errMsg(error));
     }
-    toast(v === "none" ? `Players under ${age} can't see chat` : v === "read" ? `Players under ${age} can read team chats` : `Players under ${age} can read and send in team chats`);
+    toast(
+      v === "none"
+        ? `Players under ${age} can't see chat`
+        : v === "read"
+          ? `Players under ${age} can read team chats`
+          : `Players under ${age} can read and send in team chats`,
+    );
     refresh();
   }
   async function change(v: number) {
     const prev = age;
     setAge(v);
-    const { error } = await supabase.from("clubs").update({ chat_min_age: v }).eq("id", data.club.id);
+    const { error } = await supabase
+      .from("clubs")
+      .update({ chat_min_age: v })
+      .eq("id", data.club.id);
     if (error) {
       setAge(prev);
       return toast(errMsg(error));
     }
-    toast(v === 0 ? "All players can use team chat" : `Players ${v} and over can use team chat`);
+    toast(
+      v === 0
+        ? "All players can use team chat"
+        : `Players ${v} and over can use team chat`,
+    );
     refresh();
   }
   return (
     <div className="card-b" style={{ paddingTop: 0, display: "grid", gap: 6 }}>
       <label className="field" style={{ maxWidth: 320 }}>
         <span>Players can use team chat from age</span>
-        <select className="input" id="club-chat-age" value={age} onChange={(e) => change(+e.target.value)}>
+        <select
+          className="input"
+          id="club-chat-age"
+          value={age}
+          onChange={(e) => change(+e.target.value)}
+        >
           {[0, 12, 13, 14, 15, 16, 17, 18].map((a) => (
             <option key={a} value={a}>
               {a === 0 ? "Any age" : `${a} and over`}
@@ -712,7 +1037,14 @@ function ChatAgeSetting() {
       {age > 0 && young !== null && (
         <label className="field" style={{ maxWidth: 320 }}>
           <span>Players under {age}</span>
-          <select className="input" id="club-chat-young" value={young} onChange={(e) => changeYoung(e.target.value as "none" | "read" | "write")}>
+          <select
+            className="input"
+            id="club-chat-young"
+            value={young}
+            onChange={(e) =>
+              changeYoung(e.target.value as "none" | "read" | "write")
+            }
+          >
             <option value="none">Can&apos;t see chat</option>
             <option value="read">Can read team chats only</option>
             <option value="write">Can read and send in team chats</option>
@@ -720,8 +1052,9 @@ function ChatAgeSetting() {
         </label>
       )}
       <small className="muted" style={{ fontSize: 13 }}>
-        Uses each player&apos;s birth year if set, otherwise their team&apos;s age group (U{age || 14} players count as under {age || 14}). Private messages are never open to
-        any player, whatever these settings say.
+        Uses each player&apos;s birth year if set, otherwise their team&apos;s
+        age group (U{age || 14} players count as under {age || 14}). Private
+        messages are never open to any player, whatever these settings say.
       </small>
     </div>
   );
@@ -730,14 +1063,23 @@ function ChatAgeSetting() {
 /** Club colours: presets or custom, with a live preview of a button and the "next up" ticket. */
 function BrandColours() {
   const { data, supabase, refresh, toast } = useApp();
-  const [primary, setPrimary] = useState(data.club.brand_primary ?? DEFAULT_BRAND.primary);
-  const [accent, setAccent] = useState(data.club.brand_accent ?? DEFAULT_BRAND.accent);
+  const [primary, setPrimary] = useState(
+    data.club.brand_primary ?? DEFAULT_BRAND.primary,
+  );
+  const [accent, setAccent] = useState(
+    data.club.brand_accent ?? DEFAULT_BRAND.accent,
+  );
   const [busy, setBusy] = useState(false);
-  const changed = primary !== (data.club.brand_primary ?? DEFAULT_BRAND.primary) || accent !== (data.club.brand_accent ?? DEFAULT_BRAND.accent);
+  const changed =
+    primary !== (data.club.brand_primary ?? DEFAULT_BRAND.primary) ||
+    accent !== (data.club.brand_accent ?? DEFAULT_BRAND.accent);
   const vars = brandVars(primary, accent) as React.CSSProperties;
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from("clubs").update({ brand_primary: primary, brand_accent: accent }).eq("id", data.club.id);
+    const { error } = await supabase
+      .from("clubs")
+      .update({ brand_primary: primary, brand_accent: accent })
+      .eq("id", data.club.id);
     setBusy(false);
     if (error) return toast(errMsg(error));
     toast("Club colours saved");
@@ -765,11 +1107,21 @@ function BrandColours() {
       </div>
       <div className="brand-custom">
         <label>
-          <input type="color" value={primary} onChange={(e) => setPrimary(e.target.value)} aria-label="Main colour" />
+          <input
+            type="color"
+            value={primary}
+            onChange={(e) => setPrimary(e.target.value)}
+            aria-label="Main colour"
+          />
           Main colour
         </label>
         <label>
-          <input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} aria-label="Accent colour" />
+          <input
+            type="color"
+            value={accent}
+            onChange={(e) => setAccent(e.target.value)}
+            aria-label="Accent colour"
+          />
           Accent (buttons)
         </label>
       </div>
@@ -779,14 +1131,28 @@ function BrandColours() {
           <b>6:00 pm</b>
           <span className="bp-btn">Yes</span>
         </div>
-        <span className="bp-text">Small text in your accent stays readable</span>
+        <span className="bp-text">
+          Small text in your accent stays readable
+        </span>
       </div>
       {changed && (
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn primary" type="button" disabled={busy} onClick={save}>
+          <button
+            className="btn primary"
+            type="button"
+            disabled={busy}
+            onClick={save}
+          >
             Save colours
           </button>
-          <button className="btn" type="button" onClick={() => (setPrimary(data.club.brand_primary ?? DEFAULT_BRAND.primary), setAccent(data.club.brand_accent ?? DEFAULT_BRAND.accent))}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => (
+              setPrimary(data.club.brand_primary ?? DEFAULT_BRAND.primary),
+              setAccent(data.club.brand_accent ?? DEFAULT_BRAND.accent)
+            )}
+          >
             Undo
           </button>
         </div>
