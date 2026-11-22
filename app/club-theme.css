@@ -2107,3 +2107,86 @@ html { -webkit-text-size-adjust: 100%; }
 [data-look="club"] .lp-plan-cta p { margin: 0; color: #4b5563; }
 [data-look="club"] .lp-faq-wrap { max-width: 860px; margin: 0 auto; padding: 56px 16px 24px; }
 @media (max-width: 900px) { [data-look="club"] .lp-plan-row { grid-template-columns: 1fr; } [data-look="club"] .lp-plans { padding-top: 56px; } }
+
+/* ---------------------------------------------------------------- front page v3: conversion */
+[data-look="club"] .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[data-look="club"] .lp-offer-pill { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 7px; border-radius: 999px; background: rgba(255, 138, 31, 0.14); border: 1px solid rgba(255, 138, 31, 0.45); color: #ffd7ad; font-size: 14.5px; font-weight: 600; text-decoration: none; }
+[data-look="club"] .lp-offer-pill b { background: #ff8a1f; color: #1a1205; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+[data-look="club"] .lp-offer-pill:hover { background: rgba(255, 138, 31, 0.22); }
+[data-look="club"] .lp-hero h1 { font-size: clamp(42px, 5.6vw, 68px); }
+
+[data-look="club"] .lp-trust { max-width: 1160px; margin: -30px auto 0; padding: 14px 18px; position: relative; z-index: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(16, 24, 40, 0.1); border: 1px solid #eef0f3; }
+[data-look="club"] .lp-trust span { font-size: 14px; color: #4b5563; line-height: 1.4; padding-left: 26px; position: relative; }
+[data-look="club"] .lp-trust span::before { content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%; background: #16a34a; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+[data-look="club"] .lp-trust b { color: #14161a; }
+[data-look="club"] .lp-roles { margin-top: 40px; }
+
+[data-look="club"] .lp-pain { max-width: 1160px; margin: 0 auto; padding: 80px 16px 0; text-align: center; }
+[data-look="club"] .lp-pain h2, [data-look="club"] .lp-vs h2, [data-look="club"] .lp-calc-wrap h2, [data-look="club"] .lp-offer h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.05; margin: 6px 0 12px; }
+[data-look="club"] .lp-pain-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; text-align: left; }
+[data-look="club"] .lp-pain article { background: #fff; border: 1px solid #e6e8ec; border-radius: 18px; padding: 20px; display: grid; gap: 6px; align-content: start; }
+[data-look="club"] .lp-pain article span { font-size: 28px; }
+[data-look="club"] .lp-pain article b { font-size: 17px; line-height: 1.3; }
+[data-look="club"] .lp-pain article p { margin: 0; color: #4b5563; font-size: 15px; line-height: 1.5; }
+[data-look="club"] .lp-replaces { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 26px 0 0; }
+[data-look="club"] .lp-replaces > span { font-weight: 700; color: #14161a; margin-right: 4px; }
+[data-look="club"] .lp-replaces s { text-decoration-color: #dc2626; text-decoration-thickness: 2px; color: #6b7280; background: #fff; border: 1px solid #e6e8ec; border-radius: 999px; padding: 6px 12px; font-size: 14.5px; }
+
+[data-look="club"] .lp-vs { max-width: 1000px; margin: 0 auto; padding: 72px 16px 0; }
+[data-look="club"] .lp-vs-head { text-align: center; }
+[data-look="club"] .lp-vs table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 18px; background: #fff; border: 1px solid #e6e8ec; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 40px rgba(16, 24, 40, 0.06); }
+[data-look="club"] .lp-vs th, [data-look="club"] .lp-vs td { text-align: left; padding: 14px 16px; border-top: 1px solid #eef0f3; font-size: 15.5px; vertical-align: top; line-height: 1.45; }
+[data-look="club"] .lp-vs thead th { border-top: 0; font-size: 14px; color: #4b5563; font-weight: 700; background: #f8f9fb; }
+[data-look="club"] .lp-vs thead th.ov { background: #17181c; color: #fff; }
+[data-look="club"] .lp-vs tbody th { font-weight: 700; color: #14161a; width: 24%; }
+[data-look="club"] .lp-vs td { color: #6b7280; }
+[data-look="club"] .lp-vs td.ov { color: #14161a; font-weight: 600; background: #fffaf3; }
+[data-look="club"] .lp-vs .x { color: #dc2626; font-weight: 800; margin-right: 8px; }
+[data-look="club"] .lp-vs .ok { color: #16a34a; font-weight: 800; margin-right: 8px; }
+
+[data-look="club"] .lp-calc-wrap { max-width: 1160px; margin: 0 auto; padding: 80px 16px 0; display: grid; grid-template-columns: 0.9fr 1.3fr; gap: 40px; align-items: center; }
+[data-look="club"] .lp-calc-wrap > div > p { color: #4b5563; font-size: 17px; line-height: 1.6; margin: 0; }
+[data-look="club"] .lp-calc { background: #fff; border: 1px solid #e6e8ec; border-radius: 20px; padding: 22px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; box-shadow: 0 14px 40px rgba(16, 24, 40, 0.06); }
+[data-look="club"] .lp-calc-in { display: grid; gap: 16px; }
+[data-look="club"] .lp-calc label { display: grid; gap: 8px; font-size: 14.5px; color: #344054; }
+[data-look="club"] .lp-calc label b { color: #c2691c; white-space: nowrap; margin-left: 6px; }
+[data-look="club"] .lp-calc input[type="range"] { width: 100%; accent-color: #ff8a1f; height: 28px; }
+[data-look="club"] .lp-calc-out { background: #17181c; color: #fff; border-radius: 16px; padding: 20px; display: grid; gap: 6px; align-content: center; }
+[data-look="club"] .lp-calc-out span { color: #c9ccd3; font-size: 14px; }
+[data-look="club"] .lp-calc-out b { font-family: var(--display); font-size: 48px; line-height: 1; color: #ff9b3d; }
+[data-look="club"] .lp-calc-out small { color: #c9ccd3; font-size: 14px; line-height: 1.5; }
+
+[data-look="club"] .lp-founder { max-width: 860px; margin: 0 auto; padding: 80px 16px 0; display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+[data-look="club"] .lp-founder-av { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #ff8a1f, #2d5bff); color: #fff; display: grid; place-items: center; font-family: var(--display); font-size: 28px; font-weight: 700; }
+[data-look="club"] .lp-founder blockquote { margin: 0; }
+[data-look="club"] .lp-founder blockquote p { margin: 0 0 12px; font-size: 20px; line-height: 1.55; color: #14161a; }
+[data-look="club"] .lp-founder footer { color: #4b5563; font-size: 15px; }
+
+[data-look="club"] .lp-offer { max-width: 1160px; margin: 80px auto 0; padding: 40px; border-radius: 28px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: center; background: radial-gradient(600px 400px at 100% 0%, rgba(255, 138, 31, 0.35), transparent 70%), radial-gradient(600px 400px at 0% 100%, rgba(45, 91, 255, 0.25), transparent 70%), #17181c; color: #fff; }
+[data-look="club"] .lp-offer-tag { display: inline-block; background: #ff8a1f; color: #1a1205; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; }
+[data-look="club"] .lp-offer h2 { color: #fff; margin-top: 14px; }
+[data-look="club"] .lp-offer p { color: #c9ccd3; font-size: 17px; margin: 0 0 12px; }
+[data-look="club"] .lp-offer .lp-ticks { flex-direction: column; color: #e6e8ec; margin: 0 0 22px; font-size: 16px; }
+[data-look="club"] .lp-offer-badge { justify-self: center; width: 240px; aspect-ratio: 1; border-radius: 50%; background: #fff; color: #14161a; display: grid; place-content: center; text-align: center; gap: 4px; box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.08), 0 30px 60px rgba(0, 0, 0, 0.4); transform: rotate(-6deg); }
+[data-look="club"] .lp-offer-badge b { font-family: var(--display); font-size: 84px; line-height: 0.9; color: #c2691c; }
+[data-look="club"] .lp-offer-badge span { font-weight: 700; font-size: 17px; }
+[data-look="club"] .lp-offer-badge small { color: #6b7280; font-size: 13px; }
+[data-look="club"] .lp-plan-small b { color: #ff9b3d; }
+
+@media (max-width: 900px) {
+  [data-look="club"] .lp-trust { grid-template-columns: 1fr 1fr; margin: 16px 16px 0; }
+  [data-look="club"] .lp-pain-grid { grid-template-columns: 1fr 1fr; }
+  [data-look="club"] .lp-calc-wrap, [data-look="club"] .lp-calc, [data-look="club"] .lp-offer { grid-template-columns: 1fr; }
+  [data-look="club"] .lp-offer { margin: 56px 16px 0; padding: 26px 20px; }
+  [data-look="club"] .lp-offer-badge { width: 190px; order: -1; }
+  [data-look="club"] .lp-offer-badge b { font-size: 64px; }
+  [data-look="club"] .lp-vs table, [data-look="club"] .lp-vs thead, [data-look="club"] .lp-vs tbody, [data-look="club"] .lp-vs tr, [data-look="club"] .lp-vs th, [data-look="club"] .lp-vs td { display: block; }
+  [data-look="club"] .lp-vs thead { display: none; }
+  [data-look="club"] .lp-vs tr { border-top: 1px solid #eef0f3; padding: 12px 14px; }
+  [data-look="club"] .lp-vs tr:first-child { border-top: 0; }
+  [data-look="club"] .lp-vs th, [data-look="club"] .lp-vs td { border: 0; padding: 3px 0; width: auto !important; background: none !important; }
+  [data-look="club"] .lp-founder { grid-template-columns: 1fr; }
+  [data-look="club"] .lp-founder blockquote p { font-size: 18px; }
+}
+@media (max-width: 520px) { [data-look="club"] .lp-pain-grid, [data-look="club"] .lp-trust { grid-template-columns: 1fr; } [data-look="club"] .lp-offer-pill { font-size: 13px; } }
+[data-look="club"] .lp-offer-pill b { white-space: nowrap; }

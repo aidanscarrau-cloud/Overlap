@@ -28,10 +28,10 @@ export function StickyRegister() {
   return (
     <div className={`lp-sticky${show ? " on" : ""}`} aria-hidden={!show}>
       <span>
-        <b>Free</b> Lite plan · Pro <b>$60</b>/month
+        <b>Founding clubs:</b> first season of Pro free
       </span>
       <a href="#contact" className="btn primary" tabIndex={show ? 0 : -1}>
-        Register interest
+        Claim a spot
       </a>
     </div>
   );

@@ -6,10 +6,24 @@ import { DrillDemo, type DemoDrill } from "@/components/landing/DrillDemo";
 import { StickyRegister } from "@/components/landing/StickyRegister";
 import { SignInLink } from "@/components/landing/SignInLink";
 import { LIBRARY_BY_KEY } from "@/lib/library-drills";
+import { HoursCalc } from "@/components/landing/HoursCalc";
+
+const SITE = (process.env.SITE_URL || "https://overlap-three-pi.vercel.app").replace(/\/$/, "");
 
 export const metadata: Metadata = {
-  title: { absolute: "Overlap · The club app for grassroots football" },
-  description: "Training, matches, team chat, trials, line-ups and player development in one simple app for coaches, players and parents.",
+  metadataBase: new URL(SITE),
+  title: { absolute: "Overlap · Stop chasing replies. Start coaching." },
+  description: "The club app for grassroots football: training, matches, chat, trials and line-ups in one app families actually use. Founding clubs get their first season of Pro free.",
+  openGraph: {
+    title: "Overlap · Stop chasing replies. Start coaching.",
+    description: "Training, matches, chat, trials and line-ups in one app families actually use. Founding clubs get their first season of Pro free.",
+    url: "/",
+    siteName: "Overlap",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Overlap: the club app for grassroots football" }],
+    locale: "en_AU",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "Overlap · Stop chasing replies. Start coaching.", images: ["/og.png"] },
 };
 
 /* The public front page: what Overlap is, for clubs thinking about it. Signed-in people go straight to their club. */
@@ -109,7 +123,24 @@ const PRO = [
   "Import every player from a spreadsheet",
 ];
 
+const PAINS = [
+  { e: "💬", t: "37 unread in the parents' chat", d: "…and still no idea who's actually coming on Tuesday." },
+  { e: "📋", t: "Trials on a form, three spreadsheets and a clipboard", d: "Then someone has to email every family, one by one." },
+  { e: "🧠", t: "Session plans live in one coach's head", d: "When they're away, training turns into a scrimmage." },
+  { e: "🙋", t: "The same five volunteers do everything", d: "And they're tired by the end of pre-season." },
+];
+const REPLACES = ["Group chats", "Spreadsheets", "Paper registers", "Google Forms", "Word docs"];
+const VS: [string, string, string][] = [
+  ["Who's coming Tuesday?", "Scroll the group chat and count the thumbs-ups", "Live count on the coach's home screen"],
+  ["Training changes", "Message three chats and hope everyone sees it", "One change; every family gets a notification"],
+  ["Taking the register", "Paper sheet, typed up later (or never)", "A few taps; attendance trends build themselves"],
+  ["Session plans", "In someone's head or a Word doc", "Animated drills and a plan the whole club can reuse"],
+  ["Trials", "Google Form, spreadsheets, 40 emails", "Sign-up, ratings, offers and invites in one flow"],
+  ["Line-ups", "A photo of a whiteboard", "Drag players onto a pitch and share with families"],
+];
+
 const FAQ: [string, React.ReactNode][] = [
+  ["What's the catch with the free founding season?", <>There isn&apos;t one. We want ten clubs to help shape Overlap. After your first season Pro is $60 a month; if you&apos;d rather not, your club drops to Lite, which is free forever, and you keep all your data.</>],
   ["Is it safe for children?", <>Each club&apos;s data is private to that club, chat is off for younger players by default, and private messages are never open to players. <Link href="/privacy">Read how we protect children&apos;s information</Link>.</>],
   ["Where is our data kept?", <>In Australia (Sydney). Admins can download all of the club&apos;s data at any time.</>],
   ["Does it work with PlayHQ?", <>It sits alongside it: import your players from a registration export and paste your fixtures straight in.</>],
@@ -135,25 +166,28 @@ export default function Welcome() {
         <nav aria-label="Main">
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
-          <a href="#contact">Register interest</a>
+          <a href="#offer">Founding clubs</a>
           <SignInLink className="lp-signin" />
         </nav>
       </header>
 
       <section className="lp-hero">
         <div className="lp-hero-txt">
-          <span className="lp-kicker">The club app for grassroots football</span>
-          <h1>Your whole club, in one simple app</h1>
+          <a href="#offer" className="lp-offer-pill">
+            <b>Founding clubs</b> <span className="lp-long">First season of Pro free · 10 spots →</span>
+            <span className="lp-short">First season of Pro free →</span>
+          </a>
+          <h1>Stop chasing replies. Start coaching.</h1>
           <p>
-            <span className="lp-long">Training, matches, team chat, trials, line-ups and player development, for coaches, players and parents. Set up in an afternoon. Works on any phone, no app store needed.</span>
-            <span className="lp-short">Training, matches, chat, trials and line-ups for coaches, players and parents. Works on any phone.</span>
+            <span className="lp-long">Overlap puts your whole club in one app families actually use: training, matches, chat, trials and line-ups. Coaches know who&apos;s coming before they set out the cones, and volunteers get their weeknights back.</span>
+            <span className="lp-short">Training, matches, chat, trials and line-ups in one app families actually use.</span>
           </p>
           <div className="lp-ctas">
             <a href="#contact" className="btn primary lp-big">
-              Register interest
+              Claim a founding spot
             </a>
             <a href="#features" className="btn lp-big lp-ghost">
-              See how it works
+              See it in action
             </a>
           </div>
           {/* Small phones: a peek at the app on the first screen (the three-phone picture is hidden there). */}
@@ -170,10 +204,10 @@ export default function Welcome() {
             </span>
           </div>
           <ul className="lp-ticks">
-            <li>Free Lite plan for every club</li>
-            <li>Unlimited teams, players and parents</li>
-            <li>Your club&apos;s badge and colours</li>
-            <li>Made in Australia</li>
+            <li>Free for families, any phone</li>
+            <li>Set up in an afternoon</li>
+            <li>Lite plan free forever</li>
+            <li>Data kept in Australia</li>
           </ul>
         </div>
         <div className="lp-stage" aria-hidden="true">
@@ -208,6 +242,80 @@ export default function Welcome() {
             </span>
           </span>
         </div>
+      </section>
+
+      <section className="lp-trust" aria-label="Why clubs can trust Overlap">
+        <span>
+          <b>Built with Southern Lakes United FC</b> this season
+        </span>
+        <span>
+          <b>Data stored in Sydney</b>, private to your club
+        </span>
+        <span>
+          <b>Made in Newcastle, NSW</b> by Aidan Scarr
+        </span>
+        <span>
+          <b>Free for families</b>, no app store needed
+        </span>
+      </section>
+
+      <section className="lp-pain" aria-label="Sound familiar?">
+        <span className="lp-kicker">Sound familiar?</span>
+        <h2>Running a club shouldn&apos;t take over your evenings</h2>
+        <div className="lp-pain-grid">
+          {PAINS.map((x) => (
+            <article key={x.t}>
+              <span aria-hidden="true">{x.e}</span>
+              <b>{x.t}</b>
+              <p>{x.d}</p>
+            </article>
+          ))}
+        </div>
+        <p className="lp-replaces">
+          <span>Overlap replaces</span>
+          {REPLACES.map((r) => (
+            <s key={r}>{r}</s>
+          ))}
+        </p>
+      </section>
+
+      <section className="lp-vs" aria-label="Before and after Overlap">
+        <div className="lp-vs-head">
+          <span className="lp-kicker">Before and after</span>
+          <h2>The same Tuesday night, two ways</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className="sr-only">Task</span>
+              </th>
+              <th scope="col">Group chats &amp; spreadsheets</th>
+              <th scope="col" className="ov">
+                With Overlap
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {VS.map(([task, before, after]) => (
+              <tr key={task}>
+                <th scope="row">{task}</th>
+                <td>
+                  <span className="x" aria-hidden="true">
+                    ✕
+                  </span>
+                  {before}
+                </td>
+                <td className="ov">
+                  <span className="ok" aria-hidden="true">
+                    ✓
+                  </span>
+                  {after}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       <section className="lp-roles" aria-label="Who it's for">
@@ -320,6 +428,52 @@ export default function Welcome() {
         </ul>
       </section>
 
+      <section className="lp-calc-wrap" aria-label="Volunteer hours">
+        <div>
+          <span className="lp-kicker">Do the maths</span>
+          <h2>How much volunteer time goes on admin?</h2>
+          <p>Move the sliders to match your club. It&apos;s a rough estimate, but it&apos;s the number your committee will care about.</p>
+        </div>
+        <HoursCalc />
+      </section>
+
+      <section className="lp-founder" aria-label="A note from the founder">
+        <span className="lp-founder-av" aria-hidden="true">
+          AS
+        </span>
+        <blockquote>
+          <p>
+            &ldquo;I&apos;m building Overlap with my own club, Southern Lakes United FC, this season. Every feature has to survive a real Tuesday night training and a real Saturday morning before it reaches you. If you join as a founding club,
+            you&apos;ll have my number, and what you tell me shapes what gets built next.&rdquo;
+          </p>
+          <footer>
+            <b>Aidan Scarr</b>, founder · Newcastle, NSW
+          </footer>
+        </blockquote>
+      </section>
+
+      <section id="offer" className="lp-offer">
+        <div className="lp-offer-txt">
+          <span className="lp-offer-tag">Founding clubs · 10 spots</span>
+          <h2>Your first season of Pro, free</h2>
+          <p>We&apos;re opening Overlap to ten founding clubs after our test season. Founding clubs get:</p>
+          <ul className="lp-ticks">
+            <li>Every Pro feature free for your first season</li>
+            <li>Your club set up for you: players imported, colours and badge on</li>
+            <li>A direct line to the founder, and a say in what gets built</li>
+            <li>No card needed now. Afterwards, $60 a month or stay on Lite for free</li>
+          </ul>
+          <a href="#contact" className="btn primary lp-big">
+            Claim a founding spot
+          </a>
+        </div>
+        <div className="lp-offer-badge" aria-hidden="true">
+          <b>$0</b>
+          <span>Pro, your first season</span>
+          <small>then $60/month · cancel any time</small>
+        </div>
+      </section>
+
       <section id="pricing" className="lp-plans">
         <span className="lp-kicker">Planned pricing</span>
         <h2>Free to start. Pro when you&apos;re ready.</h2>
@@ -354,13 +508,15 @@ export default function Welcome() {
                 <li key={x}>{x}</li>
               ))}
             </ul>
-            <p className="lp-plan-small">Pay monthly and cancel any time. A club with 100 players pays about 60c per player a month.</p>
+            <p className="lp-plan-small">
+              <b>Founding clubs: first season free.</b> Pay monthly and cancel any time. A club with 100 players pays about 60c per player a month.
+            </p>
           </article>
         </div>
         <div className="lp-plan-cta">
-          <p>We&apos;re running Overlap with our own club this season. Register your interest and we&apos;ll let you know when we open to more clubs.</p>
+          <p>We&apos;re running Overlap with Southern Lakes United FC this season, then opening to ten founding clubs.</p>
           <a href="#contact" className="btn primary lp-big">
-            Register interest
+            Claim a founding spot
           </a>
         </div>
       </section>
@@ -380,13 +536,13 @@ export default function Welcome() {
 
       <section id="contact" className="lp-contact">
         <div className="lp-contact-txt">
-          <span className="lp-kicker">Get in early</span>
-          <h2>Register your club&apos;s interest</h2>
-          <p>We&apos;re trialling Overlap with our own club this season before opening it up. Tell us about your club and we&apos;ll be in touch.</p>
+          <span className="lp-kicker">Ten founding spots</span>
+          <h2>Claim your club&apos;s founding spot</h2>
+          <p>Tell us a little about your club. Aidan will get back to you personally, usually within a day.</p>
           <ul className="lp-ticks">
-            <li>No cost or commitment to register</li>
-            <li>First in line when we open to more clubs</li>
-            <li>We&apos;ll help set your club up, players and all</li>
+            <li>First season of Pro free</li>
+            <li>No cost, card or commitment to claim</li>
+            <li>We&apos;ll set your club up for you, players and all</li>
           </ul>
         </div>
         <ContactForm />
