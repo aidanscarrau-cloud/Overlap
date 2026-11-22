@@ -11,6 +11,7 @@ import { Crest } from "@/components/ui";
 import { isStandalone } from "@/lib/push-client";
 import { ThemeToggle } from "./ThemeToggle";
 import { ProBadge } from "./Pro";
+import { ViewAsPicker } from "./ViewAs";
 
 const NAV = [
   { href: "/home", label: "Home", short: "Home", icon: "i-home" },
@@ -58,7 +59,8 @@ const FAMILY_NAV = [
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { data, team, setTeam, unread, myPlayers, kidName } = useApp();
+  const { data, team, setTeam, unread, myPlayers, kidName, realRole, viewAs } = useApp();
+  const [pickingView, setPickingView] = useState(false);
   const family = data.role === "player" || data.role === "parent";
   // Plain words for families: "Leo's progress" for a parent of one, "My progress" for a player.
   const progress = data.role === "player" ? "My progress" : myPlayers.length === 1 ? `${kidName(myPlayers[0])}'s progress` : "Progress";
@@ -190,7 +192,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="coach">
-          <div className="av">{initials(data.myName)}</div>
+          <div className="av">{!viewAs && data.avatars?.[data.userId] ? <img className="av-img" src={data.avatars[data.userId]} alt="" /> : initials(data.myName || "?")}</div>
           <div style={{ minWidth: 0, display: "grid", gap: 2 }}>
             <b
               style={{
@@ -206,6 +208,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 Sign out
               </button>
             </form>
+            {realRole === "admin" && !viewAs && (
+              <button type="button" className="side-va" onClick={() => setPickingView(true)}>
+                View as…
+              </button>
+            )}
             <ThemeToggle compact />
             <span className="side-help">
               <Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link>
@@ -242,7 +249,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             aria-label={`Your account: ${data.myName}`}
             style={{ textDecoration: "none" }}
           >
-            {initials(data.myName)}
+            {!viewAs && data.avatars?.[data.userId] ? <img className="av-img" src={data.avatars[data.userId]} alt="" /> : initials(data.myName || "?")}
           </Link>
         </header>
         <main id="main">
@@ -261,7 +268,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <span className="grab" aria-hidden="true" />
             <div className="more-me">
-              <div className="av">{initials(data.myName)}</div>
+              <div className="av">{!viewAs && data.avatars?.[data.userId] ? <img className="av-img" src={data.avatars[data.userId]} alt="" /> : initials(data.myName || "?")}</div>
               <div style={{ minWidth: 0 }}>
                 <b>{data.myName}</b>
                 <small>
@@ -340,6 +347,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <option value="__new">Enter an invite code…</option>
               </select>
             )}
+            {realRole === "admin" && !viewAs && (
+              <button type="button" className="btn more-va" onClick={() => (setMore(false), setPickingView(true))}>
+                See the app as a parent, player or coach
+              </button>
+            )}
             <ThemeToggle />
             <form action="/auth/signout" method="post">
               <button className="btn more-out" type="submit">
@@ -349,6 +361,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
+      {pickingView && <ViewAsPicker onClose={() => setPickingView(false)} />}
       <nav className="bnav" aria-label="Sections">
         {nav
           .filter((n) => PHONE.includes(n.href))

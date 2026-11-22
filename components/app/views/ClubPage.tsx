@@ -1,7 +1,10 @@
 "use client";
 
+import { ViewAsPicker } from "../ViewAs";
+import { Avatar } from "../Avatar";
+import { removeAvatarFile, uploadAvatar } from "@/lib/avatar";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "../AppProvider";
 import { Upgrade, usePro } from "../Pro";
@@ -44,10 +47,32 @@ export function ClubPage() {
         {isAdmin && <RolesCard />}
         {(isAdmin || can("invites.create")) && <InvitesCard />}
         {(isAdmin || can("members.view")) && <MembersCard />}
+        {isAdmin && <ViewAsCard />}
         {isAdmin && <DataCard />}
         <AccountCard />
       </div>
     </>
+  );
+}
+
+/** Admins can check what parents, players and coaches see. */
+function ViewAsCard() {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="card">
+      <div className="card-h">
+        <h2>See the app as someone else</h2>
+      </div>
+      <div className="card-b va-entry" style={{ flexWrap: "wrap" }}>
+        <p className="muted" style={{ margin: 0, flex: "1 1 260px" }}>
+          Check exactly what a parent, player, coach or assistant sees before you invite them.
+        </p>
+        <button className="btn" onClick={() => setOpen(true)}>
+          View as…
+        </button>
+      </div>
+      {open && <ViewAsPicker onClose={() => setOpen(false)} />}
+    </section>
   );
 }
 
@@ -671,7 +696,7 @@ function MemberRow({ m, editable }: { m: Member; editable: boolean }) {
 
   return (
     <div className="mrow">
-      <span className="av">{initials(m.full_name)}</span>
+      <Avatar userId={m.user_id} name={m.full_name} />
       <span style={{ minWidth: 0, display: "grid", gap: 6 }}>
         <span>
           <b style={{ display: "block" }}>
@@ -865,6 +890,58 @@ function RolesCard() {
   );
 }
 
+/** Your own profile picture: shown on your avatar, in chat and in member lists. */
+function ProfilePicture() {
+  const { data, supabase, toast, refresh, patch } = useApp();
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const url = data.avatars?.[data.userId];
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const next = await uploadAvatar(supabase, data.userId, file);
+      const { error } = await supabase.from("profiles").update({ avatar_url: next }).eq("id", data.userId);
+      if (error) throw error;
+      await removeAvatarFile(supabase, url);
+      patch((x) => ({ ...x, avatars: { ...x.avatars, [data.userId]: next } }));
+      toast("Profile picture updated");
+      refresh();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : errMsg(e));
+    }
+    setBusy(false);
+  }
+  async function remove() {
+    setBusy(true);
+    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", data.userId);
+    setBusy(false);
+    if (error) return toast(errMsg(error));
+    await removeAvatarFile(supabase, url);
+    patch((x) => {
+      const a = { ...x.avatars };
+      delete a[data.userId];
+      return { ...x, avatars: a };
+    });
+    toast("Profile picture removed");
+    refresh();
+  }
+  return (
+    <div className="acc-pic">
+      <Avatar userId={data.userId} name={data.myName} />
+      <input ref={input} type="file" accept="image/*" onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ""))} />
+      <button type="button" className="btn" disabled={busy} onClick={() => input.current?.click()}>
+        {busy ? "Saving…" : url ? "Change picture" : "Add a profile picture"}
+      </button>
+      {url && (
+        <button type="button" className="btn-quiet" disabled={busy} onClick={remove}>
+          Remove
+        </button>
+      )}
+    </div>
+  );
+}
+
 function AccountCard() {
   const { data, supabase, refresh, toast } = useApp();
   const router = useRouter();
@@ -899,6 +976,7 @@ function AccountCard() {
         <h2>Your account</h2>
       </div>
       <div className="card-b" style={{ display: "grid", gap: 14 }}>
+        <ProfilePicture />
         <form
           onSubmit={saveName}
           style={{

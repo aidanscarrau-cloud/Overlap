@@ -251,6 +251,8 @@ export type Injury = {
 
 export type ClubData = {
   injuries: Injury[];
+  /** Profile pictures by user id. */
+  avatars: Record<string, string>;
   trials: Trial[];
   trialDates: TrialDate[];
   trialApplicants: TrialApplicant[];

@@ -2284,3 +2284,24 @@ html { -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) {
   [data-look="club"] *, [data-look="club"] *::before, [data-look="club"] *::after { animation-duration: 0.001ms !important; animation-delay: 0ms !important; transition-duration: 0.001ms !important; }
 }
+/* Profile pictures */
+[data-look="club"] .av, [data-look="club"] .chat-av { overflow: hidden; }
+[data-look="club"] .has-img { background: var(--surface-3) !important; padding: 0; }
+[data-look="club"] .has-img img, [data-look="club"] .av-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
+[data-look="club"] .acc-pic { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+[data-look="club"] .acc-pic .av { width: 72px; height: 72px; border-radius: 50%; font-size: 24px; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-weight: 700; flex: none; }
+[data-look="club"] .acc-pic input[type="file"] { display: none; }
+/* View as */
+[data-look="club"] .va-banner { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 14px; background: #6d28d9; color: #fff; font-size: 14px; }
+[data-look="club"] .va-banner span { flex: 1 1 200px; }
+[data-look="club"] .va-banner button { border: 1px solid rgba(255, 255, 255, 0.5); background: transparent; color: #fff; border-radius: 999px; padding: 5px 12px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; min-height: 32px; }
+[data-look="club"] .va-banner .va-exit { background: #fff; color: #4c1d95; border-color: #fff; }
+[data-look="club"] .va-form { display: grid; gap: 14px; }
+[data-look="club"] .va-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+[data-look="club"] .va-roles button { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; color: inherit; cursor: pointer; }
+[data-look="club"] .va-roles button b { font-size: var(--fs-base); }
+[data-look="club"] .va-roles button small { color: var(--muted); font-size: var(--fs-sm); }
+[data-look="club"] .va-roles button.on { border-color: var(--accent); background: var(--accent-soft); }
+[data-look="club"] .va-entry { display: flex; align-items: center; gap: 8px; }
+[data-look="club"] .more-va { width: 100%; justify-content: center; }
+[data-look="club"] .side-va { margin-top: 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: transparent; color: var(--on-navy); border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }

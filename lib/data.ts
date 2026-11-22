@@ -104,6 +104,8 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("trial_attendance").select("applicant_id,date_id").eq("club_id", clubId),
       supabase.from("trial_ratings").select("id,applicant_id,date_id,rated_by,rated_by_name,rating,notes,updated_at").eq("club_id", clubId),
       supabase.from("clubs").select("plan").eq("id", clubId).maybeSingle(),
+      // Profile pictures of everyone this person can see (only after update 32).
+      supabase.from("profiles").select("id,avatar_url").not("avatar_url", "is", null),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -114,7 +116,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -206,6 +208,7 @@ export async function getClubData(): Promise<ClubData> {
     fitnessResults: fitnessResults.error ? [] : ((fitnessResults.data ?? []) as FitnessResult[]).map((r) => ({ ...r, value: Number(r.value) })),
     fitnessBands: fitnessBands.error ? [] : ((fitnessBands.data ?? []) as FitnessBand[]),
     injuries: injuries.error ? [] : ((injuries.data ?? []) as Injury[]),
+    avatars: avatarRows.error ? {} : Object.fromEntries(((avatarRows.data ?? []) as { id: string; avatar_url: string }[]).map((r) => [r.id, r.avatar_url])),
     trials: trials.error ? [] : ((trials.data ?? []) as Trial[]),
     trialDates: trialDates.error ? [] : ((trialDates.data ?? []) as TrialDate[]),
     trialApplicants: trialApplicants.error ? [] : ((trialApplicants.data ?? []) as TrialApplicant[]),

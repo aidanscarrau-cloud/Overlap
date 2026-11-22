@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewAsBanner } from "./ViewAs";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -8,7 +9,7 @@ import { registerWorker } from "@/lib/push-client";
 import { DEFAULT_BRAND, brandVars } from "@/lib/brand";
 import { lastClubCookie } from "@/lib/last-club";
 import type { ClubData, Drill, Match, MatchPlayer, MatchReply, Player, PlayerLoad, Reply, Session, Team } from "@/lib/types";
-import { isStaffRole, type Perm } from "@/lib/permissions";
+import { isStaffRole, permsFor, type Perm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
 
 export type Sheet =
@@ -70,7 +71,14 @@ type Ctx = {
   matchRepliesFor: (matchId: string) => Map<string, MatchReply>;
   /** Unread notifications in the inbox. */
   unread: number;
+  /** Admins previewing the app as another role (null when not previewing). */
+  viewAs: ViewAs | null;
+  setViewAs: (v: ViewAs | null) => void;
+  /** The signed-in person's real role, even while previewing. */
+  realRole: ClubData["role"];
 };
+
+export type ViewAs = { role: "parent" | "player" | "coach" | "assistant"; playerId?: string; teamId?: string };
 
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -82,8 +90,44 @@ export const useApp = () => {
 export function AppProvider({ data: serverData, initialTeam, children }: { data: ClubData; initialTeam: string | null; children: React.ReactNode }) {
   const router = useRouter();
   // Local copy so changes show instantly; replaced whenever fresh data arrives from the server.
-  const [data, setData] = useState(serverData);
+  const [realData, setData] = useState(serverData);
   useEffect(() => setData(serverData), [serverData]);
+  // "View as": a club admin can see the app as a parent, player or coach would. Only the screens change;
+  // the admin's real account is still the one saving anything.
+  const [viewAs, setViewAsState] = useState<ViewAs | null>(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(sessionStorage.getItem("overlap-view-as") || "null") as ViewAs | null;
+      if (v && serverData.role === "admin") setViewAsState(v);
+    } catch {}
+  }, [serverData.role]);
+  const setViewAs = useCallback((v: ViewAs | null) => {
+    setViewAsState(v);
+    try {
+      if (v) sessionStorage.setItem("overlap-view-as", JSON.stringify(v));
+      else sessionStorage.removeItem("overlap-view-as");
+    } catch {}
+  }, []);
+  const data = useMemo<ClubData>(() => {
+    if (!viewAs || realData.role !== "admin") return realData;
+    const player = viewAs.playerId ? realData.players.find((p) => p.id === viewAs.playerId) : undefined;
+    const family = viewAs.role === "parent" || viewAs.role === "player";
+    const teamIds = family ? (player?.team_ids ?? []) : viewAs.teamId ? [viewAs.teamId] : [];
+    return {
+      ...realData,
+      role: viewAs.role,
+      perms: permsFor(viewAs.role, realData.rolePerms),
+      myTeamIds: teamIds,
+      me: { ...realData.me, role: viewAs.role, player_ids: family && player ? [player.id] : [], team_ids: family ? [] : teamIds },
+      // Their real name if they've joined, so greetings read right.
+      myName:
+        family && player
+          ? viewAs.role === "player"
+            ? player.full_name
+            : (realData.members.find((m) => m.role === "parent" && m.player_ids.includes(player.id))?.full_name ?? "")
+          : (realData.members.find((m) => m.role === viewAs.role && m.team_ids.includes(teamIds[0] ?? ""))?.full_name ?? ""),
+    };
+  }, [realData, viewAs]);
   // Remember this club's look on this device, for the sign-in page next time.
   useEffect(() => {
     const c = data.club;
@@ -174,6 +218,9 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
   }, [sheet]);
 
   const value: Ctx = {
+    viewAs: realData.role === "admin" ? viewAs : null,
+    setViewAs,
+    realRole: realData.role,
     data,
     team,
     setTeam,
@@ -213,6 +260,7 @@ export function AppProvider({ data: serverData, initialTeam, children }: { data:
     <AppCtx.Provider value={value}>
       {/* Coaches and admins get the dense "pro" look; players and parents the "calm" one. */}
       <div className="look-root" data-look="club" data-app="" data-role={isStaffRole(data.role) ? "staff" : "family"} style={(data.club.plan === "lite" ? brandVars(null, null) : brandVars(data.club.brand_primary, data.club.brand_accent)) as React.CSSProperties}>
+        <ViewAsBanner />
       {children}
       {toastMsg && (
         <div className="toast" role="status">

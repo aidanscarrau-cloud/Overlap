@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "../Avatar";
 import { Empty } from "../Empty";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -362,9 +363,7 @@ export function ChatAvatar({ chat }: { chat: ChatSummary }) {
       </span>
     );
   return (
-    <span className={`chat-av ${chat.kind}`} aria-hidden="true" style={{ background: nameColour(chat.name) }}>
-      {initials(chat.name)}
-    </span>
+    <Avatar userId={chat.kind === "direct" ? chat.other_user : null} name={chat.name} className={`chat-av ${chat.kind}`} style={{ background: nameColour(chat.name) }} />
   );
 }
 
@@ -1138,9 +1137,7 @@ function GroupMembers({ chat, moderator, onClose, onLeft, onChanged }: { chat: C
         <ul className="member-list">
           {(members ?? []).map((m) => (
             <li key={m.user_id}>
-              <span className="chat-av direct" aria-hidden="true">
-                {initials(m.name)}
-              </span>
+              <Avatar userId={m.user_id} name={m.name} className="chat-av direct" />
               <span>
                 <b>{m.name}</b>
                 {m.user_id === data.userId && <span className="muted"> (you)</span>}
