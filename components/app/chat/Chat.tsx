@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "../AppProvider";
@@ -261,7 +262,11 @@ export function Chat() {
           })}
         </ul>
         {chats.length > 0 && !shown.length && <p className="muted chat-empty">{filter === "unread" ? "You're all caught up." : "No chats match."}</p>}
-        {!chats.length && <p className="muted chat-empty">No chats yet. Team chats appear once you&apos;re in a team.</p>}
+        {!chats.length && (
+          <div style={{ padding: 16 }}>
+            <Empty icon="i-chat" title="No chats yet" text="Your team's chat appears here once you're in a team." compact />
+          </div>
+        )}
         <p className="chat-safe">
           Keeping it safe: players can&apos;t send or receive private messages, team chats can be read by club admins, and coaches can remove messages.
         </p>

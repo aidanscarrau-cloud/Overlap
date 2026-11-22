@@ -22,6 +22,7 @@ export function Shirt({ p, small }: { p: Pick<Player, "position" | "shirt_number
 }
 
 export function Timeline({ s, drills, lg }: { s: Pick<Session, "plan">; drills: Map<string, Drill>; lg?: boolean }) {
+  if (!s.plan.some((x) => drills.has(x.drill_id))) return null;
   return (
     <div className={`timeline${lg ? " lg" : ""}`} aria-hidden="true">
       {s.plan.map((x, i) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
 import { DateBox, Icon } from "@/components/ui";
@@ -132,23 +133,16 @@ function TeamMatches() {
           })}
         </div>
       ) : (
-        <div className="empty">
-          {tab === "upcoming" ? (
-            <>
-              No fixtures yet.{" "}
-              {canEdit && (
-                <>
-                  <button className="linklike" onClick={() => open({ kind: "import-draw" })}>
-                    Import your draw
-                  </button>{" "}
-                  or add matches one by one.
-                </>
-              )}
-            </>
-          ) : (
-            "No results yet."
-          )}
-        </div>
+        tab === "upcoming" ? (
+          <Empty
+            icon="i-ball"
+            title="No fixtures yet"
+            text={canEdit ? "Paste your draw from the competition website and every game is added at once. You can also add matches one by one." : "Your team's matches will show up here."}
+            action={canEdit ? { label: "Import your draw", onClick: () => open({ kind: "import-draw" }) } : undefined}
+          />
+        ) : (
+          <Empty icon="i-ball" title="No results yet" text="Results and match stats appear here after each game." compact />
+        )
       )}
     </>
   );
@@ -187,7 +181,7 @@ function SeasonStats({ matches, players }: { matches: Match[]; players: Player[]
   const top = [...tableRows].filter((r) => r.t.goals > 0).sort((a, b) => b.t.goals - a.t.goals).slice(0, 3);
 
   if (!rec.played)
-    return <div className="empty">No results {seasons.length ? `in ${season}` : "yet"}. Season stats appear here once you add results.</div>;
+    return <Empty icon="i-chart" title={`No results ${seasons.length ? `in ${season}` : "yet"}`} text="Season stats, top scorers and form build up as you add results." compact />;
   return (
     <div className="season">
       {seasons.length > 1 && (

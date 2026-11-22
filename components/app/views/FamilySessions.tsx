@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { CalendarSync } from "../CalendarSync";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
@@ -80,7 +81,7 @@ export function FamilySessions() {
             </section>
           ))
         ) : (
-          <p className="calm-muted">No sessions planned yet. When your coach plans one, it shows up here.</p>
+          <Empty icon="i-cal" title="Nothing planned yet" text="When your coach plans training, it shows up here and you can reply in one tap." compact />
         ))}
 
       {tab === "past" &&

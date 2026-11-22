@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { Upgrade, usePro } from "../Pro";
 import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
@@ -528,7 +529,7 @@ function SessionReadOnly({ id }: { id: string }) {
             </div>
           );
         })}
-        {!s.plan.length && <div className="empty">Your coach hasn't added drills to this session yet.</div>}
+        {!s.plan.length && <Empty icon="i-board" title="No drills yet" text="Your coach hasn't planned this session yet. Check back closer to the day." compact />}
       </div>
       <ReadOnlyNote>Only your coaches can change this session plan.</ReadOnlyNote>
     </SheetFrame>

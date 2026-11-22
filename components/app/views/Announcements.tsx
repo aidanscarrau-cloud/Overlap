@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { pingPush } from "@/lib/push-client";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
@@ -60,7 +61,7 @@ export function Announcements() {
         </div>
       )}
       <div className="news">
-        {list.length ? list.map((a) => <AnnouncementItem key={a.id} a={a} />) : <div className="empty">{canPost ? "No announcements yet. Post the first one above." : "No announcements yet."}</div>}
+        {list.length ? list.map((a) => <AnnouncementItem key={a.id} a={a} />) : <Empty icon="i-megaphone" title="No news yet" text={canPost ? "Post the first update above. Everyone it's for gets a notification and an email." : "Club and team news will show up here."} />}
       </div>
     </>
   );

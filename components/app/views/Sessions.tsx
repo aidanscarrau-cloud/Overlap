@@ -1,5 +1,6 @@
 "use client";
 
+import { Empty } from "../Empty";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { DateBox, Icon, Timeline, totalMins } from "@/components/ui";
@@ -142,7 +143,16 @@ function TeamSessions() {
           </section>
         ))
       ) : (
-        <div className="empty">{filter === "upcoming" ? "No upcoming sessions." : "No completed sessions."}</div>
+        filter === "upcoming" ? (
+          <Empty
+            icon="i-cal"
+            title="No sessions planned yet"
+            text={canEdit ? "Plan your first session and families will get a notification to reply." : "When your coach plans a session it'll show up here."}
+            action={canEdit ? { label: "Plan a session", onClick: () => open({ kind: "session", id: null }) } : undefined}
+          />
+        ) : (
+          <Empty icon="i-check" title="No completed sessions yet" text="Sessions move here once they've happened, with who came." compact />
+        )
       )}
     </>
   );
