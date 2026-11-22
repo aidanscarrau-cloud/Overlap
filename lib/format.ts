@@ -43,3 +43,16 @@ export const initials = (n: string) =>
     .toUpperCase();
 export const errMsg = (e: unknown) =>
   (e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "") || "Something went wrong. Try again.";
+
+/** Times as people say them: "5:30 pm", "6:00 pm". Use for display only; forms keep 24-hour "17:30". */
+export const clock = (t: string | null | undefined) => {
+  if (!t) return "";
+  const [h, m] = hhmm(t).split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m || 0).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+};
+/** "5:30 – 6:45 pm" (or "11:30 am – 1 pm" across noon). */
+export const clockRange = (start: string, end: string) => {
+  const a = clock(start), b = clock(end);
+  if (a === b) return a; // no plan yet: just the start
+  return a.slice(-2) === b.slice(-2) ? `${a.slice(0, -3)} – ${b}` : `${a} – ${b}`;
+};

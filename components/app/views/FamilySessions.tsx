@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { ReplyButtons } from "../Replies";
 import { totalMins } from "@/components/ui";
-import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, todayIso } from "@/lib/format";
+import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, todayIso, clock, clockRange } from "@/lib/format";
 
 /** Players and parents: every session for their teams, with Yes/No right on the page. */
 export function FamilySessions() {
@@ -55,8 +55,7 @@ export function FamilySessions() {
                 <div style={{ minWidth: 0 }}>
                   <h2>{s.title || "Training session"}</h2>
                   <p className="calm-muted">
-                    {fmtLongDay(s.date)} {fmtNum(s.date)} {fmtLongMon(s.date)} · {hhmm(s.start_time)}
-                    {totalMins(s) ? ` to ${addMins(s.start_time, totalMins(s))}` : ""}
+                    {fmtLongDay(s.date)} {fmtNum(s.date)} {fmtLongMon(s.date)} · {totalMins(s) ? clockRange(s.start_time, addMins(s.start_time, totalMins(s))) : clock(s.start_time)}
                     {s.location ? ` · ${s.location}` : ""}
                     {teamIds.length > 1 ? ` · ${tName(s.team_id)}` : ""}
                   </p>

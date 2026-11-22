@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui";
 import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { Modal } from "../fitness/Fitness";
@@ -626,7 +627,7 @@ export function FamilyInjuries() {
             className="inj-add"
             onClick={() => setWho(p)}
           >
-            🩹{" "}
+            <Icon id="i-plaster" />
             {parent
               ? `${kidName(p)} hurt? Tell the coaches`
               : "Hurt? Tell your coaches"}

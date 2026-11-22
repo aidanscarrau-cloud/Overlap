@@ -102,9 +102,18 @@ export function ReplyCounts({ sessionId, playerIds }: { sessionId: string; playe
     const x = r.get(id);
     if (x) x.going ? yes++ : no++;
   });
+  const wait = playerIds.length - yes - no;
+  const total = Math.max(1, playerIds.length);
   return (
-    <span className="rcounts" title={`${yes} going, ${no} not going, ${playerIds.length - yes - no} no reply`}>
-      <b className="y">✓ {yes}</b> <b className="n">✕ {no}</b> <span>? {playerIds.length - yes - no}</span>
+    <span className="rcounts" aria-label={`${yes} coming, ${no} can't, ${wait} no reply`}>
+      <span className="rbar" aria-hidden="true">
+        <i className="y" style={{ width: `${(yes / total) * 100}%` }} />
+        <i className="n" style={{ width: `${(no / total) * 100}%` }} />
+      </span>
+      <span className="rtxt">
+        <b>{yes}</b> coming{no > 0 && <> · {no} can&apos;t</>}
+        {wait > 0 && <> · {wait} to reply</>}
+      </span>
     </span>
   );
 }

@@ -2190,3 +2190,30 @@ html { -webkit-text-size-adjust: 100%; }
 }
 @media (max-width: 520px) { [data-look="club"] .lp-pain-grid, [data-look="club"] .lp-trust { grid-template-columns: 1fr; } [data-look="club"] .lp-offer-pill { font-size: 13px; } }
 [data-look="club"] .lp-offer-pill b { white-space: nowrap; }
+
+/* ---------------------------------------------------------------- polish pass */
+[data-look="club"] .rcounts { display: inline-grid; gap: 4px; min-width: 130px; justify-items: end; }
+[data-look="club"] .rbar { display: flex; width: 100%; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; gap: 1px; }
+[data-look="club"] .rbar i { display: block; height: 100%; }
+[data-look="club"] .rbar .y { background: var(--good); }
+[data-look="club"] .rbar .n { background: var(--bad); }
+[data-look="club"] .rtxt { font-size: 13px; color: var(--muted); white-space: nowrap; }
+[data-look="club"] .rtxt b { color: var(--ink); font-variant-numeric: tabular-nums; }
+[data-look="club"] .pp-acts button .i { width: 22px; height: 22px; color: var(--accent-text); }
+[data-look="club"] .inj-add { display: inline-flex; align-items: center; gap: 8px; }
+[data-look="club"] .inj-add .i { width: 18px; height: 18px; flex: none; }
+/* Quiet secondary action: reads as a link, still a 44px target. */
+[data-look="club"] .btn-quiet { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-weight: 600; font-size: 14.5px; color: var(--accent-text); cursor: pointer; }
+[data-look="club"] .btn-quiet .i { width: 18px; height: 18px; }
+[data-look="club"] .btn-quiet:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Squad strip on the coach home */
+[data-look="club"] .md-strip { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow-sm); text-decoration: none; color: inherit; }
+[data-look="club"] .md-strip-top { display: flex; justify-content: space-between; align-items: baseline; }
+[data-look="club"] .md-strip-top b { font-family: var(--display); font-size: 20px; }
+[data-look="club"] .md-strip-top span { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+[data-look="club"] .md-strip-bar { height: 6px; border-radius: 3px; background: var(--bad-bg); overflow: hidden; }
+[data-look="club"] .md-strip-bar i { display: block; height: 100%; background: var(--good); border-radius: 3px; }
+[data-look="club"] .md-strip-out { font-size: 13.5px; color: var(--ink-2); }
+/* Fewer shouting labels: date eyebrows over greetings read as quiet text, not orange caps. */
+[data-look="club"] .md-hello .eyebrow { color: var(--muted); letter-spacing: 0.02em; text-transform: none; font-size: 14px; font-weight: 600; }
+[data-look="club"] .noplan { color: var(--warn-ink); font-weight: 600; font-size: 13.5px; }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui";
 import { useState } from "react";
 import { useApp } from "./AppProvider";
 import { ConfirmButton } from "./sheets/SheetFrame";
@@ -48,13 +49,14 @@ export function CalendarSync() {
     <>
       <button
         type="button"
-        className="btn"
+        className="btn-quiet"
         aria-expanded={openPanel}
         onClick={() => {
           setOpenPanel(!openPanel);
           if (!token) load();
         }}
       >
+        <Icon id="i-cal" />
         Add to phone calendar
       </button>
       {openPanel && (

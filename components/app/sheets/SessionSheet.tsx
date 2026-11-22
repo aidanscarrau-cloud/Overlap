@@ -7,7 +7,7 @@ import { useApp } from "../AppProvider";
 import { ConfirmButton, ReadOnlyNote, SheetFrame } from "./SheetFrame";
 import { Icon, Shirt, Timeline, totalMins } from "@/components/ui";
 import { CATS, STATUS } from "@/lib/constants";
-import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, parseD, todayIso } from "@/lib/format";
+import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, parseD, todayIso, clock, clockRange } from "@/lib/format";
 import type { Drill, PlanItem } from "@/lib/types";
 import { ReplyButtons, ReplyCounts } from "../Replies";
 import { PlanPeek, PlanThumb, SessionWalk, WalkButton } from "../sessions/PlanPlayer";
@@ -475,7 +475,7 @@ function SessionReadOnly({ id }: { id: string }) {
     <SheetFrame title="Session plan">
       <div>
         <div className="eyebrow">
-          {fmtLongDay(s.date)} {fmtNum(s.date)} {fmtLongMon(s.date)} · {hhmm(s.start_time)}–{addMins(s.start_time, totalMins(s))}
+          {fmtLongDay(s.date)} {fmtNum(s.date)} {fmtLongMon(s.date)} · {clockRange(s.start_time, addMins(s.start_time, totalMins(s)))}
           {s.location ? ` · ${s.location}` : ""}
         </div>
         <h2 className="title-input" style={{ border: "none", marginTop: 6 }}>

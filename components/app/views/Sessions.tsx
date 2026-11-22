@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useApp } from "../AppProvider";
 import { DateBox, Icon, Timeline, totalMins } from "@/components/ui";
 import { NoTeams } from "./Overview";
-import { addMins, hhmm, todayIso, weekKey, weekLabel } from "@/lib/format";
+import { addMins, hhmm, todayIso, weekKey, weekLabel, clock, clockRange } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import { ReplyBadge, ReplyCounts } from "../Replies";
 import { FamilySessions } from "./FamilySessions";
@@ -95,7 +95,7 @@ function TeamSessions() {
                     <div className="smeta">
                       <span>
                         <Icon id="i-clock" />
-                        {hhmm(s.start_time)}–{addMins(s.start_time, totalMins(s))}
+                        {clockRange(s.start_time, addMins(s.start_time, totalMins(s)))}
                       </span>
                       {s.location && (
                         <span>
@@ -112,11 +112,15 @@ function TeamSessions() {
                     </div>
                   </div>
                   <div className="sright">
-                    <Timeline s={s} drills={drillMap} />
+                    {s.plan.length > 0 && <Timeline s={s} drills={drillMap} />}
                     <div className="r">
-                      <span>
-                        <b>{s.plan.length}</b> drills · <b>{totalMins(s)}</b> min
-                      </span>
+                      {s.plan.length ? (
+                        <span>
+                          <b>{s.plan.length}</b> drills · <b>{totalMins(s)}</b> min
+                        </span>
+                      ) : (
+                        <span className="noplan">No plan yet</span>
+                      )}
                       <span>
                         {!isPast && can("attendance.view") ? (
                           <ReplyCounts sessionId={s.id} playerIds={squad().map((p) => p.id)} />

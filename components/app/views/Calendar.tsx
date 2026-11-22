@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "../AppProvider";
-import { hhmm, iso, parseD, todayIso } from "@/lib/format";
+import { hhmm, iso, parseD, todayIso, clock, clockRange } from "@/lib/format";
 import type { Match, Session } from "@/lib/types";
 
 type Item = { kind: "session" | "match"; id: string; date: string; time: string; title: string; place: string; off: boolean };
@@ -117,7 +117,7 @@ export function MonthCalendar({ sessions, matches = [], canEdit }: { sessions: S
                       open(s.kind === "match" ? { kind: "match", id: s.id } : { kind: "session", id: s.id });
                     }}
                   >
-                    <span className="tnum">{s.time}</span> {s.kind === "match" ? "⚽ " : ""}
+                    <span className="tnum">{clock(s.time)}</span> {s.kind === "match" ? "vs " : ""}
                     {s.title}
                   </button>
                 ))}
@@ -148,7 +148,7 @@ export function MonthCalendar({ sessions, matches = [], canEdit }: { sessions: S
         {pickedList.length ? (
           pickedList.map((s) => (
             <button key={s.id} type="button" className="cal-agenda-item" onClick={() => open(s.kind === "match" ? { kind: "match", id: s.id } : { kind: "session", id: s.id })}>
-              <span className="tnum">{s.time}</span>
+              <span className="tnum">{clock(s.time)}</span>
               <span>
                 <b>
                   {s.kind === "match" ? "Match " : ""}

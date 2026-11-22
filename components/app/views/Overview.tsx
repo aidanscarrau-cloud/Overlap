@@ -9,7 +9,7 @@ import { ReplyButtons } from "../Replies";
 import { LoadWatch, MyLoadLine } from "../Load";
 import { overall, reviewDue } from "@/lib/idp";
 import { AnnouncementItem } from "./Announcements";
-import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel } from "@/lib/format";
+import { addMins, errMsg, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, todayIso, whenLabel, clock, clockRange } from "@/lib/format";
 import type { Status } from "@/lib/types";
 
 export function Overview() {
@@ -46,7 +46,7 @@ export function Overview() {
             <div className="hmeta">
               <span>
                 <Icon id="i-clock" />
-                {hhmm(next.start_time)}–{addMins(next.start_time, totalMins(next))}
+                {clockRange(next.start_time, addMins(next.start_time, totalMins(next)))}
               </span>
               {next.location && (
                 <span>
@@ -92,7 +92,7 @@ export function Overview() {
             <small>{fmtLongDay(next.date)}</small>
             <div className="big">{fmtNum(next.date)}</div>
             <small>{fmtLongMon(next.date)}</small>
-            <div className="t">{hhmm(next.start_time)}</div>
+            <div className="t">{clock(next.start_time)}</div>
           </div>
         </section>
       ) : (
@@ -266,7 +266,7 @@ export function Overview() {
                   <span className="rt">
                     <b>{s.title || "Training session"}</b>
                     <span>
-                      {hhmm(s.start_time)}
+                      {clock(s.start_time)}
                       {s.location ? ` · ${s.location}` : ""} · {totalMins(s)} min
                     </span>
                   </span>
@@ -330,7 +330,7 @@ export function Overview() {
                   <span>
                     {squad(t.id).length} players · {t.coach_name || "No coach set"}
                   </span>
-                  <span>{n ? `Next: ${fmtDay(n.date)} ${fmtNum(n.date)} ${fmtMon(n.date)}, ${hhmm(n.start_time)}` : "No session planned"}</span>
+                  <span>{n ? `Next: ${fmtDay(n.date)} ${fmtNum(n.date)} ${fmtMon(n.date)}, ${clock(n.start_time)}` : "No session planned"}</span>
                 </span>
               </button>
             );
@@ -371,7 +371,7 @@ export function TrainingReplies({ playerId, teamIds, parent, name }: { playerId:
               <b>{s.title || "Training session"}</b>
               <span>
                 {teamIds.length > 1 ? `${tName(s.team_id)} · ` : ""}
-                {whenLabel(s.date)} · {hhmm(s.start_time)}
+                {whenLabel(s.date)} · {clock(s.start_time)}
                 {s.location ? ` · ${s.location}` : ""}
               </span>
             </span>

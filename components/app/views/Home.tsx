@@ -10,7 +10,7 @@ import { Linkify } from "@/components/Linkify";
 import { totalMins } from "@/components/ui";
 import { overall } from "@/lib/idp";
 import { fmtMins, isHighLoad } from "@/lib/load";
-import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, parseD, todayIso, whenLabel } from "@/lib/format";
+import { addMins, fmtDay, fmtLongDay, fmtLongMon, fmtMon, fmtNum, hhmm, iso, parseD, todayIso, whenLabel, clock } from "@/lib/format";
 import { timeAgo } from "./Announcements";
 import { STATUS } from "@/lib/constants";
 import { InstallHint } from "./Notifications";
@@ -37,8 +37,7 @@ const byWhen = (a: Ev, b: Ev) => (a.date + a.time).localeCompare(b.date + b.time
 
 /** "6:00 pm" */
 export function time12(t: string) {
-  const [h, m] = (t || "00:00").split(":").map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+  return clock(t || "00:00");
 }
 /** "Tonight", "Tomorrow", "Sat 28 Nov" */
 function dayWord(date: string, time: string) {
@@ -77,7 +76,7 @@ function DateTile({ date }: { date: string }) {
 /* ---------------------------------------------------------------- Coaches */
 
 function CoachHome() {
-  const { data, team, squad, sessionsOf, matchesOf, canDo, open, repliesFor, matchRepliesFor, squadOf, isAdmin, setTeam } = useApp();
+  const { data, team, squad, sessionsOf, matchesOf, canDo, open, repliesFor, matchRepliesFor, squadOf, isAdmin } = useApp();
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const today = todayIso();
   const weekEnd = iso(new Date(Date.now() + 6 * 864e5));
@@ -274,44 +273,30 @@ function CoachHome() {
         </section>
       </div>
 
-      <section className="md-sec">
-        <div className="md-sec-h">
-          <h2>Squad</h2>
-          <Link href="/squad">{sq.length} players</Link>
-        </div>
-        <div className="md-stats">
-          <Link href="/squad" className="md-stat ok">
-            <b>{sq.filter((p) => p.status === "available").length}</b>
-            <small>Available</small>
-          </Link>
-          <Link href="/squad" className="md-stat bad">
-            <b>{sq.filter((p) => p.status === "injured").length}</b>
-            <small>Injured</small>
-          </Link>
-          <Link href="/squad" className="md-stat">
-            <b>{sq.filter((p) => p.status === "unavailable").length}</b>
-            <small>Unavailable</small>
-          </Link>
-        </div>
-      </section>
-
-      {(isAdmin || data.teams.length > 1) && data.teams.length > 1 && (
-        <section className="md-sec">
-          <div className="md-sec-h">
-            <h2>Teams</h2>
-          </div>
-          <div className="md-teams">
-            {data.teams.map((tm) => (
-              <button key={tm.id} className="chip" aria-pressed={tm.id === team.id} onClick={() => setTeam(tm.id)}>
-                {tm.name}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      <SquadStrip players={sq} />
 
       <ClubNews />
     </div>
+  );
+}
+
+/** One line about the squad instead of three big number tiles: who's out, and a bar for the rest. */
+function SquadStrip({ players }: { players: { id: string; full_name: string; status: string }[] }) {
+  const out = players.filter((p) => p.status !== "available");
+  const avail = players.length - out.length;
+  return (
+    <Link href="/squad" className="md-strip">
+      <span className="md-strip-top">
+        <b>Squad</b>
+        <span>
+          {avail} of {players.length} available
+        </span>
+      </span>
+      <span className="md-strip-bar" aria-hidden="true">
+        <i style={{ width: `${players.length ? (avail / players.length) * 100 : 0}%` }} />
+      </span>
+      <span className="md-strip-out">{out.length ? `Out: ${out.map((p) => `${p.full_name.split(" ")[0]} (${p.status === "injured" ? "injured" : "away"})`).join(", ")}` : "Everyone's available"}</span>
+    </Link>
   );
 }
 
@@ -363,8 +348,6 @@ function FamilyHome() {
   const attention: string[] = [];
   for (const p of myPlayers) {
     const who = parent ? kidName(p) : "You";
-    const unreplied = upcoming.filter((s) => p.team_ids.includes(s.team_id) && s.date <= weekEnd && !repliesFor(s.id).get(p.id));
-    if (unreplied.length) attention.push(`${who} ${parent ? "hasn't" : "haven't"} replied to ${unreplied.length} session${unreplied.length === 1 ? "" : "s"} this week.`);
     if (p.status !== "available") attention.push(`${who} ${parent ? "is" : "are"} marked ${STATUS[p.status].toLowerCase()}${p.status_note ? ` (${p.status_note})` : ""}.`);
     const overdue = goalsOf(p.id).filter((g) => g.status === "active" && g.target_date && g.target_date < today);
     if (overdue.length) attention.push(`${overdue.length} of ${parent ? `${kidName(p)}'s` : "your"} goals ${overdue.length === 1 ? "is" : "are"} past ${overdue.length === 1 ? "its" : "their"} target date.`);
@@ -420,7 +403,7 @@ function FamilyHome() {
             <p className="ticket-sub">
               {e.kind === "match"
                 ? [e.place, e.m?.meet_time ? `Arrive by ${time12(e.m.meet_time)}` : "", mp ? `${parent ? kidName(p) + " is" : "You're"} ${mp.role === "start" ? "starting" : "on the bench"}` : ""].filter(Boolean).join(" · ")
-                : [e.place ? e.title : "", e.s && totalMins(e.s) ? `Finishes ${addMins(e.time, totalMins(e.s))}` : ""].filter(Boolean).join(" · ")}
+                : [e.place ? e.title : "", e.s && totalMins(e.s) ? `Finishes ${clock(addMins(e.time, totalMins(e.s)))}` : ""].filter(Boolean).join(" · ")}
             </p>
             {e.kind === "session" ? (
               <ReplyButtons sessionId={e.id} playerId={p.id} label={parent ? `Is ${kidName(p)} coming?` : "Are you coming?"} who={parent ? kidName(p) : undefined} />

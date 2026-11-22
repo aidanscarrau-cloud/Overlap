@@ -9,8 +9,9 @@ import { LoadCard } from "../Load";
 import { PlayerFitness } from "../fitness/Fitness";
 import { usePro } from "../Pro";
 import { PlayerInjuries, InjurySheet } from "../injuries/Injuries";
+import { Icon } from "@/components/ui";
 import { STATUS } from "@/lib/constants";
-import { errMsg, fmtDay, fmtNum, fmtMon, hhmm, todayIso } from "@/lib/format";
+import { errMsg, fmtDay, fmtNum, fmtMon, hhmm, todayIso, clock, clockRange } from "@/lib/format";
 import { overall } from "@/lib/idp";
 import type { Player, Position, Status } from "@/lib/types";
 import { badgeOf } from "../views/Squad";
@@ -108,7 +109,7 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
             <div className="pp-next">
               <span>
                 <b>
-                  {fmtDay(next.date)} {fmtNum(next.date)} {fmtMon(next.date)} · {hhmm(next.start_time)}
+                  {fmtDay(next.date)} {fmtNum(next.date)} {fmtMon(next.date)} · {clock(next.start_time)}
                 </b>{" "}
                 · {next.title || "Training"}
               </span>
@@ -190,21 +191,21 @@ export function PlayerProfile({ p, onEdit, canEdit }: { p: Player; onEdit: () =>
             {canEdit &&
               (p.status === "available" ? (
                 <button type="button" disabled={busy} onClick={() => (pro ? setLogInj(true) : setStatus("injured"))}>
-                  <span aria-hidden="true">🩹</span>{pro ? "Log injury" : "Mark injured"}
+                  <Icon id="i-plaster" />{pro ? "Log injury" : "Mark injured"}
                 </button>
               ) : data.injuries.some((i) => i.player_id === p.id && i.status === "active") ? null : (
                 <button type="button" disabled={busy} onClick={() => setStatus("available")}>
-                  <span aria-hidden="true">✅</span>Mark available
+                  <Icon id="i-check" />Mark available
                 </button>
               ))}
             {canMessage && (
               <button type="button" disabled={busy} onClick={message}>
-                <span aria-hidden="true">💬</span>Message {parents.length === 1 ? parents[0].full_name.split(" ")[0] : "parent"}
+                <Icon id="i-chat" />Message {parents.length === 1 ? parents[0].full_name.split(" ")[0] : "parent"}
               </button>
             )}
             {canEdit && (
               <button type="button" onClick={onEdit}>
-                <span aria-hidden="true">✎</span>Edit details
+                <Icon id="i-edit" />Edit details
               </button>
             )}
           </div>

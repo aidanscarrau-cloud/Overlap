@@ -6,7 +6,7 @@ import { DateBox, Icon } from "@/components/ui";
 import { NoTeams } from "../views/Overview";
 import { ReplyButtons } from "../Replies";
 import { HA_LABEL, RESULT_WORD, playerTotals, resultOf, seasonOf, teamRecord, type PlayerTotals, type Result } from "@/lib/matches";
-import { hhmm, parseD, todayIso } from "@/lib/format";
+import { hhmm, parseD, todayIso, clock, clockRange } from "@/lib/format";
 import type { Match, Player } from "@/lib/types";
 
 const longDate = (d: string) => parseD(d).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
@@ -104,7 +104,7 @@ function TeamMatches() {
                     {m.status === "cancelled" && <span className="tag-off">Cancelled</span>}
                   </h3>
                   <p className="muted match-meta">
-                    {hhmm(m.kickoff)}
+                    {clock(m.kickoff)}
                     {m.venue && ` · ${m.venue}`}
                     {(m.competition || m.round) && ` · ${[m.competition, m.round && `Round ${m.round}`].filter(Boolean).join(" ")}`}
                   </p>
@@ -323,8 +323,8 @@ function FamilyMatches() {
                   </button>
                 </h2>
                 <p className="calm-meta">
-                  {longDate(m.date)}, {hhmm(m.kickoff)}
-                  {m.meet_time && ` (arrive ${hhmm(m.meet_time)})`} · {HA_LABEL[m.home_away]}
+                  {longDate(m.date)}, {clock(m.kickoff)}
+                  {m.meet_time && ` (arrive ${clock(m.meet_time)})`} · {HA_LABEL[m.home_away]}
                   {m.venue && ` at ${m.venue}`}
                 </p>
                 {m.status === "postponed" && <p className="bad-text">Postponed</p>}

@@ -9,7 +9,7 @@ import { Pitch } from "./Pitch";
 import { pingPush } from "@/lib/push-client";
 import { DEFAULT_LENGTH, FORMATIONS, backLine, formationFor } from "@/lib/formations";
 import { HA_LABEL, RESULT_WORD, resultOf } from "@/lib/matches";
-import { errMsg, hhmm, parseD, todayIso } from "@/lib/format";
+import { errMsg, hhmm, parseD, todayIso, clock, clockRange } from "@/lib/format";
 import type { HomeAway, Match, MatchFormat, MatchPlayer, MatchStatus, Player } from "@/lib/types";
 
 const longDate = (d: string) => parseD(d).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
@@ -329,7 +329,7 @@ function SquadPicker({ match }: { match: Match }) {
   return (
     <div className="squad-pick">
       <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-        {longDate(match.date)}, {hhmm(match.kickoff)} · {yes} available, {no} can&apos;t play, {teamPlayers.length - yes - no} haven&apos;t replied
+        {longDate(match.date)}, {clock(match.kickoff)} · {yes} available, {no} can&apos;t play, {teamPlayers.length - yes - no} haven&apos;t replied
       </p>
       <div className="squad-grid">
         <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
@@ -593,8 +593,8 @@ export function MatchView({ match }: { match: Match }) {
     <SheetFrame title={`${teamName} vs ${match.opponent}`}>
       <div className="match-view">
         <p className="match-when">
-          <b>{longDate(match.date)}</b>, kick-off {hhmm(match.kickoff)}
-          {match.meet_time && <> · arrive by {hhmm(match.meet_time)}</>}
+          <b>{longDate(match.date)}</b>, kick-off {clock(match.kickoff)}
+          {match.meet_time && <> · arrive by {clock(match.meet_time)}</>}
           <br />
           {HA_LABEL[match.home_away]}
           {match.venue && <> at {match.venue}</>}
