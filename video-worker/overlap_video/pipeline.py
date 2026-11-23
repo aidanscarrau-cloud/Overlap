@@ -6,7 +6,7 @@ two teams' shirt colours so the coach can say which one is theirs.
 
 Building blocks (all permissively licensed, safe for a paid product):
   * RF-DETR (Apache-2.0 code and Nano–Large weights) for people and the ball
-  * trackers (Apache-2.0) for ByteTrack tracking, supervision (MIT) for detection data
+  * trackers (Apache-2.0) for BoT-SORT tracking with camera-motion compensation, supervision (MIT) for detection data
   * scikit-learn (BSD) for grouping shirt colours into teams
 
 Nothing here identifies people: tracks are anonymous boxes, and only numbers leave this module.
@@ -35,7 +35,10 @@ class Settings:
     model_size: str = "medium"  # nano | small | medium | large (all Apache-2.0)
     person_threshold: float = 0.35
     ball_threshold: float = 0.25
-    max_width: int = 1280  # frames are scaled down to this before detection
+    max_width: int = 1920  # frames are scaled down to this before detection
+    # Also look at the far side of the pitch in close-up sections, so far-away players (only a few
+    # pixels tall once the whole frame is shrunk for the model) are found too. About 4x the work.
+    tiles: bool = True
     possession_reach: float = 0.9  # ball within this many player-heights of a player's feet = theirs
     min_track_seconds: float = 2.0  # shorter tracks are ignored for team colours
     max_seconds: float | None = None  # analyse only the first N seconds (testing)
@@ -170,7 +173,7 @@ def lab_to_hex(lab: np.ndarray) -> str:
 def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str], None] | None = None, model=None, debug_dir: str | None = None, data_path: str | None = None) -> dict:
     """Analyse a match video. If `data_path` is given, everyone's positions (as camera rays) are saved there,
     so the pitch can be mapped later once the coach has tapped a few points (see mapping.py)."""
-    from trackers import ByteTrackTracker
+    from trackers import BoTSORTTracker
 
     from .camera import Registrar
 
@@ -183,7 +186,17 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     pid, bid = PERSON_ID, BALL_ID
 
     pitch = Pitch()
-    tracker = ByteTrackTracker(frame_rate=s.sample_fps, lost_track_buffer=round(2 * s.sample_fps), track_activation_threshold=0.45, high_conf_det_threshold=0.5, minimum_consecutive_frames=2)
+    # BoT-SORT with camera-motion compensation: Veo pans a lot, and without it small far-away players move
+    # further between frames than their own size, so they'd never be linked into tracks.
+    tracker = BoTSORTTracker(
+        frame_rate=s.sample_fps,
+        lost_track_buffer=round(2 * s.sample_fps),
+        track_activation_threshold=0.45,
+        high_conf_det_threshold=0.5,
+        minimum_consecutive_frames=2,
+        enable_cmc=True,
+        cmc_method="sparseOptFlow",
+    )
     track_colours: dict[int, list[np.ndarray]] = defaultdict(list)
     track_seen: dict[int, list[float]] = defaultdict(list)
     # Per analysed frame: (t, ball centre or None, [(track_id, foot_x, foot_y, height, shirt colour or None)])
@@ -195,13 +208,13 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     views: list[tuple[int, np.ndarray, float]] = []
 
     for t, frame in frames(path, s):
-        det = model.predict(np.ascontiguousarray(frame[:, :, ::-1]), threshold=min(s.person_threshold, s.ball_threshold))
-        cls = det.class_id if det.class_id is not None else np.zeros(len(det), int)
-        conf = det.confidence if det.confidence is not None else np.ones(len(det))
         if n % 25 == 0:
             pitch.learn(frame)
         surface = pitch.mask(frame)
         field = pitch.field(surface)
+        det = detect(model, frame, field, min(s.person_threshold, s.ball_threshold), s.tiles)
+        cls = det.class_id if det.class_id is not None else np.zeros(len(det), int)
+        conf = det.confidence if det.confidence is not None else np.ones(len(det))
 
         people = det[(cls == pid) & (conf >= s.person_threshold)]
         fh = frame.shape[0]
@@ -299,6 +312,32 @@ def camera_rays(reg, timeline, views, team_of, centres, data_path):
     return {"pano_jpeg": base64.b64encode(jpg.tobytes()).decode() if ok else None, "pano": info, "keyframes": len(reg.keys), "placed": sum(k.R is not None for k in reg.keys), "points": len(rows)}
 
 
+def detect(model, frame: np.ndarray, field: np.ndarray, threshold: float, tiles: bool):
+    """People and the ball in one frame. With `tiles`, the far part of the pitch (the top of the field area,
+    where players are smallest) is also checked in three overlapping close-ups, and the results merged."""
+    import supervision as sv
+
+    rgb = np.ascontiguousarray(frame[:, :, ::-1])
+    if not tiles:
+        return model.predict(rgb, threshold=threshold, include_source_image=False)
+    h, w = frame.shape[:2]
+    rows = np.where(field.any(axis=1))[0]
+    top = int(rows[0]) if len(rows) else int(h * 0.2)
+    # The far band: from just above the far touchline down to about 40% of the frame below it.
+    y0, y1 = max(0, top - int(0.06 * h)), min(h, top + int(0.4 * h))
+    tw = int(w * 0.4)
+    xs = [0, (w - tw) // 2, w - tw]
+    crops = [rgb[y0:y1, x : x + tw] for x in xs]
+    outs = model.predict([rgb] + crops, threshold=threshold, include_source_image=False)
+    parts = [outs[0]]
+    for x, d in zip(xs, outs[1:]):
+        if len(d):
+            d.xyxy = d.xyxy + np.array([x, y0, x, y0], dtype=d.xyxy.dtype)
+            parts.append(d)
+    merged = sv.Detections.merge(parts)
+    return merged.with_nms(threshold=0.5, class_agnostic=False) if len(merged) else merged
+
+
 def assign_teams(track_colours, track_seen, s: Settings):
     """Find the two teams among everyone tracked on the field.
 
@@ -329,8 +368,18 @@ def assign_teams(track_colours, track_seen, s: Settings):
         return [], {}, {}
     centres = {0: km.cluster_centers_[first], 1: km.cluster_centers_[second]}
     team_of = {}
-    for tid, x in zip(ids, X):
-        team_of[tid] = classify(x, centres)
+    # Each track's team is a vote over all its frames: far-away players are small, so any one frame's
+    # colour can be off (background creeping in), but most frames agree.
+    for tid, cols in track_colours.items():
+        votes = [classify(c, centres) for c in cols]
+        votes = [v for v in votes if v >= 0]
+        if len(votes) >= 2:
+            best = max((0, 1), key=votes.count)
+            if votes.count(best) >= 0.65 * len(votes):
+                team_of[tid] = best
+                continue
+        if tid in ids:
+            team_of[tid] = -1
     teams = []
     for t in (0, 1):
         members = [i for i, lab in team_of.items() if lab == t]

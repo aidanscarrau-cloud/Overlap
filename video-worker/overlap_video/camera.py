@@ -128,6 +128,13 @@ def overlap(H: np.ndarray, shape) -> float:
 def solve_cameras(keys: list[Keyframe]) -> list[int]:
     """Rotation and focal length for every keyframe (bundle adjustment). Returns the keyframes it could place."""
     d = cv2.detail
+    if len(keys) < 2:
+        # One view only (a very short or static video): no rotation to estimate. A typical Veo field of view.
+        for k in keys:
+            h, w = k.image.shape[:2]
+            k.K = np.array([[0.8 * w, 0, w / 2], [0, 0.8 * w, h / 2], [0, 0, 1]], float)
+            k.R = np.eye(3)
+        return list(range(len(keys)))
     feats = []
     for k in keys:
         f = d.computeImageFeatures2(cv2.ORB_create(3000), k.image, static_overlay_mask(k.image.shape))
@@ -137,6 +144,8 @@ def solve_cameras(keys: list[Keyframe]) -> list[int]:
     matcher.collectGarbage()
     keep = d.leaveBiggestComponent(feats, matches, 0.5)
     keep = [int(i) for i in np.array(keep).reshape(-1)]
+    if len(keep) < 2:
+        raise RuntimeError("The camera views in this video couldn't be matched to each other.")
     feats = [feats[i] for i in keep]
     matches = matcher.apply2(feats)
     ok, cams = d.HomographyBasedEstimator().apply(feats, matches, None)
