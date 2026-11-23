@@ -845,28 +845,13 @@ export function FitnessPage() {
   const [guide, setGuide] = useState<FitnessTest | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
 
-  if (!staff) {
+  // Fitness testing is for coaching staff only.
+  if (!staff)
     return (
-      <div className="md-home fit">
-        <header className="md-hello">
-          <span className="eyebrow">Fitness</span>
-          <h1>{myPlayers.length === 1 && data.role === "parent" ? `${kidName(myPlayers[0])}'s fitness` : "Fitness results"}</h1>
-        </header>
-        {myPlayers.map((p) => {
-          const t = data.teams.find((x) => x.id === p.team_id);
-          const keys = TESTS.map((x) => x.key).filter((k) => data.fitnessResults.some((r) => r.team_id === p.team_id && r.test_key === k));
-          return (
-            <div key={p.id} style={{ display: "grid", gap: 16 }}>
-              {myPlayers.length > 1 && <h2 className="fit-kid">{p.full_name}</h2>}
-              <PlayerFitness player={p} />
-              {t && (teamAge(t) ?? 99) >= 13 && keys.length > 0 && <Leaderboard team={t} testKeys={keys} staff={false} />}
-            </div>
-          );
-        })}
-        {!myPlayers.length && <p className="fl-empty">Your account isn&apos;t linked to a player yet.</p>}
+      <div className="empty">
+        Fitness results are kept by your coaches. <Link href="/home">Back to home</Link>
       </div>
     );
-  }
   if (!team) return <NoTeams isAdmin={isAdmin} />;
   const canRun = canDo("attendance.edit", team.id);
   const players = squad();

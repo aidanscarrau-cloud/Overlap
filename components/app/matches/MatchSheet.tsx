@@ -590,8 +590,12 @@ export function MatchView({ match }: { match: Match }) {
   const bench = rows.filter((r) => r.role === "bench").map((r) => byId.get(r.player_id)).filter(Boolean) as Player[];
   const res = resultOf(match);
   const upcoming = match.date >= todayIso() && match.status === "scheduled";
-  const scorers = rows.filter((r) => r.goals > 0).map((r) => `${byId.get(r.player_id)?.full_name ?? "Player"}${r.goals > 1 ? ` (${r.goals})` : ""}`);
   const parent = data.role === "parent";
+  // Line-ups (who starts, positions, the bench) are for coaching staff only.
+  const staff = ["admin", "coach", "assistant"].includes(data.role);
+  const scorerRows = staff ? rows.filter((r) => r.goals > 0).map((r) => ({ name: byId.get(r.player_id)?.full_name ?? "Player", goals: r.goals })) : data.scorers.filter((x) => x.match_id === match.id).map((x) => ({ name: x.full_name, goals: x.goals }));
+  const scorers = scorerRows.map((x) => `${x.name}${x.goals > 1 ? ` (${x.goals})` : ""}`);
+  const announced = match.squad_published || match.status === "played";
 
   return (
     <SheetFrame title={`${teamName} vs ${match.opponent}`}>
@@ -620,12 +624,20 @@ export function MatchView({ match }: { match: Match }) {
           mine.map((p) => (
             <ReplyButtons key={p.id} matchId={match.id} playerId={p.id} label={parent ? `Can ${kidName(p)} play?` : "Can you play?"} who={parent ? kidName(p) : undefined} />
           ))}
-        {rows.length > 0 ? (
+        {(staff ? rows.length > 0 : announced) ? (
           <>
             {mine.map((p) => {
               const r = rows.find((x) => x.player_id === p.id);
               const who = parent ? kidName(p) : "You";
-              const text = !r ? `${who} ${parent ? "isn't" : "aren't"} in the squad this time.` : r.role === "start" ? `${who} ${parent ? "is" : "are"} starting${r.slot !== null && formation.slots[r.slot] ? ` (${formation.slots[r.slot].pos})` : ""}.` : `${who} ${parent ? "is" : "are"} on the bench.`;
+              const text = !r
+                ? `${who} ${parent ? "isn't" : "aren't"} in the squad this time.`
+                : !staff
+                  ? res
+                    ? `${who} played.`
+                    : `${who} ${parent ? "is" : "are"} in the squad.`
+                  : r.role === "start"
+                    ? `${who} ${parent ? "is" : "are"} starting${r.slot !== null && formation.slots[r.slot] ? ` (${formation.slots[r.slot].pos})` : ""}.`
+                    : `${who} ${parent ? "is" : "are"} on the bench.`;
               return (
                 <p key={p.id} className="squad-me">
                   {text}
@@ -633,8 +645,8 @@ export function MatchView({ match }: { match: Match }) {
                 </p>
               );
             })}
-            {pro && <Pitch formation={formation} bySlot={bySlot} highlight={new Set(mine.map((p) => p.id))} />}
-            {bench.length > 0 && <p className="muted">Bench: {bench.map((p) => p.full_name).join(", ")}</p>}
+            {staff && pro && <Pitch formation={formation} bySlot={bySlot} highlight={new Set(mine.map((p) => p.id))} />}
+            {staff && bench.length > 0 && <p className="muted">Bench: {bench.map((p) => p.full_name).join(", ")}</p>}
           </>
         ) : (
           upcoming && <p className="muted">The squad hasn&apos;t been announced yet.</p>

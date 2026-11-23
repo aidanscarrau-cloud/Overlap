@@ -24,7 +24,7 @@ const FAQ: { group: string; items: [string, React.ReactNode][] }[] = [
     items: [
       ["How do I take the register?", <>Open the session (from Home or Schedule) and choose the <b>Attendance</b> tab. Tap each player who&apos;s there.</>],
       ["How do I plan a session quickly?", <>On <b>Drills</b>, pick a focus and age, press <b>Suggest</b>, then <b>Add to</b> your next session. Each drill has an animation you can show the players.</>],
-      ["How do I set the line-up?", <>On <b>Squad</b>, tap <b>Edit line-up</b>, pick a formation and drag players into place. <b>Save &amp; share</b> tells the families.</>],
+      ["How do I set the line-up?", <>On <b>Squad</b>, tap <b>Edit line-up</b>, pick a formation and drag players into place. <b>Save &amp; share</b> tells the team&apos;s other coaches. Line-ups are only visible to coaching staff.</>],
       ["How do trials work?", <>On <b>Trials</b>, set up the dates and share the sign-up link (or import your form&apos;s spreadsheet). Check players in and rate them on the night, then send offers from <b>Selection</b>. Accepting adds the player to your squad.</>],
     ],
   },

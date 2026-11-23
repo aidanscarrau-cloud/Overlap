@@ -332,6 +332,8 @@ export type ClubData = {
   matchReplies: MatchReply[];
   matchReviews: MatchReview[];
   videoJobs: VideoJob[];
+  /** Goal scorers of played matches (names and goals only), for families who can't see squads. */
+  scorers: { match_id: string; full_name: string; goals: number }[];
   matchReports: MatchReport[];
   /** This person's own inbox, newest first (all their clubs). */
   notifications: AppNotification[];

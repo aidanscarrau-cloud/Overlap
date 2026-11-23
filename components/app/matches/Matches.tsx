@@ -336,19 +336,19 @@ function FamilyMatches() {
             {tab === "upcoming" &&
               m.status === "scheduled" &&
               kids.map((p) => <ReplyButtons key={p.id} matchId={m.id} playerId={p.id} label={parent ? `Can ${kidName(p)} play?` : "Can you play?"} who={parent ? kidName(p) : undefined} />)}
-            {rows.length > 0 &&
+            {(m.squad_published || res) &&
               kids.map((p) => {
                 const r = rows.find((x) => x.player_id === p.id);
                 const who = parent ? kidName(p) : "You";
                 const be = parent ? "is" : "are";
-                let text = !r ? `${who} ${parent ? "wasn't" : "weren't"} in the squad.` : r.role === "start" ? `${who} ${be} starting.` : `${who} ${be} on the bench.`;
+                let text = !r ? `${who} ${parent ? "wasn't" : "weren't"} in the squad.` : `${who} ${be} in the squad.`;
                 if (res && r) text = `${who} played${r.minutes ? ` ${r.minutes} minutes` : ""}${r.goals ? `, scored ${r.goals}` : ""}${r.assists ? `, ${r.assists} assist${r.assists > 1 ? "s" : ""}` : ""}.`;
                 if (!res && !r) text = `${who} ${parent ? "isn't" : "aren't"} in the squad this time.`;
                 return (
                   <p key={p.id} className="squad-me">
                     {text}{" "}
                     <button className="linklike" onClick={() => open({ kind: "match", id: m.id })}>
-                      {res ? "See the match" : "See the line-up"}
+                      See the match
                     </button>
                   </p>
                 );

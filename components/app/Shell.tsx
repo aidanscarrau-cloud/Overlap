@@ -52,7 +52,6 @@ const FAMILY_NAV = [
     short: "Progress",
     icon: "i-target",
   },
-  { href: "/fitness", label: "Fitness", short: "Fitness", icon: "i-clock" },
   { href: "/chat", label: "Chat", short: "Chat", icon: "i-chat" },
   { href: "/announcements", label: "News", short: "News", icon: "i-megaphone" },
   { href: "/club", label: "Account", short: "Account", icon: "i-people" },

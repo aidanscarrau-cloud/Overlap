@@ -77,7 +77,7 @@ export default function Privacy() {
         <h2>Who can see what</h2>
         <ul>
           <li>
-            <b>Parents and players</b> see their own player&apos;s schedule, replies, development, fitness and injuries, team chat (if allowed for their age) and club news.
+            <b>Parents and players</b> see their own player&apos;s schedule, replies, whether they&apos;re in a match squad, results and goal scorers, development and injuries, team chat (if allowed for their age) and club news. Line-ups, positions and fitness test results are for coaching staff only.
           </li>
           <li>
             <b>Coaches and assistants</b> see the teams they work with. What they can change is set by the club&apos;s admins.
