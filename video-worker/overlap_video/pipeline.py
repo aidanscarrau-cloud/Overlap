@@ -271,7 +271,7 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     teams, team_of, centres = assign_teams(track_colours, track_seen, s)
     say(0.96, "Adding up possession")
     poss, on_ball = possession(timeline, team_of, centres, s)
-    numbers = {tid: n for tid in track_seen if reader is not None and (n := reader.number_of(tid)) is not None}
+    numbers = {tid: shirt for tid in track_seen if reader is not None and (shirt := reader.number_of(tid)) is not None}
     people_stats = player_summary(track_seen, team_of, numbers, on_ball, s)
     if debug_dir:
         draw_debug(debug_dir, snaps, teams, team_of, centres)
