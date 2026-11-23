@@ -22,6 +22,8 @@ from typing import Callable, Iterator
 import cv2
 import numpy as np
 
+from .camera import WORK_WIDTH
+
 # RF-DETR's COCO models report the original COCO category ids (not positions in class_names).
 PERSON_ID = 1
 BALL_ID = 37
@@ -165,8 +167,12 @@ def lab_to_hex(lab: np.ndarray) -> str:
 # ---------------------------------------------------------------- the analysis
 
 
-def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str], None] | None = None, model=None, debug_dir: str | None = None) -> dict:
+def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str], None] | None = None, model=None, debug_dir: str | None = None, data_path: str | None = None) -> dict:
+    """Analyse a match video. If `data_path` is given, everyone's positions (as camera rays) are saved there,
+    so the pitch can be mapped later once the coach has tapped a few points (see mapping.py)."""
     from trackers import ByteTrackTracker
+
+    from .camera import Registrar
 
     s = s or Settings()
     info = video_info(path)
@@ -185,6 +191,8 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     ball_frames = 0
     n = 0
     snaps: list[tuple[np.ndarray, list, tuple | None]] = []  # a few frames kept for the debug pictures
+    reg = Registrar()  # where the camera is looking, frame by frame
+    views: list[tuple[int, np.ndarray, float]] = []
 
     for t, frame in frames(path, s):
         det = model.predict(np.ascontiguousarray(frame[:, :, ::-1]), threshold=min(s.person_threshold, s.ball_threshold))
@@ -225,6 +233,11 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
                 track_colours[tid].append(c)
             players.append((tid, float((box[0] + box[2]) / 2), float(box[3]), float(box[3] - box[1]), c))
         timeline.append((t, ball, players))
+        try:
+            k, H = reg.add(t, frame)
+            views.append((k, H, WORK_WIDTH / frame.shape[1]))
+        except cv2.error:
+            views.append((-1, np.eye(3), 1.0))
         if debug_dir and n % 50 == 10 and len(snaps) < 8:
             snaps.append((frame.copy(), [(p[0], b.copy(), p[4]) for b, p in zip(people.xyxy, players)], ball))
         n += 1
@@ -237,6 +250,8 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     poss = possession(timeline, team_of, centres, s)
     if debug_dir:
         draw_debug(debug_dir, snaps, teams, team_of, centres)
+    say(0.97, "Working out where the camera was looking")
+    pitch_view = camera_rays(reg, timeline, views, team_of, centres, data_path)
 
     return {
         "version": 1,
@@ -248,7 +263,40 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
         },
         "teams": teams,
         "possession": poss,
+        "pitch_view": pitch_view,
     }
+
+
+def camera_rays(reg, timeline, views, team_of, centres, data_path):
+    """Solve the camera for the whole video, save everyone's position as a ray, and make the panorama
+    the coach taps pitch points on. Returns what the app needs to show the panorama (or why it couldn't)."""
+    import base64
+
+    from .camera import rays, render_pano, solve_cameras
+
+    try:
+        solve_cameras(reg.keys)
+    except Exception as e:  # mapping is a bonus; the team stats still stand
+        return {"error": f"Couldn't work out the camera: {str(e)[:120]}"}
+    rows = []
+    for (t, ball, players), (k, H, sc) in zip(timeline, views):
+        if k < 0 or reg.keys[k].R is None:
+            continue
+        pts = [(p[1] * sc, p[2] * sc) for p in players] + ([(ball[0] * sc, ball[1] * sc)] if ball else [])
+        if not pts:
+            continue
+        r = rays(reg.keys[k], H, np.array(pts))
+        for p, rr in zip(players, r):
+            rows.append((t, p[0], team_for(p[0], p[4], team_of, centres), rr[0], rr[1], rr[2], 0))
+        if ball:
+            rows.append((t, -1, -1, *r[-1], 1))
+    if not rows:
+        return {"error": "Couldn't place anyone on the pitch."}
+    if data_path:
+        np.savez_compressed(data_path, rows=np.array(rows, dtype=np.float32))
+    pano, info = render_pano(reg.keys, 1600)
+    ok, jpg = cv2.imencode(".jpg", pano, [cv2.IMWRITE_JPEG_QUALITY, 78])
+    return {"pano_jpeg": base64.b64encode(jpg.tobytes()).decode() if ok else None, "pano": info, "keyframes": len(reg.keys), "placed": sum(k.R is not None for k in reg.keys), "points": len(rows)}
 
 
 def assign_teams(track_colours, track_seen, s: Settings):

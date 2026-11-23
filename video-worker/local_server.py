@@ -9,7 +9,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from overlap_video.job import run_job
+from overlap_video.job import run_job, run_map
 from overlap_video.pipeline import Settings
 
 SECRET = os.environ["VIDEO_WORKER_SECRET"]
@@ -23,7 +23,10 @@ class H(BaseHTTPRequestHandler):
             self.end_headers()
             return
         job = json.loads(self.rfile.read(int(self.headers.get("content-length", 0))))
-        threading.Thread(target=run_job, args=(job, SECRET, SETTINGS), daemon=True).start()
+        if job.get("kind") == "map":
+            threading.Thread(target=run_map, args=(job, SECRET), daemon=True).start()
+        else:
+            threading.Thread(target=run_job, args=(job, SECRET, SETTINGS), daemon=True).start()
         self.send_response(202)
         self.end_headers()
         self.wfile.write(b'{"ok":true}')

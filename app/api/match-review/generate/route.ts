@@ -163,5 +163,13 @@ function videoSummary(row?: { our_team: number | null; results: unknown } | null
   const us = Math.round(r.possession.pct[row.our_team] ?? 0);
   const halves = (r.possession.by_5_min ?? []).filter((b) => b.team0_pct !== null);
   const trend = halves.length >= 4 ? ` By 5-minute block (our %): ${halves.map((b) => `${b.from_min}' ${Math.round(row.our_team === 0 ? b.team0_pct! : 100 - b.team0_pct!)}%`).join(", ")}.` : "";
-  return `Possession ${us}% us, ${100 - us}% them.${trend}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
+  const m = (r as { mapping?: { teams?: ({ ball_thirds?: number[] | null; metres_per_min?: number | null; defensive_line_m?: number | null } | null)[] } }).mapping?.teams?.[row.our_team];
+  const pitch = m
+    ? [
+        m.ball_thirds ? ` Ball in our defensive third ${Math.round(m.ball_thirds[0])}%, middle ${Math.round(m.ball_thirds[1])}%, attacking third ${Math.round(m.ball_thirds[2])}%.` : "",
+        m.metres_per_min ? ` Team running about ${((m.metres_per_min * 90) / 1000).toFixed(1)} km per player per 90 minutes.` : "",
+        m.defensive_line_m ? ` Back line usually ${Math.round(m.defensive_line_m)} m from our goal.` : "",
+      ].join("")
+    : "";
+  return `Possession ${us}% us, ${100 - us}% them.${trend}${pitch}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
 }

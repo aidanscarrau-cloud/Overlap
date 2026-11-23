@@ -7,6 +7,15 @@ analyses it on a GPU on Modal, reports back to `/api/match-video/callback`, and 
 Licences: RF-DETR (Apache-2.0, Nano–Large weights), trackers (Apache-2.0), supervision (MIT),
 scikit-learn (BSD), OpenCV (Apache-2.0). No AGPL/GPL code.
 
+## Pitch mapping
+
+The analysis also tracks where the camera is looking (`camera.py`): a Veo follow-cam is one fixed camera
+turning and zooming, so frames are matched to keyframes and bundle-adjusted with OpenCV's stitching tools,
+no training needed. It saves everyone's position as a camera ray (`data/<job>.npz`, kept 30 days) and a
+panorama of the ground. The coach taps 4+ known points on the panorama (halfway line, centre circle, goals,
+corners); `pitchmap.py` solves the camera's position and height and the pitch size, and `mapping.py`
+works out heat maps, the ball in each third, distance covered, back-line height and width.
+
 ## Try it on a clip (CPU)
 
     python -m venv .venv && . .venv/bin/activate

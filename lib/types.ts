@@ -136,7 +136,23 @@ export type VideoStats = {
   quality: { ball_seen_pct: number; players_per_frame: number; tracks: number };
   teams: { key: 0 | 1; colour: string; tracks: number; presence: number }[];
   possession: { pct: [number, number]; seconds_with_owner: number; by_5_min: { from_min: number; team0_pct: number | null; seconds: number }[] };
+  /** The panorama of the ground for pitch mapping (the picture itself is fetched separately). */
+  pitch_view?: { pano?: { scale: number; theta0: number; phi0: number; width: number; height: number }; error?: string };
+  mapping?: PitchMapping;
+  mapping_pending?: boolean;
+  mapping_error?: string;
+  taps?: Record<string, [number, number]>;
 };
+export type TeamMap = {
+  /** Share of time in each cell (per 1000), grid[x][y], always attacking left to right. */
+  heat: number[][];
+  ball_thirds: [number, number, number] | null;
+  metres_per_min: number | null;
+  high_speed_pct: number | null;
+  defensive_line_m: number | null;
+  width_m: number | null;
+};
+export type PitchMapping = { pitch: { length: number; width: number; fit_error_deg: number; camera_height: number }; teams: (TeamMap | null)[]; grid: [number, number] };
 export type VideoJob = {
   id: string;
   match_id: string;
