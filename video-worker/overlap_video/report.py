@@ -20,6 +20,7 @@ Write the post-match analysis the head coach would want on their desk the next m
 
 How to work:
 - Base every point on what you can actually see in the frames or on the numbers given. When the picture isn't clear (players far from the camera, the ball hidden), say "appears to" or leave it out. Never invent goals, scores, shots, player names or events you can't see.
+- Each moment comes with a label from the automatic tracking (e.g. "won the ball in the opposition half"). Labels are guesses, and are least reliable right at the ends of the pitch: trust what you see in the frames over the label, and describe what actually happened.
 - The camera is a single wide follow-cam: you won't see everything. Prefer patterns (things that happen in several moments) over one-offs, and cite the moment IDs (e.g. M4, M11) that show each point so the coach can watch them.
 - Refer to the teams by name and shirt colour. Refer to players only by team and shirt number, and only when the number is legible or given in the numbers.
 - Cover the game's phases: in possession (build-up, progression, chance creation), out of possession (press height and triggers, block, compactness), both transitions, and set pieces if any are visible. Then the opposition: their threats and weaknesses.
@@ -148,7 +149,7 @@ def build_content(job: dict, frames_dir: str) -> list[dict]:
     for m in moments:
         f = os.path.join(frames_dir, f"{m['id']}.jpg")
         who = names.get(int(m["team"]), "a team")
-        desc = f"{m['id']} at {clock(m['t'])}: {who} {TYPE_WORDS.get(m['type'], m['type'])}" + (f" ({m['length']} s)" if m.get("length") else "")
+        desc = f"{m['id']} at {clock(m['t'])}. Tracking suggests: {who} {TYPE_WORDS.get(m['type'], m['type'])}" + (f" ({m['length']} s)" if m.get("length") else "") + ". Check the frames."
         content.append({"type": "text", "text": desc})
         if os.path.exists(f):
             content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(open(f, "rb").read()).decode()}})
