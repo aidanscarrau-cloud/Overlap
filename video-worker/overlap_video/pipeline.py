@@ -22,8 +22,9 @@ from typing import Callable, Iterator
 import cv2
 import numpy as np
 
-PERSON = "person"
-BALL = "sports ball"
+# RF-DETR's COCO models report the original COCO category ids (not positions in class_names).
+PERSON_ID = 1
+BALL_ID = 37
 
 
 @dataclasses.dataclass
@@ -86,36 +87,69 @@ def video_info(path: str) -> dict:
 # ---------------------------------------------------------------- pitch and shirts
 
 
-def grass_mask(frame: np.ndarray) -> np.ndarray:
-    """Pixels that look like grass (works for natural and most artificial turf)."""
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    return cv2.inRange(hsv, (30, 40, 40), (90, 255, 255))
+class Pitch:
+    """Learns what the playing surface looks like in this video (green, dry and brown, or artificial turf),
+    and where the field is in each frame, so spectators and benches beyond it are ignored."""
+
+    def __init__(self):
+        self.colour: np.ndarray | None = None  # Lab
+
+    def learn(self, frame: np.ndarray) -> None:
+        h, w = frame.shape[:2]
+        # The lower middle of a match camera's view is almost always playing surface.
+        patch = frame[int(h * 0.55) : int(h * 0.9), int(w * 0.2) : int(w * 0.8)]
+        lab = cv2.cvtColor(patch, cv2.COLOR_BGR2LAB).reshape(-1, 3).astype(np.float32)
+        c = np.median(lab, axis=0)
+        self.colour = c if self.colour is None else 0.9 * self.colour + 0.1 * c
+
+    def mask(self, frame: np.ndarray) -> np.ndarray:
+        """255 where a pixel looks like the playing surface."""
+        if self.colour is None:
+            self.learn(frame)
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB).astype(np.float32)
+        d = lab - self.colour
+        # Lightness varies a lot with sun and shadow; colour (a, b) much less.
+        dist = np.sqrt(0.15 * d[..., 0] ** 2 + d[..., 1] ** 2 + d[..., 2] ** 2)
+        return np.where(dist < 14, 255, 0).astype(np.uint8)
+
+    def field(self, mask: np.ndarray) -> np.ndarray:
+        """The field area: the biggest patch of surface, filled in (players and lines become part of it)."""
+        small = cv2.resize(mask, (mask.shape[1] // 4, mask.shape[0] // 4), interpolation=cv2.INTER_AREA)
+        small = cv2.morphologyEx(small, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+        n, labels, stats, _ = cv2.connectedComponentsWithStats((small > 127).astype(np.uint8))
+        out = np.zeros_like(small)
+        if n > 1:
+            k = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            cnts, _ = cv2.findContours((labels == k).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if cnts:
+                cv2.fillPoly(out, [cv2.convexHull(max(cnts, key=cv2.contourArea))], 255)
+        out = cv2.resize(out, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+        # Pull the edge in a little, so people standing right on the fence line don't count.
+        k = max(3, mask.shape[0] // 80)
+        return cv2.erode(out, np.ones((k, k), np.uint8))
 
 
-def on_pitch(box: np.ndarray, grass: np.ndarray) -> bool:
-    """Is this person standing on grass? Filters out spectators, coaches and parents on the sideline."""
+def on_pitch(box: np.ndarray, field: np.ndarray) -> bool:
+    """Are this person's feet inside the field? Filters out spectators, coaches and parents beyond the lines."""
     x1, y1, x2, y2 = box.astype(int)
-    h, w = grass.shape
-    fy = min(h - 1, max(0, y2 + 2))
-    xa, xb = max(0, x1), min(w, x2)
-    if xb <= xa:
-        return False
-    band = grass[max(0, fy - 3) : min(h, fy + 6), xa:xb]
-    return band.size > 0 and band.mean() / 255 > 0.35
+    h, w = field.shape
+    fx, fy = min(w - 1, max(0, (x1 + x2) // 2)), min(h - 1, max(0, y2))
+    return bool(field[fy, fx])
 
 
-def shirt_colour(frame: np.ndarray, box: np.ndarray) -> np.ndarray | None:
-    """Median colour (Lab) of the shirt area, ignoring grass showing through."""
+def shirt_colour(frame: np.ndarray, box: np.ndarray, surface: np.ndarray) -> np.ndarray | None:
+    """Median colour (Lab) of the shirt area, ignoring pitch showing through."""
     x1, y1, x2, y2 = box.astype(int)
     bw, bh = x2 - x1, y2 - y1
     if bh < 18 or bw < 6:
         return None
     ya, yb = y1 + int(0.18 * bh), y1 + int(0.5 * bh)
     xa, xb = x1 + int(0.25 * bw), x2 - int(0.25 * bw)
-    crop = frame[max(0, ya) : yb, max(0, xa) : xb]
+    ya, xa = max(0, ya), max(0, xa)
+    crop = frame[ya:yb, xa:xb]
     if crop.size == 0:
         return None
-    keep = grass_mask(crop) == 0
+    keep = surface[ya:yb, xa:xb] == 0
     if keep.sum() < 12:
         return None
     lab = cv2.cvtColor(crop, cv2.COLOR_BGR2LAB)[keep]
@@ -140,14 +174,14 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     say = progress or (lambda p, m: None)
     say(0.01, "Loading the model")
     model = model or load_model(s.model_size)
-    names = model.class_names
-    pid, bid = names.index(PERSON), names.index(BALL)
+    pid, bid = PERSON_ID, BALL_ID
 
+    pitch = Pitch()
     tracker = ByteTrackTracker(frame_rate=s.sample_fps, lost_track_buffer=round(2 * s.sample_fps), track_activation_threshold=0.45, high_conf_det_threshold=0.5, minimum_consecutive_frames=2)
     track_colours: dict[int, list[np.ndarray]] = defaultdict(list)
     track_seen: dict[int, list[float]] = defaultdict(list)
-    # Per analysed frame: (t, ball centre or None, [(track_id, foot_x, foot_y, height)])
-    timeline: list[tuple[float, tuple[float, float] | None, list[tuple[int, float, float, float]]]] = []
+    # Per analysed frame: (t, ball centre or None, [(track_id, foot_x, foot_y, height, shirt colour or None)])
+    timeline: list[tuple[float, tuple[float, float] | None, list[tuple]]] = []
     ball_frames = 0
     n = 0
     snaps: list[tuple[np.ndarray, list, tuple | None]] = []  # a few frames kept for the debug pictures
@@ -156,10 +190,20 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
         det = model.predict(np.ascontiguousarray(frame[:, :, ::-1]), threshold=min(s.person_threshold, s.ball_threshold))
         cls = det.class_id if det.class_id is not None else np.zeros(len(det), int)
         conf = det.confidence if det.confidence is not None else np.ones(len(det))
-        grass = grass_mask(frame)
+        if n % 25 == 0:
+            pitch.learn(frame)
+        surface = pitch.mask(frame)
+        field = pitch.field(surface)
 
         people = det[(cls == pid) & (conf >= s.person_threshold)]
-        people = people[np.array([on_pitch(b, grass) for b in people.xyxy], dtype=bool)] if len(people) else people
+        fh = frame.shape[0]
+        if len(people):
+            keep = []
+            for b in people.xyxy:
+                w_, h_ = b[2] - b[0], b[3] - b[1]
+                # Standing on the field, upright (not sitting or crouching), and not cut off right by the camera.
+                keep.append(on_pitch(b, field) and h_ > 1.4 * w_ and b[3] < 0.97 * fh)
+            people = people[np.array(keep, dtype=bool)]
         people = tracker.update(people, frame=frame, timestamp=t)
         if people.tracker_id is None:
             people.tracker_id = np.full(len(people), -1)
@@ -176,24 +220,23 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
         for box, tid in zip(people.xyxy, people.tracker_id):
             tid = int(tid)
             track_seen[tid].append(t)
-            if len(track_colours[tid]) < 40 and n % 2 == 0:
-                c = shirt_colour(frame, box)
-                if c is not None:
-                    track_colours[tid].append(c)
-            players.append((tid, float((box[0] + box[2]) / 2), float(box[3]), float(box[3] - box[1])))
+            c = shirt_colour(frame, box, surface)
+            if c is not None and len(track_colours[tid]) < 60:
+                track_colours[tid].append(c)
+            players.append((tid, float((box[0] + box[2]) / 2), float(box[3]), float(box[3] - box[1]), c))
         timeline.append((t, ball, players))
         if debug_dir and n % 50 == 10 and len(snaps) < 8:
-            snaps.append((frame.copy(), [(int(tid), b.copy()) for b, tid in zip(people.xyxy, people.tracker_id)], ball))
+            snaps.append((frame.copy(), [(p[0], b.copy(), p[4]) for b, p in zip(people.xyxy, players)], ball))
         n += 1
         if n % 25 == 0:
             say(min(0.9, 0.02 + 0.88 * t / max(total, 1)), f"Analysed {int(t // 60)}:{int(t % 60):02d} of the video")
 
     say(0.92, "Working out the teams")
-    teams, team_of = assign_teams(track_colours, track_seen, s)
+    teams, team_of, centres = assign_teams(track_colours, track_seen, s)
     say(0.96, "Adding up possession")
-    poss = possession(timeline, team_of, s)
+    poss = possession(timeline, team_of, centres, s)
     if debug_dir:
-        draw_debug(debug_dir, snaps, teams, team_of)
+        draw_debug(debug_dir, snaps, teams, team_of, centres)
 
     return {
         "version": 1,
@@ -209,7 +252,11 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
 
 
 def assign_teams(track_colours, track_seen, s: Settings):
-    """Group long-enough tracks into two teams by shirt colour. Referees and keepers usually end up as 'other'."""
+    """Find the two teams among everyone tracked on the field.
+
+    Shirt colours are grouped into several clusters. The two teams are the two biggest clusters
+    (by how much they're seen) whose colours are clearly different from each other. Referees, keepers,
+    coaches and spectators near the line usually land in the smaller clusters and count as 'other'."""
     from sklearn.cluster import KMeans
 
     rows, ids, weights = [], [], []
@@ -219,36 +266,64 @@ def assign_teams(track_colours, track_seen, s: Settings):
             rows.append(np.median(np.stack(cols), axis=0))
             ids.append(tid)
             weights.append(len(seen))
-    if len(rows) < 4:
-        return [], {}
+    if len(rows) < 6:
+        return [], {}, {}
     X = np.stack(rows)
-    km = KMeans(n_clusters=2, n_init=10, random_state=0).fit(X, sample_weight=weights)
-    d = np.linalg.norm(X - km.cluster_centers_[km.labels_], axis=1)
-    # Far from both team colours (e.g. referee in black, keepers): not counted for either team.
-    cut = max(18.0, float(np.percentile(d, 85)) * 1.5)
-    team_of = {tid: (int(lab) if dist <= cut else -1) for tid, lab, dist in zip(ids, km.labels_, d)}
+    W = np.array(weights, dtype=float)
+    k = min(5, len(rows) // 3)
+    km = KMeans(n_clusters=k, n_init=10, random_state=0).fit(X, sample_weight=W)
+    mass = np.array([W[km.labels_ == c].sum() for c in range(k)])
+    order = list(np.argsort(-mass))
+    first = order[0]
+    # The second team: the next-biggest cluster whose colour is clearly different from the first.
+    second = next((c for c in order[1:] if np.linalg.norm(km.cluster_centers_[c] - km.cluster_centers_[first]) > 25), None)
+    if second is None:
+        return [], {}, {}
+    centres = {0: km.cluster_centers_[first], 1: km.cluster_centers_[second]}
+    team_of = {}
+    for tid, x in zip(ids, X):
+        team_of[tid] = classify(x, centres)
     teams = []
-    for k in (0, 1):
-        members = [t for t, lab in team_of.items() if lab == k]
-        teams.append({"key": k, "colour": lab_to_hex(km.cluster_centers_[k]), "tracks": len(members), "presence": int(sum(len(track_seen[t]) for t in members))})
-    return teams, team_of
+    for t in (0, 1):
+        members = [i for i, lab in team_of.items() if lab == t]
+        teams.append({"key": t, "colour": lab_to_hex(centres[t]), "tracks": len(members), "presence": int(sum(len(track_seen[i]) for i in members))})
+    return teams, team_of, centres
 
 
-def possession(timeline, team_of, s: Settings):
+def classify(colour, centres, close: float = 28.0) -> int:
+    """Which team a shirt colour belongs to: 0, 1, or -1 if it's neither (referee, keeper, spectator)."""
+    if colour is None or not centres:
+        return -1
+    d = {t: float(np.linalg.norm(colour - c)) for t, c in centres.items()}
+    t = min(d, key=d.get)
+    # Must be close to that team's colour, and clearly closer to it than to the other team.
+    return t if d[t] < close and d[t] < 0.7 * d[1 - t] else -1
+
+
+def team_for(tid, colour, team_of, centres) -> int:
+    """A player's team from their track if it's known, otherwise from this frame's shirt colour
+    (tracks restart when the camera pans quickly, and new tracks don't have a team yet)."""
+    t = team_of.get(tid)
+    if t is not None:
+        return t
+    return classify(colour, centres, close=24.0)
+
+
+def possession(timeline, team_of, centres, s: Settings):
     """Who was closest to the ball, frame by frame, smoothed so brief misreads don't flip possession."""
     raw = []
     for t, ball, players in timeline:
         owner = None
         if ball is not None and players:
             best, best_d = None, math.inf
-            for tid, fx, fy, h in players:
-                if team_of.get(tid, -1) < 0:
+            for tid, fx, fy, h, col in players:
+                if team_for(tid, col, team_of, centres) < 0:
                     continue
                 d = math.hypot(fx - ball[0], fy - ball[1]) / max(h, 1.0)
                 if d < best_d:
                     best, best_d = tid, d
             if best is not None and best_d <= s.possession_reach:
-                owner = team_of[best]
+                owner = next(team_for(tid, col, team_of, centres) for tid, fx, fy, h, col in players if tid == best)
         raw.append((t, owner))
 
     # Carry possession through short gaps (passes, ball hidden) of up to 3 seconds.
@@ -279,7 +354,7 @@ def possession(timeline, team_of, s: Settings):
     return {"pct": pct, "seconds_with_owner": round(known, 1), "by_5_min": by_5}
 
 
-def draw_debug(folder: str, snaps, teams, team_of):
+def draw_debug(folder: str, snaps, teams, team_of, centres):
     """Save a few frames with boxes coloured by team, to check the analysis by eye."""
     import os
 
@@ -287,13 +362,13 @@ def draw_debug(folder: str, snaps, teams, team_of):
     col = {t["key"]: tuple(int(t["colour"][i : i + 2], 16) for i in (5, 3, 1)) for t in teams}
     for i, (frame, boxes, ball) in enumerate(snaps):
         img = frame.copy()
-        for tid, b in boxes:
-            k = team_of.get(tid)
+        for tid, b, colr in boxes:
+            k = team_for(tid, colr, team_of, centres)
             c = col.get(k, (128, 128, 128)) if k is not None and k >= 0 else (0, 0, 255)
             x1, y1, x2, y2 = b.astype(int)
             cv2.rectangle(img, (x1, y1), (x2, y2), (255, 255, 255), 3)
             cv2.rectangle(img, (x1, y1), (x2, y2), c, 2)
-            cv2.putText(img, f"{tid}{'' if k is None else ' T' + str(k) if k >= 0 else ' ?'}", (x1, y1 - 3), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+            cv2.putText(img, f"{tid}{' T' + str(k) if k >= 0 else ' ?'}", (x1, y1 - 3), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
         if ball is not None:
             cv2.circle(img, (int(ball[0]), int(ball[1])), 9, (0, 255, 255), 2)
         cv2.imwrite(os.path.join(folder, f"frame-{i}.jpg"), img)
