@@ -1,19 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
 import { usePro } from "../Pro";
-import { Tagger, MiniPitch, useMatchSource } from "./Tagger";
-import { VideoPlayer, type PlayerHandle } from "./VideoPlayer";
-import { EVENT_KINDS, SCOUT_SECTIONS, clock, kindLabel, type ClipPlaylist, type MatchEvent, type ScoutingReport } from "@/lib/analysis";
+import { Tagger, MiniPitch, useCodes, loadEvents } from "./Tagger";
+import { Reel } from "./Reel";
+import { CodeWindow } from "./CodeWindow";
+import { SCOUT_SECTIONS, clock, kindLabel, type ClipPlaylist, type MatchEvent, type Period, type ScoutingReport } from "@/lib/analysis";
 import { errMsg, parseD, todayIso } from "@/lib/format";
 import type { Match, Team } from "@/lib/types";
 
 /* Match analysis workspace (Pro, coaching staff only, teams with match review switched on):
  * tag matches, build clip playlists, the set-piece library and opposition scouting reports. */
 
-type Tab = "matches" | "playlists" | "setpieces" | "scouting";
-const EV_COLS = "id,match_id,t,kind,team,player_id,shirt,x,y,outcome,routine,note,pre,post,created_at";
+type Tab = "matches" | "playlists" | "setpieces" | "scouting" | "codes";
 const day = (d: string) => parseD(d).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
 
 export function AnalysisPage() {
@@ -52,6 +52,7 @@ export function AnalysisPage() {
             ["playlists", "Playlists"],
             ["setpieces", "Set pieces"],
             ["scouting", "Scouting"],
+            ["codes", "Code window"],
           ] as const
         ).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
@@ -63,6 +64,7 @@ export function AnalysisPage() {
       {tab === "playlists" && <Playlists team={team} />}
       {tab === "setpieces" && <SetPieces team={team} />}
       {tab === "scouting" && <Scouting team={team} />}
+      {tab === "codes" && <CodeWindow team={team} />}
     </div>
   );
 }
@@ -71,16 +73,20 @@ export function AnalysisPage() {
 function useTeamEvents(team: Team) {
   const { data, supabase } = useApp();
   const [events, setEvents] = useState<MatchEvent[] | null>(null);
+  const [periods, setPeriods] = useState<Record<string, Period[]>>({});
   const ids = useMemo(() => data.matches.filter((m) => m.team_id === team.id).map((m) => m.id), [data.matches, team.id]);
   const load = useCallback(async () => {
-    if (!ids.length) return setEvents([]);
-    const { data: rows } = await supabase.from("match_events").select(EV_COLS).in("match_id", ids).order("t").limit(20000);
-    setEvents((rows ?? []) as MatchEvent[]);
+    const { rows } = await loadEvents(supabase, ids);
+    setEvents(rows);
+    if (ids.length) {
+      const { data: pr } = await supabase.from("match_analysis").select("match_id,periods").in("match_id", ids);
+      setPeriods(Object.fromEntries(((pr ?? []) as { match_id: string; periods: Period[] }[]).map((r) => [r.match_id, r.periods])));
+    }
   }, [supabase, ids]);
   useEffect(() => {
     load();
   }, [load]);
-  return { events, reload: load };
+  return { events, periods, reload: load };
 }
 
 /* ---------------------------------------------------------------- matches */
@@ -114,67 +120,12 @@ function MatchList({ team, onTag }: { team: Team; onTag: (m: Match) => void }) {
   );
 }
 
-/* ---------------------------------------------------------------- clip player */
-
-/** Plays a list of clips one after another (each from its match's video). */
-function ClipReel({ clips, onClose }: { clips: MatchEvent[]; onClose: () => void }) {
-  const { data } = useApp();
-  const [i, setI] = useState(0);
-  const clip = clips[i];
-  const source = useMatchSource(clip.match_id);
-  const player = useRef<PlayerHandle>(null);
-  const started = useRef<string | null>(null);
-  const m = data.matches.find((x) => x.id === clip.match_id);
-  const name = (id: string | null) => (id ? (data.players.find((p) => p.id === id)?.full_name ?? "") : "");
-
-  const onTime = useCallback(
-    (t: number) => {
-      if (!player.current) return;
-      if (started.current !== clip.id) {
-        // Wait for the player to be ready, then jump to the start of the clip.
-        player.current.seek(clip.t - clip.pre);
-        player.current.play();
-        started.current = clip.id;
-        return;
-      }
-      // Not there yet (the player was still loading when we asked): ask again.
-      if (t < clip.t - clip.pre - 2) player.current.seek(clip.t - clip.pre);
-      else if (t > clip.t + clip.post) setI((n) => (n + 1 < clips.length ? n + 1 : n));
-    },
-    [clip, clips.length],
-  );
-
-  return (
-    <div className="an-reel">
-      {source ? <VideoPlayer ref={player} source={source} onTime={onTime} /> : <div className="ap-player ap-none">Finding the video…</div>}
-      <div className="an-reel-bar">
-        <button className="btn sm" type="button" disabled={i === 0} onClick={() => setI(i - 1)}>
-          ← Previous
-        </button>
-        <span>
-          <b>
-            {i + 1} / {clips.length}: {kindLabel(clip.kind)}
-          </b>{" "}
-          <small className="muted">
-            {[m ? `vs ${m.opponent}` : "", clock(clip.t), name(clip.player_id), clip.outcome, clip.note].filter(Boolean).join(" · ")}
-          </small>
-        </span>
-        <button className="btn sm" type="button" disabled={i + 1 >= clips.length} onClick={() => setI(i + 1)}>
-          Next →
-        </button>
-        <button className="linkbtn" type="button" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ---------------------------------------------------------------- playlists */
 
 function Playlists({ team }: { team: Team }) {
   const { data, supabase, toast } = useApp();
-  const { events } = useTeamEvents(team);
+  const { events, periods } = useTeamEvents(team);
+  const { codes } = useCodes(team.id);
   const [lists, setLists] = useState<ClipPlaylist[]>([]);
   const [playing, setPlaying] = useState<MatchEvent[] | null>(null);
   const [f, setF] = useState({ kind: "", team: "us", player: "", match: "" });
@@ -209,7 +160,7 @@ function Playlists({ team }: { team: Team }) {
     load();
   }
 
-  if (playing) return <ClipReel clips={playing} onClose={() => setPlaying(null)} />;
+  if (playing) return <Reel clips={playing} codes={codes} periods={periods} onClose={() => setPlaying(null)} />;
   return (
     <div className="an-cols">
       <section className="in-card">
@@ -219,7 +170,7 @@ function Playlists({ team }: { team: Team }) {
         <div className="an-filter">
           <select className="input" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })} aria-label="Event">
             <option value="">Any event</option>
-            {EVENT_KINDS.map((k) => (
+            {codes.map((k) => (
               <option key={k.key} value={k.key}>
                 {k.label}
               </option>
@@ -297,11 +248,13 @@ function Playlists({ team }: { team: Team }) {
 /* ---------------------------------------------------------------- set pieces */
 
 function SetPieces({ team }: { team: Team }) {
-  const { events } = useTeamEvents(team);
+  const { events, periods } = useTeamEvents(team);
+  const { codes } = useCodes(team.id);
   const [side, setSide] = useState<"us" | "them">("us");
   const [playing, setPlaying] = useState<MatchEvent[] | null>(null);
-  if (playing) return <ClipReel clips={playing} onClose={() => setPlaying(null)} />;
-  const sp = (events ?? []).filter((e) => ["corner", "free_kick", "throw_in"].includes(e.kind) && e.team === side);
+  if (playing) return <Reel clips={playing} codes={codes} periods={periods} onClose={() => setPlaying(null)} />;
+  const spKinds = new Set([...codes.filter((c) => c.setPiece).map((c) => c.key), "corner", "free_kick", "throw_in"]);
+  const sp = (events ?? []).filter((e) => spKinds.has(e.kind) && e.team === side);
   const groups = new Map<string, MatchEvent[]>();
   sp.forEach((e) => {
     const k = `${e.kind}|${e.routine || "No routine named"}`;
@@ -344,7 +297,7 @@ function SetPieces({ team }: { team: Team }) {
               return (
                 <tr key={k}>
                   <th scope="row">
-                    {routine} <small className="muted">{kindLabel(kind)}</small>
+                    {routine} <small className="muted">{kindLabel(kind, codes)}</small>
                   </th>
                   <td className="tnum">{list.length}</td>
                   <td className="tnum">{Math.round((100 * shots) / list.length)}%</td>
@@ -368,7 +321,7 @@ function SetPieces({ team }: { team: Team }) {
 
 function Scouting({ team }: { team: Team }) {
   const { data, supabase, toast } = useApp();
-  const { events } = useTeamEvents(team);
+  const { events, periods } = useTeamEvents(team);
   const [reports, setReports] = useState<ScoutingReport[]>([]);
   const [open, setOpen] = useState<ScoutingReport | null>(null);
   const [opp, setOpp] = useState("");
@@ -397,7 +350,7 @@ function Scouting({ team }: { team: Team }) {
     load();
   }
 
-  if (open) return <ScoutEditor report={open} events={events ?? []} team={team} onClose={() => (setOpen(null), load())} />;
+  if (open) return <ScoutEditor report={open} events={events ?? []} periods={periods} team={team} onClose={() => (setOpen(null), load())} />;
   return (
     <div className="an-cols">
       <section className="in-card">
@@ -448,8 +401,9 @@ function Scouting({ team }: { team: Team }) {
   );
 }
 
-function ScoutEditor({ report, events, team, onClose }: { report: ScoutingReport; events: MatchEvent[]; team: Team; onClose: () => void }) {
+function ScoutEditor({ report, events, periods, team, onClose }: { report: ScoutingReport; events: MatchEvent[]; periods: Record<string, Period[]>; team: Team; onClose: () => void }) {
   const { data, supabase, toast } = useApp();
+  const { codes } = useCodes(team.id);
   const [r, setR] = useState(report);
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState<MatchEvent[] | null>(null);
@@ -478,7 +432,7 @@ function ScoutEditor({ report, events, team, onClose }: { report: ScoutingReport
   }
   const toggleClip = (id: string) => setR((x) => ({ ...x, clips: x.clips.some((c) => c.event_id === id) ? x.clips.filter((c) => c.event_id !== id) : [...x.clips, { event_id: id }].slice(0, 60) }));
 
-  if (playing) return <ClipReel clips={playing} onClose={() => setPlaying(null)} />;
+  if (playing) return <Reel clips={playing} codes={codes} periods={periods} title={`${r.opponent} report`} onClose={() => setPlaying(null)} />;
   return (
     <div className="sc">
       <div className="phead sc-noprint">
@@ -592,7 +546,7 @@ function ScoutEditor({ report, events, team, onClose }: { report: ScoutingReport
                   <label className="check">
                     <input type="checkbox" checked={r.clips.some((c) => c.event_id === e.id)} onChange={() => toggleClip(e.id)} />
                     <span>
-                      {kindLabel(e.kind)} <small className="muted">{[clock(e.t), e.shirt !== null ? `#${e.shirt}` : "", e.outcome, e.routine, e.note].filter(Boolean).join(" · ")}</small>
+                      {kindLabel(e.kind, codes)} <small className="muted">{[clock(e.t), e.shirt !== null ? `#${e.shirt}` : "", e.outcome, e.routine, e.note].filter(Boolean).join(" · ")}</small>
                     </span>
                   </label>
                 </li>
