@@ -60,6 +60,8 @@ export type MatchEvent = {
   t_end?: number | null;
   title?: string;
   drawing?: Drawing | null;
+  /** "auto" when the video worker tagged it and no coach has confirmed it yet (update 42). */
+  source?: string;
   created_at: string;
 };
 

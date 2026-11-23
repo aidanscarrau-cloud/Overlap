@@ -199,6 +199,14 @@ function Results({ job, match }: { job: VideoJob; match: Match }) {
     const { error } = await supabase.from("match_video_jobs").update({ our_team: k }).eq("id", job.id);
     if (error) return toast(errMsg(error));
     patch((d) => ({ ...d, videoJobs: d.videoJobs.map((x) => (x.id === job.id ? { ...x, our_team: k } : x)) }));
+    // Auto-tags were saved assuming the first shirt colour was ours: swap their sides if it's the other one.
+    if ((ours ?? 0) !== k) {
+      const { data: auto } = await supabase.from("match_events").select("id,team").eq("match_id", match.id).eq("source", "auto");
+      const ids = (side: string) => ((auto ?? []) as { id: string; team: string }[]).filter((e) => e.team === side).map((e) => e.id);
+      const [us, them] = [ids("us"), ids("them")];
+      if (us.length) await supabase.from("match_events").update({ team: "them" }).in("id", us);
+      if (them.length) await supabase.from("match_events").update({ team: "us" }).in("id", them);
+    }
   }
   if (!t0 || !t1)
     return (

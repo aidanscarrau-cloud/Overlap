@@ -62,3 +62,11 @@ clip around each tagged event (phases up to 8 s) plus some "background" clips, a
 `labels.jsonl` (label, outcome, side, timing only: no names or numbers) to the `overlap-training` volume
 under `<club_id>/<match_id>/`. Withdrawing sends `kind: "withdraw"`, which deletes that team's matches.
 The video source must allow HTTP range requests (R2 signed links and Veo's public MP4s do).
+
+## Auto-tagging
+
+When the coach maps the pitch, `mapping.py` also runs `events.py`, which tags goals, shots (on/off target),
+corners, free kicks, long throws into the box, crosses, box entries and high regains from the tracked positions,
+and finds the kick-offs that start each half (the match clock). They're returned as `events` and `periods` in the
+mapping callback and saved as `match_events` with `source = 'auto'` (update 42) for a coach to confirm or delete.
+They're rules, not a trained model: confirmed auto-tags become training data for one later.

@@ -70,6 +70,8 @@ export function useCodes(teamId: string) {
 /** Events for some matches; falls back to the columns from update 38 if update 39 hasn't run. */
 export async function loadEvents(supabase: ReturnType<typeof useApp>["supabase"], matchIds: string[]) {
   if (!matchIds.length) return { rows: [] as MatchEvent[], pro: true };
+  const withSource = await supabase.from("match_events").select(`${EV_COLS_PRO},source`).in("match_id", matchIds).order("t").limit(20000);
+  if (!withSource.error || !/source/.test(withSource.error.message)) return { rows: (withSource.data ?? []) as MatchEvent[], pro: true, error: withSource.error };
   const r = await supabase.from("match_events").select(EV_COLS_PRO).in("match_id", matchIds).order("t").limit(20000);
   if (r.error && /t_end|title|drawing/.test(r.error.message)) {
     const old = await supabase.from("match_events").select(EV_COLS).in("match_id", matchIds).order("t").limit(20000);
@@ -90,7 +92,7 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
   const [pro, setPro] = useState(true);
   const [team, setTeam] = useState<"us" | "them">("us");
   const [sel, setSel] = useState<string | null>(null);
-  const [filter, setFilter] = useState<{ kind: string; team: string; player: string }>({ kind: "", team: "", player: "" });
+  const [filter, setFilter] = useState<{ kind: string; team: string; player: string; auto?: boolean }>({ kind: "", team: "", player: "" });
   const [side, setSide] = useState<"events" | "report">("events");
   const [rate, setRate] = useState(1);
   const [periods, setPeriods] = useState<Period[]>([]);
@@ -178,12 +180,28 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
   }
   const update = useCallback(
     async (id: string, p: Partial<MatchEvent>) => {
+      // Any change by a coach confirms an auto-tag.
+      if (events.find((x) => x.id === id)?.source === "auto" && p.source === undefined) p = { ...p, source: "" };
       setEvents((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)).sort((a, b) => a.t - b.t));
       const { error } = await supabase.from("match_events").update(p).eq("id", id);
       if (error) toast(/t_end|title|drawing/.test(error.message) ? "Run update 39 in Supabase first." : errMsg(error));
     },
-    [supabase, toast],
+    [supabase, toast, events],
   );
+  const autoCount = events.filter((e) => e.source === "auto").length;
+  async function confirmAll() {
+    if (!window.confirm(`Keep all ${autoCount} auto-tags as they are?`)) return;
+    setEvents((xs) => xs.map((x) => (x.source === "auto" ? { ...x, source: "" } : x)));
+    const { error } = await supabase.from("match_events").update({ source: "" }).eq("match_id", match.id).eq("source", "auto");
+    if (error) toast(errMsg(error));
+  }
+  async function removeAuto() {
+    if (!window.confirm(`Delete the ${autoCount} auto-tags you haven't checked?`)) return;
+    setEvents((xs) => xs.filter((x) => x.source !== "auto"));
+    setSel(null);
+    const { error } = await supabase.from("match_events").delete().eq("match_id", match.id).eq("source", "auto");
+    if (error) toast(errMsg(error));
+  }
   async function remove(id: string) {
     setEvents((xs) => xs.filter((x) => x.id !== id));
     if (sel === id) setSel(null);
@@ -263,7 +281,7 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const shown = events.filter((e) => (!filter.kind || e.kind === filter.kind) && (!filter.team || e.team === filter.team) && (!filter.player || e.player_id === filter.player));
+  const shown = events.filter((e) => (!filter.auto || e.source === "auto") && (!filter.kind || e.kind === filter.kind) && (!filter.team || e.team === filter.team) && (!filter.player || e.player_id === filter.player));
   const { team: counts } = useMemo(() => tally(events), [events]);
   const sk = selected ? byKey.get(selected.kind) : undefined;
 
@@ -477,6 +495,11 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
                     {selected.drawing ? "Edit drawing" : "Draw on this frame"}
                   </button>
                 )}
+                {selected.source === "auto" && (
+                  <button className="btn small primary" type="button" onClick={() => update(selected.id, { source: "" })} title="Keep this auto-tag (changing anything also keeps it)">
+                    Looks right
+                  </button>
+                )}
                 <button className="linkbtn" type="button" onClick={() => remove(selected.id)}>
                   Delete
                 </button>
@@ -607,6 +630,24 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
                   ))}
                 </select>
               </div>
+              {autoCount > 0 && (
+                <div className="tg-auto">
+                  <p>
+                    <b>{autoCount} auto-tags to check.</b> Overlap tagged these from the tracking. Click one to watch it, then keep it, fix it or delete it.
+                  </p>
+                  <div className="tg-auto-a">
+                    <button className="linkbtn" type="button" aria-pressed={!!filter.auto} onClick={() => setFilter((f) => ({ ...f, auto: !f.auto }))}>
+                      {filter.auto ? "Show all tags" : "Show only these"}
+                    </button>
+                    <button className="linkbtn" type="button" onClick={confirmAll}>
+                      Keep all
+                    </button>
+                    <button className="linkbtn" type="button" onClick={removeAuto}>
+                      Delete unchecked
+                    </button>
+                  </div>
+                </div>
+              )}
               <ol className="tg-list" aria-label="Tagged events">
                 {!loaded && <li className="muted">Loading…</li>}
                 {loaded && !shown.length && <li className="muted">{events.length ? "Nothing matches these filters." : "No tags yet. Play the video and press a key."}</li>}
@@ -619,6 +660,7 @@ export function Tagger({ match, onClose }: { match: Match; onClose: () => void }
                         <b>
                           {e.title || label(e.kind)}
                           {e.drawing ? " ✏️" : ""}
+                          {e.source === "auto" && <span className="tg-autob">Auto</span>}
                           {e.t_end != null ? ` · ${Math.round(e.t_end - e.t)} s` : byKey.get(e.kind)?.phase ? " · ● running" : ""}
                         </b>
                         <small className="muted">

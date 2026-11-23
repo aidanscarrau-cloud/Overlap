@@ -149,6 +149,8 @@ export type VideoStats = {
   report_error?: string;
   report_context?: { score?: string; formation?: string; plan?: string; notes?: string };
   mapping_error?: string;
+  /** Auto-tags saved when the pitch was mapped (update 42). */
+  auto_tags?: { count?: number; periods?: number; error?: string };
   taps?: Record<string, [number, number]>;
 };
 export type AnalystReport = {

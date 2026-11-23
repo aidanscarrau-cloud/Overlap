@@ -121,6 +121,15 @@ def map_pitch(rows: np.ndarray, taps: dict[str, list[float]], pano_info: dict, p
                     "heat": np.round(heat * 100).astype(int).tolist(),
                 }
             )
+    # Auto-tags (shots, set pieces, box entries...) for the coach to check. A failure here never loses the stats.
+    try:
+        from .events import auto_tag
+
+        tags = auto_tag(t, tid, team, kind, xy, L, W, lambda m: smooth.get(m, True))
+        out["events"], out["periods"] = tags["events"], tags["periods"]
+    except Exception as e:
+        print("auto-tagging failed:", repr(e))
+        out["events"], out["periods"] = [], []
     out["check_jpeg"] = check_picture(model, pano_info, pano_jpeg, taps)
     out["grid"] = [GRID_X, GRID_Y]
     out["model"] = model.as_dict()

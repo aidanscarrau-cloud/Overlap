@@ -100,6 +100,13 @@ function Tapper({ job, onDone }: { job: VideoJob; onDone: () => void }) {
         <h4 className="vs-h">Map the pitch for heat maps, thirds and distance covered</h4>
         <p>Tap a few points you can see on a picture of your ground (about a minute). You only need to do this once per video.</p>
         {job.results?.mapping_error && <p className="notice bad">{job.results.mapping_error}</p>}
+        {job.results?.auto_tags?.error && <p className="notice">{job.results.auto_tags.error}</p>}
+        {!!job.results?.auto_tags?.count && (
+          <p className="notice">
+            <b>{job.results.auto_tags.count} auto-tags added</b> (shots, set pieces, crosses, box entries and more){job.results.auto_tags.periods ? ", and the match clock was set" : ""}. Check them on the{" "}
+            <a href="/analysis">Analysis page</a>.
+          </p>
+        )}
         <button className="btn primary" type="button" onClick={start} style={{ justifySelf: "start" }}>
           Map the pitch
         </button>
