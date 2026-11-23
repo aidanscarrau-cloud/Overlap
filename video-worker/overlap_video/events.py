@@ -125,27 +125,41 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
         if 0 < g <= 0.6:
             vel.append((float(bt[i - 1]), bxy[i - 1], (bxy[i] - bxy[i - 1]) / g))
 
-    # ---- Restarts: the ball still (within 1.5 m) for at least 2.5 s, then moving.
+    # ---- Restarts: the ball still (within 2 m) for at least 2.5 s, then moving. Other balls (warm-ups, a
+    # spare by the touchline) and missed sightings are skipped over, as long as the ball is seen at the spot again.
     restarts = []
     i = 0
     while i < len(bt):
-        j = i
-        while j + 1 < len(bt) and bt[j + 1] - bt[j] <= 1.0 and np.linalg.norm(bxy[j + 1] - bxy[i]) < 1.5:
-            j += 1
-        if bt[j] - bt[i] >= 2.5:
-            # it must then move off: a sighting 3 m+ away within 3 s
-            moved = None
-            for k in range(j + 1, len(bt)):
-                if bt[k] - bt[j] > 3:
-                    break
-                if np.linalg.norm(bxy[k] - bxy[j]) > 3:
-                    moved = k
-                    break
-            if moved is not None:
-                restarts.append((float(bt[j]), bxy[i:j + 1].mean(0), float(bt[j] - bt[i]), moved))
-                i = moved
+        anchor, t_first, t_last, j_last = bxy[i], bt[i], bt[i], i
+        moved = None
+        for k in range(i + 1, len(bt)):
+            if bt[k] - t_last > 4.0:
+                break
+            if np.linalg.norm(bxy[k] - anchor) < 2.0:
+                t_last, j_last = bt[k], k
                 continue
-        i = j + 1
+            # Seen away from the spot: kicked if the next sighting agrees (it isn't a stray detection elsewhere).
+            if np.linalg.norm(bxy[k] - anchor) < 40 and k + 1 < len(bt) and bt[k + 1] - bt[k] <= 1.0 and np.linalg.norm(bxy[k + 1] - anchor) > 2.0 \
+                    and not any(np.linalg.norm(bxy[q] - anchor) < 2.0 for q in range(k + 1, min(len(bt), k + 12)) if bt[q] - bt[k] <= 2.0):
+                moved = k
+                break
+        if moved is not None and t_last - t_first >= 2.5:
+            restarts.append((float(t_last), bxy[i:j_last + 1][np.linalg.norm(bxy[i:j_last + 1] - anchor, axis=1) < 2.0].mean(0), float(t_last - t_first), moved))
+            i = moved
+            continue
+        i = j_last + 1 if j_last > i else i + 1
+
+    def halves_split(at: float) -> bool:
+        """At a kick-off each team is in its own half."""
+        side = {0: [], 1: []}
+        for ft in window(at - 1.0, at):
+            for _, tm, q in by_frame[ft]:
+                if 0 <= q[1] <= W and abs(q[0]) <= L / 2:
+                    side[tm].append(q[0])
+        if len(side[0]) < 5 or len(side[1]) < 5:
+            return False
+        a, b = np.median(side[0]), np.median(side[1])
+        return a * b < 0 and abs(a - b) > 10
 
     kickoffs = []
     for at, p, still, k in restarts:
@@ -156,7 +170,7 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
             # A corner: taken by the team attacking that end.
             tm = 0 if direction(0, at) * np.sign(x) > 0 else 1
             add(at, "corner", tm, p, conf=0.75)
-        elif abs(x) < 2.5 and abs(y - W / 2) < 2.5:
+        elif abs(x) < 4 and abs(y - W / 2) < 7 and halves_split(at):
             kickoffs.append((at, nearest_team(at, p)))
         elif near_side and not near_end:
             # Throw-ins are only tagged when it's a long throw into the box.
@@ -166,8 +180,8 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
                 ex, ey = rel(tm, at, end)
                 if ex > L / 2 - BOX_DEPTH - 2 and abs(ey - W / 2) < BOX_HALF + 2 and np.linalg.norm(end - p) > 15:
                     add(at, "throw_in", tm, p, conf=0.55)
-        elif abs(x) > L / 2 - 7 and abs(y - W / 2) < 10:
-            pass  # a goal kick
+        elif abs(x) > L / 2 - 8 and abs(y - W / 2) < 16:
+            pass  # a goal kick (anywhere in the six-yard box, allowing for the camera's error)
         elif still >= 3.0:
             tm = last_owner_before(at + 1.0, 1.0)
             tm = tm[1] if tm else nearest_team(at, p)
@@ -191,7 +205,7 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
         rvx = v[0] * d
         rvy = v[1] if d > 0 else -v[1]
         goal_x = L / 2
-        if speed >= 13 and rvx > 6 and goal_x - rx < 35 and at - last_shot > 4:
+        if speed >= 13 and rvx > 6 and goal_x - rx < 32 and abs(ry - W / 2) < 22 and at - last_shot > 4:
             # Where would it cross the goal line?
             tt = (goal_x - rx) / rvx
             cy = ry + rvy * tt
@@ -238,7 +252,8 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
             held_after = all(owner_team(x) in (cur, None) for x in window(ft + 1e-3, ft + 1.5))
             rx, _ = rel(cur, ft, b)
             after_restart = any(0 <= ft - r_[0] <= 2 for r_ in restarts)
-            if held_before and held_after and rx > L / 6 and ft - last_regain > 8 and not after_restart:
+            on_line = b[1] < 3 or b[1] > W - 3  # usually a throw-in, not a regain
+            if held_before and held_after and rx > L / 6 and ft - last_regain > 8 and not after_restart and not on_line:
                 add(ft, "turnover_won", cur, b, outcome="press", conf=0.5)
                 last_regain = ft
         if cur is not None and cur != prev_team:
@@ -274,6 +289,10 @@ def auto_tag(t: np.ndarray, tid: np.ndarray, team: np.ndarray, kind: np.ndarray,
             add(gt, "goal", scorer, gp, conf=0.55)
         goals.append(gt)
 
+    # Nothing before the first kick-off counts (warm-ups, the coin toss), nor during half-time.
+    if periods:
+        first = periods[0]["start"] - 1
+        events = [e for e in events if e["t"] >= first]
     # Sorted, and capped (keeping the surest) in case a noisy video produces a flood.
     events.sort(key=lambda e: e["t"])
     if len(events) > 250:

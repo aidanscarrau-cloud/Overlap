@@ -50,10 +50,21 @@ class PitchModel:
     length: float
     width: float
     error_deg: float  # average disagreement between taps and the solved model
+    # The stitched panorama's angles can all be stretched by one factor (the camera's zoom is hard to pin down
+    # from a panning, zooming Veo view). `k` undoes it, around the direction (tc, pc) the taps centre on.
+    k: float = 1.0  # left/right
+    tc: float = 0.0
+    pc: float = 0.0
+    kv: float = 1.0  # up/down
+
+    def fix(self, rays: np.ndarray, inverse: bool = False) -> np.ndarray:
+        if inverse:
+            return rescale(np.asarray(rays, float), 1 / self.k, self.tc, self.pc, 1 / self.kv)
+        return rescale(np.asarray(rays, float), self.k, self.tc, self.pc, self.kv)
 
     def to_pitch(self, rays: np.ndarray) -> np.ndarray:
         """Where rays (reference frame) hit the ground, in pitch metres. NaN for rays at or above the horizon."""
-        w = (self.R.T @ np.asarray(rays, float).T).T
+        w = (self.R.T @ self.fix(rays).T).T
         s = np.where(w[:, 2] < -1e-6, -self.C[2] / np.where(w[:, 2] < -1e-6, w[:, 2], -1), np.nan)
         return self.C[:2] + w[:, :2] * s[:, None]
 
@@ -62,14 +73,25 @@ class PitchModel:
         P = np.c_[np.asarray(pts, float), np.zeros(len(pts))]
         v = P - self.C
         r = (self.R @ v.T).T
-        return r / np.linalg.norm(r, axis=1, keepdims=True)
+        return self.fix(r / np.linalg.norm(r, axis=1, keepdims=True), inverse=True)
 
     def as_dict(self) -> dict:
-        return {"R": self.R.tolist(), "C": self.C.tolist(), "length": self.length, "width": self.width, "error_deg": self.error_deg}
+        return {"R": self.R.tolist(), "C": self.C.tolist(), "length": self.length, "width": self.width, "error_deg": self.error_deg, "k": self.k, "tc": self.tc, "pc": self.pc, "kv": self.kv}
 
     @staticmethod
     def from_dict(d: dict) -> "PitchModel":
-        return PitchModel(np.array(d["R"]), np.array(d["C"]), d["length"], d["width"], d["error_deg"])
+        return PitchModel(np.array(d["R"]), np.array(d["C"]), d["length"], d["width"], d["error_deg"], d.get("k", 1.0), d.get("tc", 0.0), d.get("pc", 0.0), d.get("kv", d.get("k", 1.0)))
+
+
+def rescale(rays: np.ndarray, k: float, tc: float, pc: float, kv: float | None = None) -> np.ndarray:
+    """Stretch rays' angles around the direction (tc, pc): left/right by k, up/down by kv (default k)."""
+    kv = k if kv is None else kv
+    if k == 1.0 and kv == 1.0:
+        return rays
+    r = rays / np.linalg.norm(rays, axis=1, keepdims=True)
+    th = tc + k * (np.arctan2(r[:, 0], r[:, 2]) - tc)
+    ph = pc + kv * (np.arcsin(np.clip(r[:, 1], -1, 1)) - pc)
+    return np.c_[np.cos(ph) * np.sin(th), np.sin(ph), np.cos(ph) * np.cos(th)]
 
 
 def calibrate(taps: dict[str, np.ndarray], length: float | None = None, width: float | None = None) -> PitchModel:
@@ -80,6 +102,10 @@ def calibrate(taps: dict[str, np.ndarray], length: float | None = None, width: f
         raise ValueError("Tap at least 4 points on the pitch.")
     obs = np.array([taps[k] / np.linalg.norm(taps[k]) for k in keys])
     fixL, fixW = length is not None, width is not None
+    # Enough taps to also solve the panorama's angle stretch (see PitchModel.k)?
+    free_k = len(keys) >= 6
+    tc = float(np.mean(np.arctan2(obs[:, 0], obs[:, 2])))
+    pc = float(np.mean(np.arcsin(np.clip(obs[:, 1], -1, 1))))
 
     def unpack(p):
         rv, C = p[:3], p[3:6]
@@ -87,21 +113,25 @@ def calibrate(taps: dict[str, np.ndarray], length: float | None = None, width: f
         L = length if fixL else p[i]
         i += 0 if fixL else 1
         W = width if fixW else p[i]
-        return Rotation.from_rotvec(rv).as_matrix(), C, L, W
+        i += 0 if fixW else 1
+        k, kv = (p[i], p[i + 1]) if free_k else (1.0, 1.0)
+        return Rotation.from_rotvec(rv).as_matrix(), C, L, W, k, kv
 
     def resid(p):
-        R, C, L, W = unpack(p)
-        P = np.array([[*LANDMARKS[k][1](L, W), 0.0] for k in keys])
+        R, C, L, W, k, kv = unpack(p)
+        P = np.array([[*LANDMARKS[key][1](L, W), 0.0] for key in keys])
         v = P - C
         r = (R @ v.T).T
         r /= np.linalg.norm(r, axis=1, keepdims=True)
-        out = np.cross(r, obs).ravel()  # ~ angle, for small angles
+        out = np.cross(r, rescale(obs, k, tc, pc, kv)).ravel()  # ~ angle, for small angles
         # Gentle pull towards a normal-sized pitch, so few taps still give a sensible answer.
         prior = []
         if not fixL:
             prior.append((L - 100) / 400)
         if not fixW:
             prior.append((W - 64) / 300)
+        if free_k:
+            prior += [(k - 1.0) / 20, (kv - k) / 10]
         return np.r_[out, prior]
 
     # The reference camera looks roughly along the world's +y (into the pitch), x to the right, y down.
@@ -117,17 +147,19 @@ def calibrate(taps: dict[str, np.ndarray], length: float | None = None, width: f
                 p0 = np.r_[p0, 100.0]
             if not fixW:
                 p0 = np.r_[p0, 64.0]
-            lo = np.r_[[-np.pi * 2] * 3, -80, -60, 1.0, [40.0] * (not fixL), [25.0] * (not fixW)]
-            hi = np.r_[[np.pi * 2] * 3, 80, 0, 40.0, [130.0] * (not fixL), [100.0] * (not fixW)]
+            if free_k:
+                p0 = np.r_[p0, 1.0, 1.0]
+            lo = np.r_[[-np.pi * 2] * 3, -80, -60, 1.0, [40.0] * (not fixL), [25.0] * (not fixW), [0.4, 0.4] * free_k]
+            hi = np.r_[[np.pi * 2] * 3, 80, 0, 40.0, [130.0] * (not fixL), [100.0] * (not fixW), [1.6, 1.6] * free_k]
             try:
                 res = least_squares(resid, p0, bounds=(lo, hi), loss="soft_l1", f_scale=0.01)
             except ValueError:
                 continue
             if best is None or res.cost < best.cost:
                 best = res
-    R, C, L, W = unpack(best.x)
-    m = PitchModel(R, C, float(L), float(W), 0.0)
-    pred = m.to_ray(np.array([LANDMARKS[k][1](L, W) for k in keys]))
+    R, C, L, W, k, kv = unpack(best.x)
+    m = PitchModel(R, C, float(L), float(W), 0.0, float(k), tc, pc, float(kv))
+    pred = m.to_ray(np.array([LANDMARKS[key][1](L, W) for key in keys]))
     m.error_deg = float(np.degrees(np.mean(np.arccos(np.clip((pred * obs).sum(1), -1, 1)))))
     return m
 
