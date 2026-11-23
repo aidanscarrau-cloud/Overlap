@@ -128,7 +128,7 @@ function VideoCard({ match }: { match: Match }) {
 
 /* ---------------------------------------------------------------- AI switch */
 
-function TeamSwitch({ teamId, teamName, ageGroup, on }: { teamId: string; teamName: string; ageGroup: string; on: boolean }) {
+export function TeamSwitch({ teamId, teamName, ageGroup, on }: { teamId: string; teamName: string; ageGroup: string; on: boolean }) {
   const { supabase, patch, toast } = useApp();
   const [busy, setBusy] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -156,7 +156,7 @@ function TeamSwitch({ teamId, teamName, ageGroup, on }: { teamId: string; teamNa
         Match review for {teamName} <ProBadge />
       </h3>
       <p>
-        Lets this team&apos;s coaches add the match video, log quick stats and notes for each player, and get AI-drafted feedback with drills for next training. It&apos;s for coaching staff only: players and parents never see it.
+        Lets this team&apos;s coaches add match videos (or paste a Veo link) and get them analysed and auto-tagged, use the Analysis page, log quick stats and notes for each player, and get AI-drafted feedback with drills for next training. It&apos;s for coaching staff only: players and parents never see it.
       </p>
       <p className="muted">Switch it on team by team. Before you do, check what applies to {ageGroup ? `an ${ageGroup} team` : "this age group"}:</p>
       <ul className="mr-checks">

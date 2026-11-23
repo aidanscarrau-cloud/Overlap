@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
-import { usePro } from "../Pro";
+import { usePro, Upgrade } from "../Pro";
 import { Tagger, MiniPitch, useCodes, loadEvents } from "./Tagger";
 import { Reel } from "./Reel";
 import { CodeWindow } from "./CodeWindow";
 import { TrainingConsent } from "./TrainingConsent";
+import { TeamSwitch } from "../matches/MatchReview";
 import { SCOUT_SECTIONS, clock, kindLabel, type ClipPlaylist, type MatchEvent, type Period, type ScoutingReport } from "@/lib/analysis";
 import { errMsg, parseD, todayIso } from "@/lib/format";
 import type { Match, Team } from "@/lib/types";
@@ -26,14 +27,22 @@ export function AnalysisPage() {
 
   if (!staff) return <div className="empty">Match analysis is for coaching staff.</div>;
   if (!team) return <div className="empty">Choose a team first.</div>;
-  if (!pro) return null;
+  if (!pro)
+    return (
+      <div className="md-home">
+        <h1>Analysis</h1>
+        <Upgrade feature="Match analysis" blurb="Paste a Veo link and get the match auto-tagged, with stats, clips, set pieces, scouting and an analyst report. Coaching staff only." />
+      </div>
+    );
   if (!team.match_ai)
     return (
       <div className="md-home">
         <h1>Analysis</h1>
-        <p className="md-muted">
-          Match analysis is switched off for {team.name}. {isAdmin ? "Turn on match review for this team from any played match's Review tab (club admins only)." : "Ask a club admin to turn on match review for this team."}
-        </p>
+        {isAdmin ? (
+          <TeamSwitch teamId={team.id} teamName={team.name} ageGroup={team.age_group ?? ""} on={false} />
+        ) : (
+          <p className="md-muted">Match analysis is switched off for {team.name}. Ask a club admin to turn it on for this team.</p>
+        )}
       </div>
     );
   if (tagging) return <Tagger match={tagging} onClose={() => setTagging(null)} />;
@@ -65,6 +74,7 @@ export function AnalysisPage() {
         <>
           <MatchList team={team} onTag={setTagging} />
           <TrainingConsent team={team} />
+          {isAdmin && <TeamSwitch teamId={team.id} teamName={team.name} ageGroup={team.age_group ?? ""} on />}
         </>
       )}
       {tab === "playlists" && <Playlists team={team} />}
