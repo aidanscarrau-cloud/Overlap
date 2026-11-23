@@ -1234,3 +1234,69 @@ button.pl-slot{cursor:pointer}
 .chat-lightbox{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:20px}
 .chat-lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
 .chat-lightbox .icon-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.15);color:#fff;border:0}
+
+/* ---------- Match review (Pro) ---------- */
+.mr{display:grid;gap:16px}
+.mr-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface);display:grid;gap:10px}
+.mr-card h3,.mr-head h3{margin:0;font-family:var(--display);font-weight:500;font-size:18px;display:flex;gap:8px;align-items:center}
+.mr-card p{margin:0;font-size:14px}
+.mr-ai{background:color-mix(in srgb,var(--accent) 6%,var(--surface));border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.mr-quote{margin:0;padding:10px 12px;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 8px 8px 0;font-size:13.5px;color:var(--ink)}
+.mr-inline{display:flex;gap:8px;align-items:center}
+.mr-inline .input{flex:1;min-width:0}
+.mr-watch{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--accent);text-decoration:none;font-size:14px;justify-self:start}
+.mr-watch:hover{text-decoration:underline}
+.mr-head{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.mr-head p{margin:2px 0 0;font-size:13px}
+.mr-gen{display:grid;gap:4px;justify-items:end;text-align:right;max-width:300px}
+.mr-gen small{font-size:12px}
+.mr-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mr-player{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.mr-player.open{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.mr-player-head{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:12px 14px;background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:56px}
+.mr-player-name{display:grid;min-width:0}
+.mr-player-name b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-player-name small{font-size:12.5px}
+.mr-status{font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.mr-status.logged{color:var(--ink)}
+.mr-status.draft{background:color-mix(in srgb,var(--gold) 22%,var(--surface));color:var(--ink)}
+.mr-status.shared{background:color-mix(in srgb,var(--good) 16%,var(--surface));color:var(--good)}
+.mr-body{padding:0 14px 14px;display:grid;gap:14px}
+.mr-log,.mr-edit{display:grid;gap:14px}
+.mr-rating{display:flex;gap:6px;flex-wrap:wrap}
+.mr-rating button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;font-weight:600;cursor:pointer}
+.mr-rating button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+.mr-counters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.mr-counter{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:6px}
+.mr-counter>span{font-size:12.5px;color:var(--muted)}
+.mr-counter>div{display:flex;align-items:center;justify-content:space-between}
+.mr-counter button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-size:20px;cursor:pointer;color:var(--ink)}
+.mr-counter b{font-size:20px;font-family:var(--display);font-weight:500}
+.mr-fs{border:0;padding:0;margin:0;display:grid;gap:8px}
+.mr-fs legend{font-size:13px;font-weight:600;color:var(--muted);padding:0;margin-bottom:6px}
+.mr-workon{display:grid;gap:6px}
+.mr-drill,.mr-goal{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:10px}
+.mr-drill>div,.mr-goal>div{display:grid;gap:6px;flex:1;min-width:0}
+.mr-goal small{font-size:13px}
+.mr-goal-acts{display:flex;gap:6px;align-items:center}
+.mr-preview summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:14px}
+.mr-preview[open] summary{margin-bottom:10px}
+.mr-report{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface);display:grid;gap:12px;box-shadow:var(--shadow-sm)}
+.mr-report h3{margin:0;font-family:var(--display);font-weight:500;font-size:20px;line-height:1.25}
+.mr-report h4{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--muted)}
+.mr-report section{display:grid}
+.mr-ticks{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.mr-ticks li{padding-left:24px;position:relative;font-size:15px}
+.mr-ticks li::before{content:"✓";position:absolute;left:0;color:var(--good);font-weight:700}
+.mr-next{margin:0 0 6px;font-size:15px}
+.mr-drills,.mr-moments{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.mr-drill-btn{width:100%;text-align:left;display:grid;gap:2px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font:inherit;color:inherit;cursor:pointer}
+.mr-drill-btn:disabled{cursor:default}
+.mr-drill-btn small{color:var(--muted);font-size:13px}
+.mr-drill-about{padding:8px 12px;font-size:14px}
+.mr-drill-about p{margin:0 0 8px;white-space:pre-line}
+.mr-moments li{font-size:14px}
+.mr-moments .tnum{display:inline-block;min-width:48px;font-weight:600;color:var(--accent)}
+.mr-note{margin:0;font-style:italic;font-size:15px}
+.mr-sign{margin:0;font-size:12.5px}
+@media (max-width:560px){.mr-gen{justify-items:stretch;text-align:left;max-width:none;width:100%}.mr-gen .btn{width:100%}}

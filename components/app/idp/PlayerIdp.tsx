@@ -1,4 +1,5 @@
 "use client";
+import { MatchFeedbackList } from "../matches/MatchReview";
 
 import { SelfReviewPrompts, SelfReviewSection, useOpenSelfFromUrl } from "./SelfReview";
 import Link from "next/link";
@@ -220,6 +221,8 @@ export function PlayerIdp({ playerId }: { playerId: string }) {
           </details>
         )}
       </section>
+
+      <MatchFeedbackList playerId={playerId} who={who ?? (mine ? "you" : player.full_name.split(" ")[0])} />
 
       {(rate !== null || load) && (
         <section className="card" style={{ marginTop: 20 }}>

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { permsFor, type RolePerm } from "@/lib/permissions";
 import type { Evaluation, Goal, GoalUpdate } from "@/lib/idp";
-import type { AppNotification, ChatSummary, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team, TeamLineup, FitnessDay, FitnessResult, FitnessBand, Injury, Trial, TrialDate, TrialApplicant, TrialAttendance, TrialRating } from "@/lib/types";
+import type { AppNotification, ChatSummary, SelfReview, Match, MatchPlayer, MatchReply, NotificationPrefs, Announcement, Attendance, Club, ClubData, Drill, Member, Player, PlayerLoad, Reply, Role, Session, Team, TeamLineup, FitnessDay, FitnessResult, FitnessBand, Injury, Trial, TrialDate, TrialApplicant, TrialAttendance, TrialRating, MatchReview, MatchReport } from "@/lib/types";
 
 type MemRow = { id: string; club_id: string; user_id: string; role: Role; clubs: Club | Club[] | null };
 type MemberRow = { id: string; user_id: string; role: Role; profiles: { full_name: string } | { full_name: string }[] | null };
@@ -106,6 +106,11 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("clubs").select("plan").eq("id", clubId).maybeSingle(),
       // Profile pictures of everyone this person can see (only after update 32).
       supabase.from("profiles").select("id,avatar_url").not("avatar_url", "is", null),
+      // Match reviews and player reports (only after update 33).
+      supabase.from("match_reviews").select("*").eq("club_id", clubId),
+      supabase.from("match_reports").select("*").eq("club_id", clubId),
+      supabase.from("clubs").select("ai_reports").eq("id", clubId).maybeSingle(),
+      supabase.from("matches").select("id,video_url").eq("club_id", clubId).not("video_url", "is", null),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -116,7 +121,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows, reviewRows, reportRows, aiRow, videoRows] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -171,6 +176,7 @@ export async function getClubData(): Promise<ClubData> {
       // Before update 0023 there are no club colours yet; the defaults are used.
       ...(brand.error || !brand.data ? {} : (brand.data as { brand_primary: string; brand_accent: string })),
       // Before update 31 there's no plan column: everything stays on, as before.
+      ai_reports: aiRow.error || !aiRow.data ? false : !!(aiRow.data as { ai_reports: boolean }).ai_reports,
       plan: planRow.error || !planRow.data ? "pro" : ((planRow.data as { plan: "lite" | "pro" }).plan ?? "pro"),
     },
     clubs: mems.map((m) => one(m.clubs)).filter(Boolean) as Club[],
@@ -195,7 +201,10 @@ export async function getClubData(): Promise<ClubData> {
     notifications: inbox.error ? [] : ((inbox.data ?? []) as AppNotification[]),
     notificationPrefs: (prefs.data as NotificationPrefs | null) ?? DEFAULT_PREFS,
     // Before update 0017 these tables don't exist; the rest of the app keeps working.
-    matches: matches.error ? [] : ((matches.data ?? []) as Match[]),
+    matches: (() => {
+      const videos = new Map(videoRows.error ? [] : ((videoRows.data ?? []) as { id: string; video_url: string }[]).map((r) => [r.id, r.video_url]));
+      return (matches.error ? [] : ((matches.data ?? []) as Match[])).map((m) => ({ ...m, video_url: videos.get(m.id) ?? null }));
+    })(),
     matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),
     matchReplies: matchReplies.error ? [] : ((matchReplies.data ?? []) as MatchReply[]),
     selfReviews: selfReviews.error ? [] : ((selfReviews.data ?? []) as SelfReview[]),
@@ -213,6 +222,8 @@ export async function getClubData(): Promise<ClubData> {
     trialDates: trialDates.error ? [] : ((trialDates.data ?? []) as TrialDate[]),
     trialApplicants: trialApplicants.error ? [] : ((trialApplicants.data ?? []) as TrialApplicant[]),
     trialAttendance: trialAttendance.error ? [] : ((trialAttendance.data ?? []) as TrialAttendance[]),
+    matchReviews: reviewRows.error ? [] : ((reviewRows.data ?? []) as MatchReview[]),
+    matchReports: reportRows.error ? [] : ((reportRows.data ?? []) as MatchReport[]),
     trialRatings: trialRatings.error ? [] : ((trialRatings.data ?? []) as TrialRating[]),
   };
 }

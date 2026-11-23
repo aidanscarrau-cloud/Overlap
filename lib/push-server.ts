@@ -38,6 +38,7 @@ const PREF_FOR_KIND: Record<string, "sessions" | "announcements" | "reminders" |
   announcement: "announcements",
   reply_reminder: "reminders",
   evaluation: "development",
+  match_report: "development",
   goal: "development",
   match_new: "sessions",
   match_changed: "sessions",

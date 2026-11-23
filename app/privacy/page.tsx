@@ -50,6 +50,10 @@ export default function Privacy() {
               <td>Coach ratings, goals and notes, self-reviews, and fitness test results.</td>
             </tr>
             <tr>
+              <th>Match reviews</th>
+              <td>A link to the match video (if the club adds one), the coach&apos;s private stats, rating and notes for each player, and the feedback report the coach shares with the family. Ratings and notes are only visible to the team&apos;s coaches and the club&apos;s admins.</td>
+            </tr>
+            <tr>
               <th>Injuries</th>
               <td>What the injury is, when it happened, notes, and the return-to-play step. This is health information, so it is only visible to the player&apos;s own family and the coaches and admins of their team.</td>
             </tr>
@@ -99,6 +103,19 @@ export default function Privacy() {
             <b>Photos:</b> photos shared in chat are only visible to members of that chat. Clubs should follow their own photo and filming consent policy; trial sign-up forms can record a filming consent box.
           </li>
           <li>If you&apos;re worried about something you&apos;ve seen in the app, tell your club&apos;s Member Protection Officer and contact us.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>AI writing help for match feedback</h2>
+        <ul>
+          <li>On Overlap Pro, a club admin can turn on AI writing help. It is off until they do.</li>
+          <li>
+            When a coach asks for draft feedback, Overlap sends the AI service (Anthropic&apos;s Claude) the team&apos;s age group, each player&apos;s position, the coach&apos;s stats and notes, and the club&apos;s drill names. Players are sent as
+            &ldquo;Player 1, Player 2&rdquo;: <b>no names, dates of birth, photos or contact details are sent</b>, and names typed into notes are removed first.
+          </li>
+          <li>Anthropic doesn&apos;t use this information to train its AI models, and it is processed under its commercial data terms. These requests may be processed outside Australia.</li>
+          <li>Every report is a draft until the coach reads it, edits it if needed, and shares it. Families can ask their coach not to use AI drafts for their child.</li>
         </ul>
       </section>
 

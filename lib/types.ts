@@ -4,7 +4,7 @@ export type Status = "available" | "injured" | "unavailable";
 export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";
 
-export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro" };
+export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro"; /** AI match feedback switched on by an admin (update 33). */ ai_reports?: boolean };
 export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null };
 export type Player = {
   id: string;
@@ -80,6 +80,8 @@ export type Match = {
   squad_published: boolean;
   report: string;
   external_ref: string | null;
+  /** Link to the match video, e.g. Veo (update 33). */
+  video_url?: string | null;
   updated_at: string;
 };
 /** A player in a match squad: line-up position and stats. */
@@ -93,6 +95,41 @@ export type MatchPlayer = {
   assists: number;
   yellow: number;
   red: number;
+};
+/** What a coach logs for one player after a match (staff only). */
+export type MatchReview = {
+  match_id: string;
+  player_id: string;
+  rating: number | null;
+  shots: number;
+  on_target: number;
+  key_passes: number;
+  tackles: number;
+  saves: number;
+  notes: string;
+  moments: { t: string; note: string }[];
+  updated_at: string;
+};
+export type ReportDrill = { ref: string; name: string; why: string };
+export type ReportGoal = { area: string; title: string; detail: string; added?: boolean };
+/** A player's personal feedback from a match. Families see it once the coach shares it. */
+export type MatchReport = {
+  id: string;
+  match_id: string;
+  player_id: string;
+  status: "draft" | "shared";
+  headline: string;
+  went_well: string[];
+  work_on: { title: string; how: string }[];
+  drills: ReportDrill[];
+  goal_ideas: ReportGoal[];
+  coach_message: string;
+  /** Timestamps to watch back in the match video (copied from the coach's log). */
+  moments: { t: string; note: string }[];
+  ai: boolean;
+  author_name: string;
+  updated_at: string;
+  shared_at: string | null;
 };
 export type MatchReply = { match_id: string; player_id: string; going: boolean; note: string; updated_at: string };
 export type Attendance = { session_id: string; player_id: string };
@@ -158,6 +195,7 @@ export type NotificationKind =
   | "self_review_done"
   | "message"
   | "injury"
+  | "match_report"
   | "trial";
 export type ChatSummary = {
   id: string;
@@ -273,6 +311,8 @@ export type ClubData = {
   matches: Match[];
   matchPlayers: MatchPlayer[];
   matchReplies: MatchReply[];
+  matchReviews: MatchReview[];
+  matchReports: MatchReport[];
   /** This person's own inbox, newest first (all their clubs). */
   notifications: AppNotification[];
   notificationPrefs: NotificationPrefs;

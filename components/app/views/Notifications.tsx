@@ -40,6 +40,7 @@ const ICON: Record<NotificationKind, string> = {
   message: "i-chat",
   injury: "i-squad",
   trial: "i-squad",
+  match_report: "i-target",
 };
 
 export function Notifications() {
