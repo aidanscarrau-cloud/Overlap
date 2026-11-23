@@ -115,6 +115,7 @@ export async function getClubData(): Promise<ClubData> {
       supabase.from("match_video_jobs").select("id,match_id,status,progress,message,file_name,file_size,our_team,results,created_at,updated_at").eq("club_id", clubId).order("created_at", { ascending: false }),
       // Goal scorers for families, who can't see the whole squad (only after update 35).
       supabase.rpc("match_scorers"),
+      supabase.from("match_video_jobs").select("id,numbers").eq("club_id", clubId),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -125,7 +126,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows, reviewRows, reportRows, aiRow, videoRows, videoJobs, scorerRows] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows, reviewRows, reportRows, aiRow, videoRows, videoJobs, scorerRows, numberRows] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -229,7 +230,10 @@ export async function getClubData(): Promise<ClubData> {
     trialApplicants: trialApplicants.error ? [] : ((trialApplicants.data ?? []) as TrialApplicant[]),
     trialAttendance: trialAttendance.error ? [] : ((trialAttendance.data ?? []) as TrialAttendance[]),
     scorers: scorerRows.error ? [] : ((scorerRows.data ?? []) as { match_id: string; full_name: string; goals: number }[]),
-    videoJobs: videoJobs.error ? [] : ((videoJobs.data ?? []) as VideoJob[]),
+    videoJobs: (() => {
+      const nums = new Map(numberRows.error ? [] : ((numberRows.data ?? []) as { id: string; numbers: Record<string, string> }[]).map((r) => [r.id, r.numbers]));
+      return (videoJobs.error ? [] : ((videoJobs.data ?? []) as VideoJob[])).map((j) => ({ ...j, numbers: nums.get(j.id) ?? {} }));
+    })(),
     matchReviews: reviewRows.error ? [] : ((reviewRows.data ?? []) as MatchReview[]),
     matchReports: reportRows.error ? [] : ((reportRows.data ?? []) as MatchReport[]),
     trialRatings: trialRatings.error ? [] : ((trialRatings.data ?? []) as TrialRating[]),

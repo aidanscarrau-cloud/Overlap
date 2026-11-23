@@ -25,6 +25,7 @@ image = (
         "opencv-python-headless==5.1.0.95",
         "scikit-learn==1.9.1",
         "numpy==2.5.4",
+        "easyocr==1.7.2",
         "fastapi[standard]",
     )
     .add_local_python_source("overlap_video")
@@ -55,7 +56,7 @@ class Worker:
         from overlap_video.pipeline import Settings
 
         os.environ["OVERLAP_DATA_DIR"] = "/data"
-        run_job(job, os.environ["VIDEO_WORKER_SECRET"], Settings(model_size="medium", sample_fps=5.0), model=self.model)
+        run_job(job, os.environ["VIDEO_WORKER_SECRET"], Settings(model_size="medium", sample_fps=5.0, gpu=True), model=self.model)
         data.commit()
 
 

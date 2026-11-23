@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     supabase.from("match_reviews").select("*").eq("match_id", matchId),
     supabase.from("teams").select("name,age_group").eq("id", match.team_id).maybeSingle(),
     supabase.from("drills").select("id,name,category,description").eq("club_id", match.club_id).order("name").limit(150),
-    supabase.from("match_video_jobs").select("our_team,results").eq("match_id", matchId).eq("status", "done").not("our_team", "is", null).order("created_at", { ascending: false }).limit(1),
+    supabase.from("match_video_jobs").select("id,our_team,results").eq("match_id", matchId).eq("status", "done").not("our_team", "is", null).order("created_at", { ascending: false }).limit(1),
     supabase.from("sessions").select("focus").eq("team_id", match.team_id).lte("date", match.date).order("date", { ascending: false }).limit(4),
   ]);
   const want = new Set((body.player_ids ?? []).filter((x) => typeof x === "string"));
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   const ids = rows.map((r) => r.player_id as string);
   const [{ data: players }, { data: goals }, { data: recent }] = await Promise.all([
-    supabase.from("players").select("id,full_name,position").in("id", ids),
+    supabase.from("players").select("id,full_name,position,shirt_number").in("id", ids),
     supabase.from("player_goals").select("player_id,area,title").in("player_id", ids).eq("status", "active"),
     supabase.from("match_reports").select("player_id,work_on,updated_at").in("player_id", ids).neq("match_id", matchId).order("updated_at", { ascending: false }).limit(ids.length * 2),
   ]);
@@ -67,6 +67,28 @@ export async function POST(request: NextRequest) {
   const rev = new Map((reviews ?? []).map((r) => [r.player_id as string, r]));
   const scrub = (s: string) => scrubNames(s, names);
 
+  // Per-player stats from the match video, matched by shirt number (the coach's choices first).
+  const vjob = videoRow?.[0] as { id: string; our_team: number | null; results: { players?: { team: number; number: number; seen_s: number; on_ball_s: number }[]; mapping?: { players?: { team: number; number: number; metres_per_min: number | null; avg_from_own_goal_m: number }[] } } | null } | undefined;
+  let chosen: Record<string, string> = {};
+  if (vjob) {
+    const { data: nrow } = await supabase.from("match_video_jobs").select("numbers").eq("id", vjob.id).maybeSingle();
+    chosen = ((nrow as { numbers?: Record<string, string> } | null)?.numbers ?? {}) as Record<string, string>;
+  }
+  const videoFor = (pid: string): string | undefined => {
+    if (!vjob?.results?.players || vjob.our_team === null) return undefined;
+    const shirt = byId.get(pid)?.shirt_number as number | null | undefined;
+    const me = vjob.results.players.find((x) => x.team === vjob.our_team && (chosen[String(x.number)] ? chosen[String(x.number)] === pid : shirt != null && x.number === shirt));
+    if (!me) return undefined;
+    const pm = vjob.results.mapping?.players?.find((x) => x.team === me.team && x.number === me.number);
+    return [
+      `seen on video for about ${Math.round(me.seen_s / 60)} min (only while their number was readable)`,
+      `about ${Math.round(me.on_ball_s)} s on the ball in that time`,
+      pm?.metres_per_min ? `running pace about ${((pm.metres_per_min * 90) / 1000).toFixed(1)} km per 90 min` : "",
+      pm ? `usually ${Math.round(pm.avg_from_own_goal_m)} m from our goal` : "",
+    ]
+      .filter(Boolean)
+      .join("; ");
+  };
   const aiPlayers: AiPlayer[] = rows.map((r) => {
     const v = rev.get(r.player_id);
     return {
@@ -87,6 +109,7 @@ export async function POST(request: NextRequest) {
       notes: scrub(v?.notes ?? ""),
       moments: ((v?.moments ?? []) as { t: string; note: string }[]).map((m) => ({ t: m.t, note: scrub(m.note) })),
       goals_now: (goals ?? []).filter((g) => g.player_id === r.player_id).map((g) => ({ area: g.area, title: scrub(g.title) })),
+      video: videoFor(r.player_id),
       recent: (recent ?? [])
         .filter((x) => x.player_id === r.player_id)
         .slice(0, 1)

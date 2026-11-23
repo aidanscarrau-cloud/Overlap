@@ -29,6 +29,7 @@ def map_pitch(rows: np.ndarray, taps: dict[str, list[float]], pano_info: dict, p
     model = calibrate(rays, length, width)
     L, W = model.length, model.width
     t, tid, team, kind = rows[:, 0], rows[:, 1].astype(int), rows[:, 2].astype(int), rows[:, 6].astype(int)
+    num = rows[:, 7].astype(int) if rows.shape[1] > 7 else np.full(len(rows), -1)
     xy = model.to_pitch(rows[:, 3:6])
     inside = np.isfinite(xy).all(1) & (np.abs(xy[:, 0]) <= L / 2 + 3) & (xy[:, 1] >= -3) & (xy[:, 1] <= W + 3)
     players = (kind == 0) & inside & (team >= 0)
@@ -96,6 +97,30 @@ def map_pitch(rows: np.ndarray, taps: dict[str, list[float]], pano_info: dict, p
                 "width_m": round(float(np.median(widths)), 1) if widths else None,
             }
         )
+    # Per player (team + shirt number), where numbers were read.
+    out["players"] = []
+    for tm in (0, 1):
+        for n in sorted(set(num[players & (team == tm) & (num >= 0)].tolist())):
+            sel = players & (team == tm) & (num == n)
+            if sel.sum() < 25:
+                continue
+            f = facing(minute[sel], tm)
+            x, y = xy[sel, 0] * f, xy[sel, 1]
+            dist, hs, secs = running(t[sel], tid[sel], xy[sel])
+            heat, _, _ = np.histogram2d(x, y, bins=[6, 4], range=[[-L / 2, L / 2], [0, W]])
+            heat = heat / max(heat.sum(), 1)
+            out["players"].append(
+                {
+                    "team": tm,
+                    "number": int(n),
+                    "metres_per_min": round(dist / secs * 60, 1) if secs > 30 else None,
+                    "high_speed_pct": round(100 * hs / dist, 1) if dist > 0 else None,
+                    # Average position, from their own goal line (x) and from the left touchline as they attack (y).
+                    "avg_from_own_goal_m": round(float(np.median(x)) + L / 2, 1),
+                    "avg_across_m": round(float(np.median(np.where(f > 0, y, W - y))), 1),
+                    "heat": np.round(heat * 100).astype(int).tolist(),
+                }
+            )
     out["check_jpeg"] = check_picture(model, pano_info, pano_jpeg, taps)
     out["grid"] = [GRID_X, GRID_Y]
     out["model"] = model.as_dict()

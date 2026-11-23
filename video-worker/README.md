@@ -5,7 +5,10 @@ video. Coaches upload the video in the app (Match → Review); it goes straight 
 analyses it on a GPU on Modal, reports back to `/api/match-video/callback`, and the app deletes the video.
 
 Licences: RF-DETR (Apache-2.0, Nano–Large weights), trackers (Apache-2.0), supervision (MIT),
-scikit-learn (BSD), OpenCV (Apache-2.0). No AGPL/GPL code.
+scikit-learn (BSD), OpenCV (Apache-2.0), EasyOCR (Apache-2.0, shirt numbers). No AGPL/GPL code.
+
+Players are told apart by shirt number (`numbers.py`): read when they're near the camera, a few times per
+track, and voted on. The coach confirms which squad player wore each number in the app.
 
 ## Pitch mapping
 

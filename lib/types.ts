@@ -139,6 +139,8 @@ export type VideoStats = {
   /** The panorama of the ground for pitch mapping (the picture itself is fetched separately). */
   pitch_view?: { pano?: { scale: number; theta0: number; phi0: number; width: number; height: number }; error?: string };
   mapping?: PitchMapping;
+  /** Players identified by team and shirt number. */
+  players?: { team: 0 | 1; number: number; seen_s: number; on_ball_s: number; tracks: number }[];
   mapping_pending?: boolean;
   mapping_error?: string;
   taps?: Record<string, [number, number]>;
@@ -152,7 +154,8 @@ export type TeamMap = {
   defensive_line_m: number | null;
   width_m: number | null;
 };
-export type PitchMapping = { pitch: { length: number; width: number; fit_error_deg: number; camera_height: number }; teams: (TeamMap | null)[]; grid: [number, number] };
+export type PlayerMap = { team: 0 | 1; number: number; metres_per_min: number | null; high_speed_pct: number | null; avg_from_own_goal_m: number; avg_across_m: number; heat: number[][] };
+export type PitchMapping = { pitch: { length: number; width: number; fit_error_deg: number; camera_height: number }; teams: (TeamMap | null)[]; grid: [number, number]; players?: PlayerMap[] };
 export type VideoJob = {
   id: string;
   match_id: string;
@@ -163,6 +166,8 @@ export type VideoJob = {
   file_size: number;
   our_team: 0 | 1 | null;
   results: VideoStats | null;
+  /** Which squad player wore each of our shirt numbers: { "15": "<player id>" } (update 37). */
+  numbers?: Record<string, string>;
   created_at: string;
   updated_at: string;
 };

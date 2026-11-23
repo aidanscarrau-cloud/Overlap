@@ -29,6 +29,8 @@ export type AiPlayer = {
   moments: { t: string; note: string }[];
   goals_now: { area: string; title: string }[];
   recent: string[];
+  /** Estimates from automatic video analysis, if the player was identified by shirt number. */
+  video?: string;
 };
 export type AiMatch = {
   ageGroup: string;
@@ -109,6 +111,7 @@ function prompt(match: AiMatch, players: AiPlayer[]) {
       p.moments.length ? `Moments to watch back: ${p.moments.map((m) => `${m.t} ${m.note}`).join("; ")}` : "",
       p.goals_now.length ? `Current development goals: ${p.goals_now.map((g) => `${g.title} (${g.area})`).join("; ")}` : "Current development goals: none.",
       p.recent.length ? `Focus from their recent match feedback: ${p.recent.join("; ")}` : "",
+      p.video ? `From automatic video analysis (an estimate, partial): ${p.video}` : "",
       `</player>`,
     ]
       .filter(Boolean)

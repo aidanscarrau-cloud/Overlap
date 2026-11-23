@@ -5,6 +5,7 @@ import { useApp } from "../AppProvider";
 import { errMsg } from "@/lib/format";
 import type { Match, VideoJob } from "@/lib/types";
 import { PitchMap } from "./PitchMap";
+import { VideoPlayers } from "./VideoPlayers";
 
 /* Automatic match stats from video (coaching staff only). The coach picks the MP4 they downloaded from
  * Veo; it uploads in parts straight to storage, is analysed on a GPU, and is deleted afterwards. */
@@ -37,7 +38,7 @@ export function VideoStats({ match }: { match: Match }) {
       ) : job && LIVE.includes(job.status) && job.status !== "uploading" ? (
         <Working job={job} />
       ) : job?.status === "done" && job.results ? (
-        <Results job={job} />
+        <Results job={job} match={match} />
       ) : (
         <Picker match={match} last={job} setUpload={setUpload} abort={abort} />
       )}
@@ -188,7 +189,7 @@ function Working({ job }: { job: VideoJob }) {
   );
 }
 
-function Results({ job }: { job: VideoJob }) {
+function Results({ job, match }: { job: VideoJob; match: Match }) {
   const { supabase, patch, toast } = useApp();
   const r = job.results!;
   const [t0, t1] = r.teams;
@@ -270,6 +271,7 @@ function Results({ job }: { job: VideoJob }) {
       </div>
       <small className="muted">Used in this match&apos;s AI feedback.</small>
       <PitchMap job={job} usColour={usCol} themColour={themCol} />
+      <VideoPlayers job={job} match={match} />
     </div>
   );
 }

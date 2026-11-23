@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
 import { ProBadge, Upgrade, usePro } from "../Pro";
 import { VideoStats } from "./VideoStats";
+import { videoLineFor } from "./VideoPlayers";
 import { LIBRARY_BY_KEY } from "@/lib/library-drills";
 import { areaLabel } from "@/lib/idp";
 import { errMsg } from "@/lib/format";
@@ -243,7 +244,13 @@ function PlayerRow({ match, row, player, report, open, onToggle }: { match: Matc
 }
 
 function LogForm({ match, player, review, onDone }: { match: Match; player: Player; review?: MatchReview; onDone: () => void }) {
-  const { supabase, patch, toast } = useApp();
+  const { data, squadOf, squad, supabase, patch, toast } = useApp();
+  const videoJob = data.videoJobs.find((j) => j.match_id === match.id && j.status === "done");
+  const fromVideo = videoLineFor(
+    videoJob,
+    player,
+    [...squadOf(match.id).map((r) => data.players.find((p) => p.id === r.player_id)).filter((p): p is Player => !!p), ...squad(match.team_id)],
+  );
   const [s, setS] = useState<Stats>(() => (review ? { ...EMPTY, ...review, moments: review.moments ?? [] } : EMPTY));
   const [momentsText, setMomentsText] = useState(() => (review?.moments ?? []).map((m) => `${m.t} ${m.note}`).join("\n"));
   const [busy, setBusy] = useState(false);
@@ -274,6 +281,7 @@ function LogForm({ match, player, review, onDone }: { match: Match; player: Play
 
   return (
     <div className="mr-log">
+      {fromVideo && <p className="mr-video">🎥 From the video: {fromVideo}</p>}
       <div className="field">
         <span>Coach rating (private, never shown to families)</span>
         <div className="mr-rating" role="group" aria-label="Rating out of 10">

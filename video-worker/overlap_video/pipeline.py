@@ -39,6 +39,9 @@ class Settings:
     # Also look at the far side of the pitch in close-up sections, so far-away players (only a few
     # pixels tall once the whole frame is shrunk for the model) are found too. About 4x the work.
     tiles: bool = True
+    # Read shirt numbers so stats can be given per player (needs easyocr).
+    numbers: bool = True
+    gpu: bool = False
     possession_reach: float = 0.9  # ball within this many player-heights of a player's feet = theirs
     min_track_seconds: float = 2.0  # shorter tracks are ignored for team colours
     max_seconds: float | None = None  # analyse only the first N seconds (testing)
@@ -205,6 +208,11 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     n = 0
     snaps: list[tuple[np.ndarray, list, tuple | None]] = []  # a few frames kept for the debug pictures
     reg = Registrar()  # where the camera is looking, frame by frame
+    reader = None
+    if s.numbers:
+        from .numbers import NumberReader
+
+        reader = NumberReader(gpu=s.gpu)
     views: list[tuple[int, np.ndarray, float]] = []
 
     for t, frame in frames(path, s):
@@ -245,6 +253,8 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
             if c is not None and len(track_colours[tid]) < 60:
                 track_colours[tid].append(c)
             players.append((tid, float((box[0] + box[2]) / 2), float(box[3]), float(box[3] - box[1]), c))
+            if reader is not None:
+                reader.maybe_read(tid, t, frame, box)
         timeline.append((t, ball, players))
         try:
             k, H = reg.add(t, frame)
@@ -260,11 +270,13 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     say(0.92, "Working out the teams")
     teams, team_of, centres = assign_teams(track_colours, track_seen, s)
     say(0.96, "Adding up possession")
-    poss = possession(timeline, team_of, centres, s)
+    poss, on_ball = possession(timeline, team_of, centres, s)
+    numbers = {tid: n for tid in track_seen if reader is not None and (n := reader.number_of(tid)) is not None}
+    people_stats = player_summary(track_seen, team_of, numbers, on_ball, s)
     if debug_dir:
         draw_debug(debug_dir, snaps, teams, team_of, centres)
     say(0.97, "Working out where the camera was looking")
-    pitch_view = camera_rays(reg, timeline, views, team_of, centres, data_path)
+    pitch_view = camera_rays(reg, timeline, views, team_of, centres, data_path, numbers)
 
     return {
         "version": 1,
@@ -276,11 +288,28 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
         },
         "teams": teams,
         "possession": poss,
+        "players": people_stats,
         "pitch_view": pitch_view,
     }
 
 
-def camera_rays(reg, timeline, views, team_of, centres, data_path):
+def player_summary(track_seen, team_of, numbers, on_ball, s: Settings) -> list[dict]:
+    """Per player, identified by team and shirt number: how long they were seen and on the ball."""
+    dt = 1.0 / s.sample_fps
+    agg: dict[tuple[int, int], dict] = {}
+    for tid, num in numbers.items():
+        team = team_of.get(tid, -1)
+        if team < 0:
+            continue
+        a = agg.setdefault((team, num), {"team": team, "number": num, "seen_s": 0.0, "on_ball_s": 0.0, "tracks": 0})
+        a["seen_s"] += len(track_seen[tid]) * dt
+        a["on_ball_s"] += on_ball.get(tid, 0.0)
+        a["tracks"] += 1
+    out = [dict(v, seen_s=round(v["seen_s"]), on_ball_s=round(v["on_ball_s"], 1)) for v in agg.values() if v["seen_s"] >= 10]
+    return sorted(out, key=lambda x: (x["team"], x["number"]))
+
+
+def camera_rays(reg, timeline, views, team_of, centres, data_path, numbers=None):
     """Solve the camera for the whole video, save everyone's position as a ray, and make the panorama
     the coach taps pitch points on. Returns what the app needs to show the panorama (or why it couldn't)."""
     import base64
@@ -300,9 +329,9 @@ def camera_rays(reg, timeline, views, team_of, centres, data_path):
             continue
         r = rays(reg.keys[k], H, np.array(pts))
         for p, rr in zip(players, r):
-            rows.append((t, p[0], team_for(p[0], p[4], team_of, centres), rr[0], rr[1], rr[2], 0))
+            rows.append((t, p[0], team_for(p[0], p[4], team_of, centres), rr[0], rr[1], rr[2], 0, (numbers or {}).get(p[0], -1)))
         if ball:
-            rows.append((t, -1, -1, *r[-1], 1))
+            rows.append((t, -1, -1, *r[-1], 1, -1))
     if not rows:
         return {"error": "Couldn't place anyone on the pitch."}
     if data_path:
@@ -409,6 +438,8 @@ def team_for(tid, colour, team_of, centres) -> int:
 def possession(timeline, team_of, centres, s: Settings):
     """Who was closest to the ball, frame by frame, smoothed so brief misreads don't flip possession."""
     raw = []
+    on_ball: dict[int, float] = defaultdict(float)
+    dt = 1.0 / s.sample_fps
     for t, ball, players in timeline:
         owner = None
         if ball is not None and players:
@@ -421,6 +452,7 @@ def possession(timeline, team_of, centres, s: Settings):
                     best, best_d = tid, d
             if best is not None and best_d <= s.possession_reach:
                 owner = next(team_for(tid, col, team_of, centres) for tid, fx, fy, h, col in players if tid == best)
+                on_ball[best] += dt
         raw.append((t, owner))
 
     # Carry possession through short gaps (passes, ball hidden) of up to 3 seconds.
@@ -448,7 +480,7 @@ def possession(timeline, team_of, centres, s: Settings):
         a = sum(per_min[m][0] for m in range(m0, m0 + 5) if m in per_min)
         b = sum(per_min[m][1] for m in range(m0, m0 + 5) if m in per_min)
         by_5.append({"from_min": m0, "team0_pct": round(100 * a / (a + b), 1) if a + b else None, "seconds": round(a + b, 1)})
-    return {"pct": pct, "seconds_with_owner": round(known, 1), "by_5_min": by_5}
+    return {"pct": pct, "seconds_with_owner": round(known, 1), "by_5_min": by_5}, on_ball
 
 
 def draw_debug(folder: str, snaps, teams, team_of, centres):
