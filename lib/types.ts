@@ -4,8 +4,8 @@ export type Status = "available" | "injured" | "unavailable";
 export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";
 
-export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro"; /** AI match feedback switched on by an admin (update 33). */ ai_reports?: boolean };
-export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null };
+export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro"; };
+export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null; /** Match review (AI player feedback) switched on by a club admin for this team (update 33). */ match_ai?: boolean };
 export type Player = {
   id: string;
   club_id: string;
@@ -80,7 +80,7 @@ export type Match = {
   squad_published: boolean;
   report: string;
   external_ref: string | null;
-  /** Link to the match video, e.g. Veo (update 33). */
+  /** Link to the match video, e.g. Veo (update 33). Coaching staff only. */
   video_url?: string | null;
   updated_at: string;
 };
@@ -112,12 +112,11 @@ export type MatchReview = {
 };
 export type ReportDrill = { ref: string; name: string; why: string };
 export type ReportGoal = { area: string; title: string; detail: string; added?: boolean };
-/** A player's personal feedback from a match. Families see it once the coach shares it. */
+/** AI-drafted feedback for one player from a match. Coaching staff only. */
 export type MatchReport = {
   id: string;
   match_id: string;
   player_id: string;
-  status: "draft" | "shared";
   headline: string;
   went_well: string[];
   work_on: { title: string; how: string }[];
@@ -129,7 +128,6 @@ export type MatchReport = {
   ai: boolean;
   author_name: string;
   updated_at: string;
-  shared_at: string | null;
 };
 export type MatchReply = { match_id: string; player_id: string; going: boolean; note: string; updated_at: string };
 export type Attendance = { session_id: string; player_id: string };

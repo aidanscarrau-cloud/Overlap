@@ -6,7 +6,7 @@ import { useApp } from "../AppProvider";
 import { ConfirmButton, SheetFrame } from "../sheets/SheetFrame";
 import { ReplyButtons } from "../Replies";
 import { Pitch } from "./Pitch";
-import { MatchReviewTab, ReportCard } from "./MatchReview";
+import { MatchReviewTab, useMatchReviewAccess } from "./MatchReview";
 import { pingPush } from "@/lib/push-client";
 import { DEFAULT_LENGTH, FORMATIONS, backLine, formationFor } from "@/lib/formations";
 import { HA_LABEL, RESULT_WORD, resultOf } from "@/lib/matches";
@@ -43,6 +43,7 @@ function MatchEditor({ match, date }: { match: Match | null; date?: string }) {
   const { data, team, refresh, close } = useApp();
   const [tab, setTab] = useState<"details" | "squad" | "result" | "review">(match ? (match.status === "played" || match.date < todayIso() ? "result" : "squad") : "details");
   const teamName = data.teams.find((t) => t.id === (match?.team_id ?? team?.id))?.name ?? "Your team";
+  const review = useMatchReviewAccess(match?.team_id ?? team?.id ?? "");
   return (
     <SheetFrame title={match ? `${teamName} vs ${match.opponent}` : "New match"}>
       {match && (
@@ -52,7 +53,7 @@ function MatchEditor({ match, date }: { match: Match | null; date?: string }) {
               ["details", "Details"],
               ["squad", "Squad & line-up"],
               ["result", "Result & stats"],
-              ...(match.status === "played" || match.date <= todayIso() ? ([["review", "Review"]] as const) : []),
+              ...(review.show && (match.status === "played" || match.date <= todayIso()) ? ([["review", "Review 🔒"]] as const) : []),
             ] as const
           ).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
@@ -615,16 +616,6 @@ export function MatchView({ match }: { match: Match }) {
           </div>
         )}
         {match.report && <p className="match-report">{match.report}</p>}
-        {match.video_url && (match.status === "played" || !upcoming) && (
-          <a className="mr-watch" href={match.video_url} target="_blank" rel="noopener noreferrer">
-            ▶ Watch the match
-          </a>
-        )}
-        {pro &&
-          mine.map((p) => {
-            const rep = data.matchReports.find((r) => r.match_id === match.id && r.player_id === p.id && r.status === "shared");
-            return rep ? <ReportCard key={p.id} report={rep} who={parent ? kidName(p) : "you"} match={match} /> : null;
-          })}
         {upcoming &&
           mine.map((p) => (
             <ReplyButtons key={p.id} matchId={match.id} playerId={p.id} label={parent ? `Can ${kidName(p)} play?` : "Can you play?"} who={parent ? kidName(p) : undefined} />

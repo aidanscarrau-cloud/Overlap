@@ -9,7 +9,7 @@ export const maxDuration = 300;
 /** Fair-use cap on AI reports per club per 30 days (about 2 matches a week for 8 teams). */
 const MONTHLY_CAP = 1200;
 
-type Body = { match_id?: string; player_ids?: string[]; replace_shared?: boolean };
+type Body = { match_id?: string; player_ids?: string[] };
 
 // A coach asks for draft reports for a match they review. Everything is read as the signed-in coach,
 // so the database decides what they can see; reports are saved as drafts for the coach to check.
@@ -33,27 +33,24 @@ export async function POST(request: NextRequest) {
     .eq("id", matchId)
     .maybeSingle();
   if (!match) return NextResponse.json({ ok: false, error: "Match not found." });
-  const { data: editable } = await supabase.rpc("match_editable", { mid: matchId });
-  if (!editable) return NextResponse.json({ ok: false, error: "Only this team's coaches can write match reports." });
-  const { data: club } = await supabase.from("clubs").select("plan,ai_reports").eq("id", match.club_id).maybeSingle();
-  if (club?.plan !== "pro") return NextResponse.json({ ok: false, error: "Match reviews are part of Overlap Pro." });
-  if (!club?.ai_reports) return NextResponse.json({ ok: false, error: "AI feedback is switched off for your club. An admin can turn it on in the Review tab." });
+  // Coaching staff of this team only, on Pro, with match review switched on for the team by a club admin.
+  const { data: allowed, error: okErr } = await supabase.rpc("match_review_ok", { mid: matchId });
+  if (okErr) return NextResponse.json({ ok: false, error: "Run update 33 in Supabase first." });
+  if (!allowed) return NextResponse.json({ ok: false, error: "Match review is only for this team's coaching staff, on Overlap Pro, once a club admin has switched it on for the team." });
 
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
   const { count } = await supabase.from("match_reports").select("id", { count: "exact", head: true }).eq("club_id", match.club_id).eq("ai", true).gte("updated_at", since);
 
-  const [{ data: squad }, { data: reviews }, { data: existing }, { data: team }, { data: drills }, { data: sessions }] = await Promise.all([
+  const [{ data: squad }, { data: reviews }, { data: team }, { data: drills }, { data: sessions }] = await Promise.all([
     supabase.from("match_players").select("player_id,role,minutes,goals,assists,yellow,red").eq("match_id", matchId),
     supabase.from("match_reviews").select("*").eq("match_id", matchId),
-    supabase.from("match_reports").select("player_id,status").eq("match_id", matchId),
     supabase.from("teams").select("name,age_group").eq("id", match.team_id).maybeSingle(),
     supabase.from("drills").select("id,name,category,description").eq("club_id", match.club_id).order("name").limit(150),
     supabase.from("sessions").select("focus").eq("team_id", match.team_id).lte("date", match.date).order("date", { ascending: false }).limit(4),
   ]);
-  const shared = new Set((existing ?? []).filter((r) => r.status === "shared").map((r) => r.player_id as string));
   const want = new Set((body.player_ids ?? []).filter((x) => typeof x === "string"));
-  const rows = (squad ?? []).filter((r) => (want.size ? want.has(r.player_id) : true) && (body.replace_shared || !shared.has(r.player_id)));
-  if (!rows.length) return NextResponse.json({ ok: false, error: want.size ? "Those players' reports are already shared." : "Pick the squad first, then log their stats." });
+  const rows = (squad ?? []).filter((r) => (want.size ? want.has(r.player_id) : true));
+  if (!rows.length) return NextResponse.json({ ok: false, error: "Pick the squad first, then log their stats." });
   if (rows.length > 30) return NextResponse.json({ ok: false, error: "That's more than 30 players. Write reports for fewer at a time." });
   if ((count ?? 0) + rows.length > MONTHLY_CAP) return NextResponse.json({ ok: false, error: "Your club has reached this month's fair-use limit for AI reports. Contact us if you need more." });
 
@@ -141,7 +138,6 @@ export async function POST(request: NextRequest) {
       return {
         match_id: matchId,
         player_id: byLabel.get(r.player)!,
-        status: "draft",
         headline: named(c.headline),
         went_well: c.went_well.map(named),
         work_on: c.work_on.map((w) => ({ title: named(w.title), how: named(w.how) })),

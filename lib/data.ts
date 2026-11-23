@@ -109,8 +109,8 @@ export async function getClubData(): Promise<ClubData> {
       // Match reviews and player reports (only after update 33).
       supabase.from("match_reviews").select("*").eq("club_id", clubId),
       supabase.from("match_reports").select("*").eq("club_id", clubId),
-      supabase.from("clubs").select("ai_reports").eq("id", clubId).maybeSingle(),
-      supabase.from("matches").select("id,video_url").eq("club_id", clubId).not("video_url", "is", null),
+      supabase.from("teams").select("id,match_ai").eq("club_id", clubId),
+      supabase.from("match_videos").select("match_id,url").eq("club_id", clubId),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -176,7 +176,6 @@ export async function getClubData(): Promise<ClubData> {
       // Before update 0023 there are no club colours yet; the defaults are used.
       ...(brand.error || !brand.data ? {} : (brand.data as { brand_primary: string; brand_accent: string })),
       // Before update 31 there's no plan column: everything stays on, as before.
-      ai_reports: aiRow.error || !aiRow.data ? false : !!(aiRow.data as { ai_reports: boolean }).ai_reports,
       plan: planRow.error || !planRow.data ? "pro" : ((planRow.data as { plan: "lite" | "pro" }).plan ?? "pro"),
     },
     clubs: mems.map((m) => one(m.clubs)).filter(Boolean) as Club[],
@@ -185,7 +184,10 @@ export async function getClubData(): Promise<ClubData> {
     perms: permsFor(mine.role, rp),
     rolePerms: rp,
     myTeamIds,
-    teams: teamList,
+    teams: (() => {
+      const on = new Set(aiRow.error ? [] : ((aiRow.data ?? []) as { id: string; match_ai: boolean }[]).filter((t) => t.match_ai).map((t) => t.id));
+      return teamList.map((t) => ({ ...t, match_ai: on.has(t.id) }));
+    })(),
     players: playerList,
     drills: (drills.data ?? []) as Drill[],
     sessions: ((sessions.data ?? []) as Omit<Session, "notes">[]).map((s) => ({ ...s, series_id: s.series_id ?? null, notes: sNotes.get(s.id) ?? "", plan: Array.isArray(s.plan) ? s.plan : [] })),
@@ -202,7 +204,7 @@ export async function getClubData(): Promise<ClubData> {
     notificationPrefs: (prefs.data as NotificationPrefs | null) ?? DEFAULT_PREFS,
     // Before update 0017 these tables don't exist; the rest of the app keeps working.
     matches: (() => {
-      const videos = new Map(videoRows.error ? [] : ((videoRows.data ?? []) as { id: string; video_url: string }[]).map((r) => [r.id, r.video_url]));
+      const videos = new Map(videoRows.error ? [] : ((videoRows.data ?? []) as { match_id: string; url: string }[]).map((r) => [r.match_id, r.url]));
       return (matches.error ? [] : ((matches.data ?? []) as Match[])).map((m) => ({ ...m, video_url: videos.get(m.id) ?? null }));
     })(),
     matchPlayers: matchPlayers.error ? [] : ((matchPlayers.data ?? []) as MatchPlayer[]),

@@ -6,11 +6,11 @@ import { ProBadge, Upgrade, usePro } from "../Pro";
 import { LIBRARY_BY_KEY } from "@/lib/library-drills";
 import { areaLabel } from "@/lib/idp";
 import { errMsg } from "@/lib/format";
-import { pingPush } from "@/lib/push-client";
 import type { Match, MatchPlayer, MatchReport, MatchReview, Player, ReportDrill } from "@/lib/types";
 
-/* Match review (Pro): video link, quick per-player stats and notes, and personal feedback reports
- * (drafted with AI, checked by the coach, then shared with each family). */
+/* Match review (Pro, coaching staff only): video link, quick per-player stats and notes, and AI-drafted
+ * feedback per player with drills for next training. A club admin switches it on per team, so the club can
+ * take that age group's rules into account. Nothing here is shown to players or parents. */
 
 type Stats = Pick<MatchReview, "rating" | "shots" | "on_target" | "key_passes" | "tackles" | "saves" | "notes" | "moments">;
 const EMPTY: Stats = { rating: null, shots: 0, on_target: 0, key_passes: 0, tackles: 0, saves: 0, notes: "", moments: [] };
@@ -24,16 +24,26 @@ const COUNTERS = [
 export const isVideoUrl = (s: string) => /^https:\/\/[^\s]+$/i.test(s.trim()) && s.trim().length <= 500;
 const videoName = (u: string) => (/veo\.co/i.test(u) ? "Veo" : /youtu/i.test(u) ? "YouTube" : /hudl/i.test(u) ? "Hudl" : "video");
 
+/** Can this person see match review for the team at all? (Coaching staff; admins also see the switch.) */
+export function useMatchReviewAccess(teamId: string) {
+  const { data, isAdmin, canDo } = useApp();
+  const team = data.teams.find((t) => t.id === teamId);
+  const staff = ["admin", "coach", "assistant"].includes(data.role) && canDo("matches.edit", teamId);
+  return { on: !!team?.match_ai, team, isAdmin, show: staff && (!!team?.match_ai || isAdmin) };
+}
+
 export function MatchReviewTab({ match }: { match: Match }) {
   const pro = usePro();
+  const { on, team, isAdmin } = useMatchReviewAccess(match.team_id);
   if (!pro)
-    return (
-      <Upgrade
-        feature="Match reviews"
-        blurb="Add the match video, log quick stats for each player, and send every family personal feedback with drills for next training."
-      />
-    );
-  return <Review match={match} />;
+    return <Upgrade feature="Match review" blurb="Add the match video, log quick stats for each player, and get AI-drafted feedback with drills for next training. For coaching staff only." />;
+  if (!on) return isAdmin && team ? <TeamSwitch teamId={team.id} teamName={team.name} ageGroup={team.age_group} on={false} /> : <p className="muted">Match review isn&apos;t switched on for this team. Ask a club admin.</p>;
+  return (
+    <>
+      <Review match={match} />
+      {isAdmin && team && <TeamSwitch teamId={team.id} teamName={team.name} ageGroup={team.age_group} on />}
+    </>
+  );
 }
 
 function Review({ match }: { match: Match }) {
@@ -43,13 +53,11 @@ function Review({ match }: { match: Match }) {
   const sorted = [...rows].sort((a, b) => (a.role === b.role ? 0 : a.role === "start" ? -1 : 1) || (a.slot ?? 99) - (b.slot ?? 99));
   const reports = new Map(data.matchReports.filter((r) => r.match_id === match.id).map((r) => [r.player_id, r]));
   const [open, setOpen] = useState<string | null>(null);
-  const drafts = [...reports.values()].filter((r) => r.status === "draft").length;
-  const sharedN = [...reports.values()].filter((r) => r.status === "shared").length;
 
   return (
     <div className="mr">
+      <p className="mr-staff">🔒 Coaching staff only. Players and parents can&apos;t see anything on this tab.</p>
       <VideoCard match={match} />
-      <AiCard />
       {!rows.length ? (
         <p className="muted" style={{ margin: 0 }}>
           Pick the squad on the Squad tab first. Then you can review each player here.
@@ -60,9 +68,7 @@ function Review({ match }: { match: Match }) {
             <div>
               <h3>Players</h3>
               <p className="muted">
-                Tap a player to log their game. {sharedN > 0 && `${sharedN} shared`}
-                {sharedN > 0 && drafts > 0 && " · "}
-                {drafts > 0 && `${drafts} draft${drafts > 1 ? "s" : ""} to check`}
+                Tap a player to log their game.{reports.size > 0 && ` ${reports.size} report${reports.size > 1 ? "s" : ""} written.`}
               </p>
             </div>
             <GenerateButton match={match} rows={rows} reports={reports} />
@@ -74,7 +80,6 @@ function Review({ match }: { match: Match }) {
               return <PlayerRow key={r.player_id} match={match} row={r} player={p} report={reports.get(r.player_id)} open={open === r.player_id} onToggle={() => setOpen(open === r.player_id ? null : r.player_id)} />;
             })}
           </ul>
-          {drafts > 0 && <ShareAll match={match} drafts={[...reports.values()].filter((r) => r.status === "draft")} />}
         </>
       )}
     </div>
@@ -92,11 +97,11 @@ function VideoCard({ match }: { match: Match }) {
     const v = url.trim();
     if (v && !isVideoUrl(v)) return toast("Paste the full link, starting with https://");
     setBusy(true);
-    const { error } = await supabase.from("matches").update({ video_url: v || null }).eq("id", match.id);
+    const { error } = v ? await supabase.from("match_videos").upsert({ match_id: match.id, url: v }, { onConflict: "match_id" }) : await supabase.from("match_videos").delete().eq("match_id", match.id);
     setBusy(false);
-    if (error) return toast(/video_url/.test(error.message) ? "Run update 33 in Supabase first." : errMsg(error));
+    if (error) return toast(/match_videos/.test(error.message) ? "Run update 33 in Supabase first." : errMsg(error));
     patch((d) => ({ ...d, matches: d.matches.map((m) => (m.id === match.id ? { ...m, video_url: v || null } : m)) }));
-    toast(v ? "Video link saved. Families can watch it from the match." : "Video link removed");
+    toast(v ? "Video link saved (coaching staff only)" : "Video link removed");
   }
   return (
     <section className="mr-card">
@@ -120,42 +125,49 @@ function VideoCard({ match }: { match: Match }) {
 
 /* ---------------------------------------------------------------- AI switch */
 
-function AiCard() {
-  const { data, isAdmin, supabase, patch, toast } = useApp();
-  const on = !!data.club.ai_reports;
+function TeamSwitch({ teamId, teamName, ageGroup, on }: { teamId: string; teamName: string; ageGroup: string; on: boolean }) {
+  const { supabase, patch, toast } = useApp();
   const [busy, setBusy] = useState(false);
-  if (on) return null;
-  async function turnOn() {
+  const [checked, setChecked] = useState(false);
+  async function set(v: boolean) {
+    if (!v && !window.confirm(`Turn off match review for ${teamName}? Coaches will lose access to its stats and reports until it's turned back on (nothing is deleted).`)) return;
     setBusy(true);
-    const { error } = await supabase.from("clubs").update({ ai_reports: true }).eq("id", data.club.id);
+    const { error } = await supabase.from("teams").update({ match_ai: v }).eq("id", teamId);
     setBusy(false);
-    if (error) return toast(/ai_reports/.test(error.message) ? "Run update 33 in Supabase first." : errMsg(error));
-    patch((d) => ({ ...d, club: { ...d.club, ai_reports: true } }));
-    toast("AI feedback is on for your club");
+    if (error) return toast(/match_ai/.test(error.message) ? "Run update 33 in Supabase first." : errMsg(error));
+    patch((d) => ({ ...d, teams: d.teams.map((t) => (t.id === teamId ? { ...t, match_ai: v } : t)) }));
+    toast(v ? `Match review is on for ${teamName}` : `Match review is off for ${teamName}`);
   }
+  if (on)
+    return (
+      <p className="mr-admin muted">
+        Club admin: match review is on for {teamName}.{" "}
+        <button className="linkbtn" type="button" disabled={busy} onClick={() => set(false)}>
+          Turn off for this team
+        </button>
+      </p>
+    );
   return (
     <section className="mr-card mr-ai">
       <h3>
-        Write player feedback with AI <ProBadge />
+        Match review for {teamName} <ProBadge />
       </h3>
       <p>
-        Overlap can turn your stats and notes into a short, encouraging report for each player, with 1–2 things to work on and drills from your library. You check and edit every report before a family sees it.
+        Lets this team&apos;s coaches add the match video, log quick stats and notes for each player, and get AI-drafted feedback with drills for next training. It&apos;s for coaching staff only: players and parents never see it.
       </p>
-      <p className="muted">
-        No names, birthdays or contact details are sent to the AI: players are sent as &ldquo;Player 1, Player 2&rdquo; with their position and your notes. Tell your families first. You can copy this:
-      </p>
-      <blockquote className="mr-quote">
-        &ldquo;This season our coaches will send players short written feedback after some matches. Coaches use Overlap&apos;s AI writing helper to draft it from their own notes, and check every report before it&apos;s shared. No names or contact details are given to the AI. If you&apos;d rather your child doesn&apos;t get AI-drafted feedback, just tell your coach.&rdquo;
-      </blockquote>
-      {isAdmin ? (
-        <button className="btn primary" type="button" disabled={busy} onClick={turnOn}>
-          {busy ? "Turning on…" : "Turn on AI feedback"}
-        </button>
-      ) : (
-        <p className="muted" style={{ margin: 0 }}>
-          A club admin can turn this on. You can still log stats and write reports yourself.
-        </p>
-      )}
+      <p className="muted">Switch it on team by team. Before you do, check what applies to {ageGroup ? `an ${ageGroup} team` : "this age group"}:</p>
+      <ul className="mr-checks">
+        <li>Your state federation&apos;s and association&apos;s rules for this age group (for example, rules on filming, player data or formal assessment in junior football).</li>
+        <li>Your club&apos;s child safe policy and photo/filming consent for these players.</li>
+        <li>No names, birthdays or contact details are sent to the AI. Players are sent as &ldquo;Player 1, Player 2&rdquo; with their position and the coach&apos;s notes.</li>
+      </ul>
+      <label className="check">
+        <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+        <span>I&apos;ve checked the rules and our policies for {teamName}.</span>
+      </label>
+      <button className="btn primary" type="button" disabled={busy || !checked} onClick={() => set(true)} style={{ justifySelf: "start" }}>
+        {busy ? "Turning on…" : `Turn on for ${teamName}`}
+      </button>
     </section>
   );
 }
@@ -165,18 +177,16 @@ function AiCard() {
 function GenerateButton({ match, rows, reports }: { match: Match; rows: MatchPlayer[]; reports: Map<string, MatchReport> }) {
   const { data, refresh, toast } = useApp();
   const [busy, setBusy] = useState(false);
-  const todo = rows.filter((r) => reports.get(r.player_id)?.status !== "shared");
+  const todo = rows;
   const logged = rows.filter((r) => data.matchReviews.some((v) => v.match_id === match.id && v.player_id === r.player_id)).length;
-  if (!data.club.ai_reports) return null;
   async function go() {
-    if (!todo.length) return toast("Every report is already shared.");
-    if (todo.some((r) => reports.get(r.player_id)?.status === "draft") && !window.confirm("Rewrite the drafts you haven't shared yet? Any edits to them will be replaced.")) return;
+    if (reports.size && !window.confirm("Rewrite the reports for this match? Any edits you made to them will be replaced.")) return;
     setBusy(true);
     try {
       const res = await fetch("/api/match-review/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ match_id: match.id }) });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; written?: number };
       if (!j.ok) throw new Error(j.error || "Couldn't write the reports.");
-      toast(`${j.written} draft report${j.written === 1 ? "" : "s"} ready. Check them, then share.`);
+      toast(`${j.written} report${j.written === 1 ? "" : "s"} ready to read`);
       refresh();
     } catch (e) {
       toast(errMsg(e));
@@ -188,7 +198,7 @@ function GenerateButton({ match, rows, reports }: { match: Match; rows: MatchPla
       <button className="btn primary" type="button" disabled={busy || !todo.length} onClick={go}>
         {busy ? `Writing ${todo.length} report${todo.length === 1 ? "" : "s"}…` : `✨ ${todo.every((r) => reports.has(r.player_id)) ? "Rewrite" : "Write"} ${todo.length} report${todo.length === 1 ? "" : "s"}`}
       </button>
-      <small className="muted">{busy ? "This takes about a minute. Keep this open." : logged < rows.length ? `${logged} of ${rows.length} players logged. Better notes, better feedback.` : "Drafts only. Nothing is shared until you say so."}</small>
+      <small className="muted">{busy ? "This takes about a minute. Keep this open." : logged < rows.length ? `${logged} of ${rows.length} players logged. Better notes, better feedback.` : "For coaching staff only."}</small>
     </div>
   );
 }
@@ -211,7 +221,7 @@ function PlayerRow({ match, row, player, report, open, onToggle }: { match: Matc
             {bits.length > 0 && ` · ${bits.join(" · ")}`}
           </small>
         </span>
-        <span className={`mr-status ${report?.status ?? (review ? "logged" : "none")}`}>{report ? (report.status === "shared" ? "✓ Shared" : "Draft") : review ? "Logged" : "To log"}</span>
+        <span className={`mr-status ${report ? "shared" : review ? "logged" : "none"}`}>{report ? "✓ Report" : review ? "Logged" : "To log"}</span>
       </button>
       {open && (
         <div className="mr-body">
@@ -220,7 +230,7 @@ function PlayerRow({ match, row, player, report, open, onToggle }: { match: Matc
               Stats & notes
             </button>
             <button type="button" role="tab" aria-pressed={view === "report"} onClick={() => setView("report")}>
-              Report{report ? (report.status === "shared" ? " ✓" : " (draft)") : ""}
+              Report{report ? " ✓" : ""}
             </button>
           </div>
           {view === "log" ? <LogForm match={match} player={player} review={review} onDone={() => setView("report")} /> : <ReportEditor match={match} player={player} report={report} />}
@@ -302,7 +312,7 @@ function LogForm({ match, player, review, onDone }: { match: Match; player: Play
         />
       </label>
       <label className="field">
-        <span>Moments to watch back (optional, one per line; the family sees these with the report)</span>
+        <span>Moments to watch back (optional, one per line)</span>
         <textarea className="input" rows={2} value={momentsText} onChange={(e) => setMomentsText(e.target.value)} placeholder={"12:30 Won it high and played it first time\n38:10 Didn't track the runner"} />
       </label>
       <div className="sheet-actions">
@@ -341,18 +351,17 @@ function ReportEditor({ match, player, report }: { match: Match; player: Player;
     coach_message: x.coach_message.trim().slice(0, 1000),
   });
 
-  async function save(status: "draft" | "shared") {
+  async function save() {
     const c = clean(d);
-    if (status === "shared" && !c.headline && !c.went_well.length) return toast("Add at least a headline or one thing that went well.");
+    if (!c.headline && !c.went_well.length && !c.work_on.length) return toast("Add at least a headline or one point.");
     setBusy(true);
     const moments = (data.matchReviews.find((v) => v.match_id === match.id && v.player_id === player.id)?.moments ?? []).filter((m) => m.t);
-    const row = { match_id: match.id, player_id: player.id, status, ...c, moments, ...(report ? {} : { ai: false, author_name: data.myName }) };
+    const row = { match_id: match.id, player_id: player.id, ...c, moments, ...(report ? {} : { ai: false, author_name: data.myName }) };
     const { data: saved, error } = await supabase.from("match_reports").upsert(row, { onConflict: "match_id,player_id" }).select("*").single();
     setBusy(false);
     if (error) return toast(/match_reports/.test(error.message) ? "Run update 33 in Supabase first." : errMsg(error));
     patch((x) => ({ ...x, matchReports: [...x.matchReports.filter((r) => r.id !== (saved as MatchReport).id), saved as MatchReport] }));
-    if (status === "shared") pingPush();
-    toast(status === "shared" ? (report?.status === "shared" ? "Report updated" : `Shared with ${first}'s family`) : "Draft saved");
+    toast("Report saved");
   }
   async function remove() {
     if (!report || !window.confirm(`Delete ${first}'s report?`)) return;
@@ -373,8 +382,8 @@ function ReportEditor({ match, player, report }: { match: Match; player: Player;
 
   return (
     <div className="mr-edit">
-      {report?.ai && report.status === "draft" && <p className="notice">Drafted with AI from your notes. Read it through and change anything that doesn&apos;t sound like you before sharing.</p>}
-      {!report && <p className="muted" style={{ margin: 0 }}>Write {first}&apos;s report yourself{data.club.ai_reports ? ", or log their stats and use ✨ Write reports above" : ""}.</p>}
+      {report?.ai && <p className="notice">Drafted with AI from your notes. Check it before you use it with {first}: AI can get things wrong.</p>}
+      {!report && <p className="muted" style={{ margin: 0 }}>Write {first}&apos;s report yourself, or log their stats and use ✨ Write reports above.</p>}
       <label className="field">
         <span>Headline</span>
         <input className="input" maxLength={200} value={d.headline} onChange={(e) => set({ headline: e.target.value })} placeholder={`e.g. ${first} was everywhere today. Great energy.`} />
@@ -450,7 +459,7 @@ function ReportEditor({ match, player, report }: { match: Match; player: Player;
       </fieldset>
       {d.goal_ideas.length > 0 && (
         <fieldset className="mr-fs">
-          <legend>Development goal ideas (only you see these)</legend>
+          <legend>Development goal ideas</legend>
           {d.goal_ideas.map((g, i) => (
             <div className="mr-goal" key={i}>
               <div>
@@ -475,7 +484,7 @@ function ReportEditor({ match, player, report }: { match: Match; player: Player;
         </fieldset>
       )}
       <label className="field">
-        <span>A personal note from you (optional)</span>
+        <span>Your own note (optional)</span>
         <textarea className="input" rows={2} maxLength={1000} value={d.coach_message} onChange={(e) => set({ coach_message: e.target.value })} placeholder="Proud of how you kept going after the second goal." />
       </label>
       <div className="sheet-actions">
@@ -487,60 +496,35 @@ function ReportEditor({ match, player, report }: { match: Match; player: Player;
           <span className="spacer" />
         )}
         <span className="spacer" />
-        {report?.status === "shared" ? (
-          <>
-            <button className="btn" type="button" disabled={busy} onClick={() => save("draft")}>
-              Unshare
-            </button>
-            <button className="btn primary" type="button" disabled={busy} onClick={() => save("shared")}>
-              Save changes
-            </button>
-          </>
-        ) : (
-          <>
-            <button className="btn" type="button" disabled={busy} onClick={() => save("draft")}>
-              Save draft
-            </button>
-            <button className="btn primary" type="button" disabled={busy} onClick={() => save("shared")}>
-              Share with family
-            </button>
-          </>
-        )}
+        <button className="btn" type="button" onClick={() => copyReport(first, clean(d)).then(() => toast("Copied. Paste it wherever you need it."))}>
+          Copy text
+        </button>
+        <button className="btn primary" type="button" disabled={busy} onClick={save}>
+          {busy ? "Saving…" : "Save"}
+        </button>
       </div>
-      <details className="mr-preview">
-        <summary>Preview what {first}&apos;s family will see</summary>
-        <ReportCard report={{ ...(report ?? ({} as MatchReport)), ...clean(d), moments: data.matchReviews.find((v) => v.match_id === match.id && v.player_id === player.id)?.moments ?? [], status: "shared" } as MatchReport} who={first} match={match} />
-      </details>
     </div>
   );
 }
 
-function ShareAll({ match, drafts }: { match: Match; drafts: MatchReport[] }) {
-  const { supabase, refresh, toast } = useApp();
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    if (!window.confirm(`Share ${drafts.length} draft report${drafts.length > 1 ? "s" : ""} with families now? Make sure you've read them.`)) return;
-    setBusy(true);
-    const { error } = await supabase.from("match_reports").update({ status: "shared" }).eq("match_id", match.id).eq("status", "draft");
-    setBusy(false);
-    if (error) return toast(errMsg(error));
-    pingPush();
-    toast("Reports shared. Families have been told.");
-    refresh();
+/** Plain text the coach can use in a chat with the player, or for their own notes. */
+async function copyReport(first: string, r: Pick<MatchReport, "headline" | "went_well" | "work_on" | "drills" | "coach_message">) {
+  const lines = [
+    `${first}: match feedback`,
+    r.headline,
+    r.went_well.length ? `\nWhat went well:\n${r.went_well.map((x) => `• ${x}`).join("\n")}` : "",
+    r.work_on.length ? `\nNext steps:\n${r.work_on.map((w) => `• ${w.title}${w.how ? `: ${w.how}` : ""}`).join("\n")}` : "",
+    r.drills.length ? `\nDrills:\n${r.drills.map((x) => `• ${x.name}${x.why ? `: ${x.why}` : ""}`).join("\n")}` : "",
+    r.coach_message ? `\n${r.coach_message}` : "",
+  ].filter(Boolean);
+  try {
+    await navigator.clipboard.writeText(lines.join("\n"));
+  } catch {
+    /* clipboard blocked; nothing else to do */
   }
-  return (
-    <div className="sheet-actions">
-      <span className="muted" style={{ fontSize: 13, marginRight: "auto" }}>
-        Families only see a report once you share it.
-      </span>
-      <button className="btn primary" type="button" disabled={busy} onClick={go}>
-        Share all {drafts.length} drafts
-      </button>
-    </div>
-  );
 }
 
-/* ---------------------------------------------------------------- what families see */
+/* ---------------------------------------------------------------- read-only view (coaching staff) */
 
 export function ReportCard({ report, who, match }: { report: MatchReport; who: string; match: Match }) {
   const { data } = useApp();
@@ -556,7 +540,7 @@ export function ReportCard({ report, who, match }: { report: MatchReport; who: s
   };
   return (
     <article className="mr-report" aria-label={`Match feedback for ${who}`}>
-      <p className="eyebrow">Coach&apos;s feedback for {who}</p>
+      <p className="eyebrow">Feedback for {who}</p>
       {report.headline && <h3>{report.headline}</h3>}
       {report.went_well.length > 0 && (
         <section>
@@ -624,8 +608,8 @@ export function ReportCard({ report, who, match }: { report: MatchReport; who: s
       )}
       {report.coach_message && <p className="mr-note">&ldquo;{report.coach_message}&rdquo;</p>}
       <p className="mr-sign muted">
-        {report.author_name ? `From ${report.author_name}` : "From the coaches"}
-        {report.ai ? " · drafted with AI help and checked by your coach" : ""}
+        {report.author_name ? `By ${report.author_name}` : "By the coaches"}
+        {report.ai ? " · drafted with AI from coach notes" : ""} · coaching staff only
       </p>
     </article>
   );
@@ -637,10 +621,10 @@ export function MatchFeedbackList({ playerId, who }: { playerId: string; who: st
   const { data, open } = useApp();
   const pro = usePro();
   const [openId, setOpenId] = useState<string | null>(null);
-  if (!pro) return null;
+  if (!pro || !["admin", "coach", "assistant"].includes(data.role)) return null;
   const matches = new Map(data.matches.map((m) => [m.id, m]));
   const list = data.matchReports
-    .filter((r) => r.player_id === playerId && r.status === "shared" && matches.has(r.match_id))
+    .filter((r) => r.player_id === playerId && matches.has(r.match_id))
     .sort((a, b) => matches.get(b.match_id)!.date.localeCompare(matches.get(a.match_id)!.date));
   if (!list.length) return null;
   const short = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
@@ -648,6 +632,7 @@ export function MatchFeedbackList({ playerId, who }: { playerId: string; who: st
     <section style={{ marginTop: 20 }}>
       <div className="phead" style={{ marginBottom: 12 }}>
         <h2 className="sec-title">Match feedback</h2>
+        <span className="muted" style={{ fontSize: 13 }}>🔒 Coaching staff only</span>
       </div>
       <ul className="mr-list">
         {list.map((r) => {
@@ -661,7 +646,7 @@ export function MatchFeedbackList({ playerId, who }: { playerId: string; who: st
                 </span>
                 <span className="mr-player-name">
                   <b>vs {m.opponent}</b>
-                  <small className="muted">{r.headline || r.work_on[0]?.title || "Feedback from your coach"}</small>
+                  <small className="muted">{r.headline || r.work_on[0]?.title || "Match feedback"}</small>
                 </span>
                 <span aria-hidden="true" className="muted">
                   {isOpen ? "▴" : "▾"}
