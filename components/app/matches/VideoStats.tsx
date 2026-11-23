@@ -47,6 +47,20 @@ export function VideoStats({ match }: { match: Match }) {
 function Picker({ match, last, setUpload, abort }: { match: Match; last?: VideoJob; setUpload: (u: { sent: number; total: number } | null) => void; abort: React.MutableRefObject<AbortController | null> }) {
   const { toast, refresh } = useApp();
   const input = useRef<HTMLInputElement>(null);
+  const [starting, setStarting] = useState(false);
+  const veo = /^https:\/\/app\.veo\.co\/matches\//i.test(match.video_url ?? "");
+
+  async function fromVeo() {
+    setStarting(true);
+    try {
+      await post("/api/match-video/from-veo", { match_id: match.id });
+      toast("Started. The analysis takes about 10–20 minutes; you can leave this page.");
+    } catch (e) {
+      toast(errMsg(e));
+    }
+    setStarting(false);
+    refresh();
+  }
 
   async function go(file: File) {
     const type = file.type || (/\.mov$/i.test(file.name) ? "video/quicktime" : "video/mp4");
@@ -98,7 +112,8 @@ function Picker({ match, last, setUpload, abort }: { match: Match; last?: VideoJ
   return (
     <div className="vs-pick">
       <p>
-        Upload the full match video and Overlap works out <b>possession</b> and how it changed through the game. Download it from Veo first (Library → ⋯ → Download), then choose the file here.
+        Overlap can work out <b>possession</b> from the full match video, and how it changed through the game.{" "}
+        {veo ? "Use the Veo link saved above, or upload the video file." : "Paste the Veo link above, or download the video from Veo (Library → ⋯ → Download) and choose the file here."}
       </p>
       {last?.status === "failed" && <p className="notice bad">The last try didn&apos;t work: {last.message || "unknown error"}</p>}
       <input
@@ -112,9 +127,17 @@ function Picker({ match, last, setUpload, abort }: { match: Match; last?: VideoJ
           if (f) go(f);
         }}
       />
-      <button className="btn primary" type="button" onClick={() => input.current?.click()} style={{ justifySelf: "start" }}>
-        Choose match video…
-      </button>
+      <div className="mr-inline" style={{ flexWrap: "wrap" }}>
+        {veo && (
+          <button className="btn primary" type="button" disabled={starting} onClick={fromVeo}>
+            {starting ? "Starting…" : "Analyse from the Veo link"}
+          </button>
+        )}
+        <button className={`btn${veo ? "" : " primary"}`} type="button" onClick={() => input.current?.click()}>
+          {veo ? "Or upload a video file…" : "Choose match video…"}
+        </button>
+      </div>
+      {veo && <small className="muted">The Veo link works when the match is shared publicly on Veo. If it isn&apos;t, upload the file instead.</small>}
       <small className="muted">Up to 10 GB. Coaching staff only. The video is deleted as soon as it&apos;s analysed; only the numbers are kept. Faces and names aren&apos;t identified.</small>
     </div>
   );

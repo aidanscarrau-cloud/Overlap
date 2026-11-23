@@ -117,7 +117,7 @@ export default function Privacy() {
           </li>
           <li>
             Coaches can also upload a match video for automatic team stats such as possession. It goes to private storage (Cloudflare) and is analysed on a cloud computer (Modal) that only counts where the players and ball are. It
-            doesn&apos;t recognise faces or identify anyone, and the video is deleted as soon as the analysis finishes; only the numbers are kept.
+            doesn&apos;t recognise faces or identify anyone, and the video is deleted as soon as the analysis finishes; only the numbers are kept. If the coach uses a publicly shared Veo link instead, the video is read straight from Veo and Overlap doesn&apos;t store a copy.
           </li>
           <li>Anthropic doesn&apos;t use this information to train its AI models, and it is processed under its commercial data terms. These requests may be processed outside Australia.</li>
         </ul>
