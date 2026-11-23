@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../AppProvider";
+import { VideoSeason } from "../matches/VideoSeason";
 import { injuryLabel, STAGES } from "../injuries/Injuries";
 import { fmtDay, fmtMon, fmtNum, iso, parseD, todayIso, weekKey } from "@/lib/format";
 import type { Player } from "@/lib/types";
@@ -448,6 +449,7 @@ export function InsightsPage() {
           )}
         </section>
       </div>
+      <VideoSeason team={team} from={from} />
     </div>
   );
 }

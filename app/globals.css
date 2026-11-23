@@ -1354,3 +1354,18 @@ button.pl-slot{cursor:pointer}
 .pm-facts b{font-family:var(--display);font-weight:500;font-size:17px}
 .pm-check{margin:0;display:grid;gap:6px}
 .pm-check img{width:100%;border-radius:10px}
+
+/* ---------- Match video trends (Insights) ---------- */
+.vsn{display:grid;gap:12px;margin-top:16px}
+.vsn-bars{position:relative;display:flex;gap:8px;align-items:flex-end;height:140px;overflow-x:auto;padding-top:4px}
+.vsn-bar{position:relative;flex:0 0 52px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;background:none;border:0;cursor:pointer;font:inherit;color:inherit;padding:0}
+.vsn-fill{display:block;width:30px;max-height:100px;background:var(--accent);border-radius:6px 6px 2px 2px;order:1}
+.vsn-bar b{order:0;font-size:12px}
+.vsn-bar small{order:2;font-size:11px;color:var(--muted);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsn-table-wrap{overflow-x:auto}
+.vsn-table{width:100%;border-collapse:collapse;font-size:14px}
+.vsn-table th,.vsn-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.vsn-table thead th{font-size:12px;color:var(--muted);font-weight:600}
+.vsn-table tbody tr{cursor:pointer}
+.vsn-table tbody tr:hover{background:var(--surface-2)}
+.vsn-table tfoot th,.vsn-table tfoot td{font-weight:700}
