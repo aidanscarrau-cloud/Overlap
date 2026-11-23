@@ -73,7 +73,7 @@ export async function readUrl(key: string) {
 
 /* ---------------------------------------------------------------- worker */
 
-export async function sendToWorker(job: { job_id: string; callback_url: string; video_url?: string; kind?: "map" | "report"; taps?: Record<string, [number, number]>; length?: number | null; width?: number | null; [k: string]: unknown }) {
+export async function sendToWorker(job: { job_id: string; callback_url: string; video_url?: string; kind?: "map" | "report" | "dataset" | "withdraw"; taps?: Record<string, [number, number]>; length?: number | null; width?: number | null; [k: string]: unknown }) {
   const res = await fetch(process.env.VIDEO_WORKER_URL!, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${process.env.VIDEO_WORKER_SECRET}` },

@@ -37,6 +37,8 @@ weights = modal.Volume.from_name("overlap-video-weights", create_if_missing=True
 # Each match's positions, kept so the coach can map the pitch afterwards (delete files older than ~30 days).
 data = modal.Volume.from_name("overlap-video-data", create_if_missing=True)
 secret = modal.Secret.from_name("overlap-video")
+# Training clips from clubs that have agreed to help improve Overlap (deleted when a club withdraws).
+training = modal.Volume.from_name("overlap-training", create_if_missing=True)
 
 with image.imports():
     from fastapi import HTTPException, Request
@@ -71,6 +73,26 @@ def report_job(job: dict):
     run_report(job, os.environ["VIDEO_WORKER_SECRET"])
 
 
+@app.function(image=image, volumes={"/training": training}, secrets=[secret], timeout=3600)
+def dataset_job(job: dict):
+    from overlap_video.job import run_dataset
+
+    os.environ["OVERLAP_TRAINING_DIR"] = "/training"
+    training.reload()
+    run_dataset(job, os.environ["VIDEO_WORKER_SECRET"])
+    training.commit()
+
+
+@app.function(image=image, volumes={"/training": training}, secrets=[secret], timeout=600)
+def withdraw_job(job: dict):
+    from overlap_video.job import run_withdraw
+
+    os.environ["OVERLAP_TRAINING_DIR"] = "/training"
+    training.reload()
+    run_withdraw(job, os.environ["VIDEO_WORKER_SECRET"])
+    training.commit()
+
+
 # Mapping the pitch is light work: no GPU needed.
 @app.function(image=image, volumes={"/data": data}, secrets=[secret], timeout=600)
 def map_job(job: dict):
@@ -90,6 +112,11 @@ async def start(request: Request):
     if not hmac.compare_digest(auth, f"Bearer {os.environ['VIDEO_WORKER_SECRET']}"):
         raise HTTPException(status_code=401)
     job = await request.json()
+    if job.get("kind") in ("dataset", "withdraw"):
+        if not all(isinstance(job.get(k), str) for k in ("club_id", "callback_url")):
+            raise HTTPException(status_code=400)
+        (dataset_job if job["kind"] == "dataset" else withdraw_job).spawn(job)
+        return {"ok": True}
     if job.get("kind") == "report":
         if not all(isinstance(job.get(k), str) for k in ("job_id", "callback_url")) or not isinstance(job.get("results"), dict):
             raise HTTPException(status_code=400)

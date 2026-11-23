@@ -154,3 +154,29 @@ def run_report(job: dict, secret: str) -> None:
             post(cb, secret, {"job_id": job_id, "report_error": f"Couldn't write the report: {str(e)[:200]}"})
         except Exception as e2:
             print("couldn't report failure:", e2)
+
+
+def run_dataset(job: dict, secret: str) -> None:
+    """Collect labelled training clips for one match (clubs that have agreed only; the app checks)."""
+    from .training import collect
+
+    cb = job["callback_url"]
+    try:
+        out = collect(job)
+        post(cb, secret, {"kind": "dataset", "match_id": job["match_id"], "status": "done", "clips": out["clips"]})
+    except Exception as e:
+        print("dataset failed", job.get("match_id"), repr(e))
+        try:
+            post(cb, secret, {"kind": "dataset", "match_id": job["match_id"], "status": "failed", "message": str(e)[:200]})
+        except Exception as e2:
+            print("couldn't report failure:", e2)
+
+
+def run_withdraw(job: dict, secret: str) -> None:
+    from .training import withdraw
+
+    withdraw(job["club_id"], job.get("match_ids"))
+    try:
+        post(job["callback_url"], secret, {"kind": "withdrawn", "club_id": job["club_id"]})
+    except Exception as e:
+        print("couldn't confirm withdrawal:", e)

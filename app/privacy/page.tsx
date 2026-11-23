@@ -122,6 +122,9 @@ export default function Privacy() {
           <li>
             If a club admin switches on <b>AI analyst reports</b> for a team (off by default), short frame strips from the key moments of that team&apos;s match videos are sent to Anthropic&apos;s Claude, which writes a post-match analysis for the coaching staff. These frames can show players. Anthropic doesn&apos;t use them to train its AI, and the report is coaching staff only.
           </li>
+          <li>
+            If a club admin agrees to <b>help improve Overlap&apos;s automatic analysis</b> for a team (off by default), short low-resolution clips around the events tagged on that team&apos;s match videos, with their labels (for example &ldquo;shot, on target&rdquo;), are kept to train and test Overlap&apos;s own analysis models. No names, shirt numbers or contact details are stored with them. They&apos;re never sold or shared, and they&apos;re deleted if the club stops sharing.
+          </li>
           <li>Coaches and analysts can also tag events on the match video (shots, tackles, set pieces) and write opposition scouting reports. These are coaching staff only, like the rest of match review.</li>
           <li>Anthropic doesn&apos;t use this information to train its AI models, and it is processed under its commercial data terms. These requests may be processed outside Australia.</li>
         </ul>

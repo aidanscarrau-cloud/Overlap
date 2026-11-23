@@ -6,6 +6,7 @@ import { usePro } from "../Pro";
 import { Tagger, MiniPitch, useCodes, loadEvents } from "./Tagger";
 import { Reel } from "./Reel";
 import { CodeWindow } from "./CodeWindow";
+import { TrainingConsent } from "./TrainingConsent";
 import { SCOUT_SECTIONS, clock, kindLabel, type ClipPlaylist, type MatchEvent, type Period, type ScoutingReport } from "@/lib/analysis";
 import { errMsg, parseD, todayIso } from "@/lib/format";
 import type { Match, Team } from "@/lib/types";
@@ -60,7 +61,12 @@ export function AnalysisPage() {
           </button>
         ))}
       </div>
-      {tab === "matches" && <MatchList team={team} onTag={setTagging} />}
+      {tab === "matches" && (
+        <>
+          <MatchList team={team} onTag={setTagging} />
+          <TrainingConsent team={team} />
+        </>
+      )}
       {tab === "playlists" && <Playlists team={team} />}
       {tab === "setpieces" && <SetPieces team={team} />}
       {tab === "scouting" && <Scouting team={team} />}

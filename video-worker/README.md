@@ -53,3 +53,12 @@ admin has switched on AI video reports.
 ## Local end-to-end test
 
 `VIDEO_WORKER_SECRET=x python local_server.py` stands in for Modal on port 8765.
+
+## Training data (opt-in)
+
+When a club admin switches on "Help improve Overlap's automatic analysis" for a team (update 41), the daily
+cron sends `kind: "dataset"` jobs for that team's tagged matches. The worker cuts a 4-second, 360p, silent
+clip around each tagged event (phases up to 8 s) plus some "background" clips, and writes them with a
+`labels.jsonl` (label, outcome, side, timing only: no names or numbers) to the `overlap-training` volume
+under `<club_id>/<match_id>/`. Withdrawing sends `kind: "withdraw"`, which deletes that team's matches.
+The video source must allow HTTP range requests (R2 signed links and Veo's public MP4s do).

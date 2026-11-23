@@ -5,7 +5,7 @@ export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";
 
 export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro"; };
-export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null; /** Match review (AI player feedback) switched on by a club admin for this team (update 33). */ match_ai?: boolean; /** AI analyst reports from video frames switched on by a club admin (update 40). */ video_ai?: boolean };
+export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null; /** Match review (AI player feedback) switched on by a club admin for this team (update 33). */ match_ai?: boolean; /** AI analyst reports from video frames switched on by a club admin (update 40). */ video_ai?: boolean; /** Club admin agreed to share this team's tagged clips to improve Overlap (update 41). */ training_opt_in?: boolean };
 export type Player = {
   id: string;
   club_id: string;
