@@ -119,6 +119,7 @@ export default function Privacy() {
             Coaches can also upload a match video for automatic team stats such as possession. It goes to private storage (Cloudflare) and is analysed on a cloud computer (Modal) that only counts where the players and ball are. It
             doesn&apos;t recognise faces; it reads shirt numbers so coaches can see stats per player, and a coach confirms who wore each number. The video is deleted as soon as the analysis finishes; only the stats are kept, and no pictures of players. If the coach uses a publicly shared Veo link instead, the video is read straight from Veo and Overlap doesn&apos;t store a copy. Positions (dots on the pitch, marked only with team and shirt number, no names) are kept for 30 days so the coach can map the pitch, then deleted.
           </li>
+          <li>Coaches and analysts can also tag events on the match video (shots, tackles, set pieces) and write opposition scouting reports. These are coaching staff only, like the rest of match review.</li>
           <li>Anthropic doesn&apos;t use this information to train its AI models, and it is processed under its commercial data terms. These requests may be processed outside Australia.</li>
         </ul>
       </section>

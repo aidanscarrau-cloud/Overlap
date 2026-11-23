@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { playerTagLine, tally, type MatchEvent } from "@/lib/analysis";
 import { aiConfigured, cleanReport, drillCatalogue, scrubNames, writeReports, type AiPlayer } from "@/lib/match-ai";
 
 // Writing a squad's reports can take a minute or two.
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest) {
       .filter(Boolean)
       .join("; ");
   };
+  // Events the analyst tagged on the match video (if update 38 has run and anything was tagged).
+  const { data: evRows } = await supabase.from("match_events").select("id,match_id,t,kind,team,player_id,shirt,x,y,outcome,routine,note,pre,post,created_at").eq("match_id", matchId);
+  const tags = tally((evRows ?? []) as MatchEvent[]);
   const aiPlayers: AiPlayer[] = rows.map((r) => {
     const v = rev.get(r.player_id);
     return {
@@ -110,6 +114,7 @@ export async function POST(request: NextRequest) {
       moments: ((v?.moments ?? []) as { t: string; note: string }[]).map((m) => ({ t: m.t, note: scrub(m.note) })),
       goals_now: (goals ?? []).filter((g) => g.player_id === r.player_id).map((g) => ({ area: g.area, title: scrub(g.title) })),
       video: videoFor(r.player_id),
+      tags: playerTagLine(tags.players.get(r.player_id)) || undefined,
       recent: (recent ?? [])
         .filter((x) => x.player_id === r.player_id)
         .slice(0, 1)
@@ -130,7 +135,7 @@ export async function POST(request: NextRequest) {
         theirScore: match.their_score,
         lengthMins: match.length_mins,
         teamReport: scrub(match.report ?? "").slice(0, 2000),
-        videoStats: videoSummary(videoRow?.[0]),
+        videoStats: [videoSummary(videoRow?.[0]), teamTagLine(tags)].filter(Boolean).join(" ") || undefined,
         focus: [...new Set((sessions ?? []).map((s) => (s.focus as string).trim()).filter(Boolean))].join("; ").slice(0, 300),
       },
       aiPlayers,
@@ -195,4 +200,11 @@ function videoSummary(row?: { our_team: number | null; results: unknown } | null
       ].join("")
     : "";
   return `Possession ${us}% us, ${100 - us}% them.${trend}${pitch}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
+}
+
+/** Match totals from tagged events, for the AI prompt. */
+function teamTagLine(t: ReturnType<typeof tally>) {
+  const n = (side: "us" | "them", k: string) => t.team[side].get(k) ?? 0;
+  if (!t.team.us.size && !t.team.them.size) return "";
+  return `Tagged by the analyst: shots ${n("us", "shot")} (${n("us", "shot_on")} on target) vs ${n("them", "shot")} (${n("them", "shot_on")}); box entries ${n("us", "box_entry")} vs ${n("them", "box_entry")}; balls won ${n("us", "turnover_won")}, lost ${n("us", "turnover_lost")}.`;
 }

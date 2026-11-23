@@ -1378,3 +1378,90 @@ button.pl-slot{cursor:pointer}
 .vp-main{display:grid;gap:4px;flex:1;min-width:0}
 .vp-main small{font-size:12.5px}
 .mr-video{margin:0;font-size:13.5px;background:var(--surface-2);border-radius:10px;padding:8px 10px}
+
+/* ---------- Match analysis ---------- */
+.an{display:grid;gap:16px}
+.an-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.an-list li{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface)}
+.an-list li>div{display:grid;min-width:0}
+.an-list small{font-size:12.5px}
+.an-cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
+.an-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.an-cols .in-card{display:grid;gap:10px}
+.ap-player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+.ap-player video,.ap-player iframe{width:100%;height:100%;display:block;border:0}
+.ap-none{display:grid;place-items:center;color:#cfd5dc;padding:24px;text-align:center;font-size:14px}
+.ap-err{position:absolute;left:8px;right:8px;bottom:8px;margin:0;background:rgba(0,0,0,.75);color:#fff;font-size:13px;padding:8px;border-radius:8px}
+.an-reel{display:grid;gap:10px}
+.an-reel-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.an-reel-bar>span{flex:1;min-width:200px}
+.tg{display:grid;gap:12px}
+.tg-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tg-head h2{margin:0;font-family:var(--display);font-weight:500;font-size:22px;flex:1;min-width:200px}
+.tg-tools{display:flex;gap:6px;flex-wrap:wrap}
+.tg-grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+@media (max-width:980px){.tg-grid{grid-template-columns:1fr}}
+.tg-main{display:grid;gap:10px;min-width:0}
+.tg-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tg-now{font-family:var(--display);font-size:22px;min-width:72px}
+.tg-keys{font-size:12px}
+.tg-buttons{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px}
+.tg-b{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13.5px;cursor:pointer;min-height:44px;color:var(--ink);text-align:left}
+.tg-b:hover{border-color:var(--accent)}
+.tg-b:active{transform:translateY(1px)}
+.tg-b kbd{font-family:var(--font-mono,monospace);font-size:12px;min-width:22px;height:22px;display:inline-grid;place-items:center;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.tg-b.attack kbd{background:color-mix(in srgb,var(--good) 18%,var(--surface))}
+.tg-b.defend kbd{background:color-mix(in srgb,var(--bad) 14%,var(--surface))}
+.tg-b.set kbd{background:color-mix(in srgb,var(--gold) 26%,var(--surface))}
+.tg-edit{border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:12px;padding:12px;display:grid;gap:10px;background:var(--surface)}
+.tg-edit-head{display:flex;gap:10px;align-items:center}
+.tg-edit-head b{flex:1}
+.tg-edit-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.tg-team{font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px}
+.tg-team.us,.tg-dot.us{background:var(--accent);color:var(--accent-ink,#fff)}
+.tg-team.them,.tg-dot.them{background:#6b7a8f;color:#fff}
+.tg-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tg-chips button{font:inherit;font-size:13px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink)}
+.tg-chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+.tg-pitch{width:100%;max-width:460px;height:auto;cursor:crosshair}
+.tg-pin{fill:var(--accent);stroke:#fff;stroke-width:.6}
+.tg-pd{fill:var(--accent);opacity:.45}
+.tg-pd.them{fill:#6b7a8f;opacity:.7}
+.tg-side{display:grid;gap:10px;position:sticky;top:12px}
+.tg-stats{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--surface);font-size:13.5px}
+.tg-stats-h,.tg-stats-r{display:grid;grid-template-columns:1fr 70px 70px;gap:6px;padding:3px 0}
+.tg-stats-h b{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.tg-stats-r b{text-align:right}
+.tg-filter{display:grid;gap:6px}
+.tg-list{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.tg-list li{border-bottom:1px solid var(--line)}
+.tg-list li:last-child{border-bottom:0}
+.tg-list li.on{background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.tg-list li.muted{padding:12px;font-size:13px}
+.tg-list button{display:grid;grid-template-columns:54px 10px 1fr;gap:8px;align-items:center;width:100%;padding:8px 12px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.tg-t{font-size:13px;color:var(--muted)}
+.tg-dot{width:10px;height:10px;border-radius:50%}
+.tg-what{display:grid;min-width:0}
+.tg-what small{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tg-foot{margin:0;font-size:12px}
+.sc{display:grid;gap:12px}
+.sc-doc{display:grid;gap:16px;max-width:860px}
+.sc-head h1{margin:2px 0 8px}
+.sc-sec{display:grid;gap:8px}
+.sc-sec h2{margin:0;font-size:16px;font-family:var(--display);font-weight:500}
+.sc-nums{display:flex;flex-wrap:wrap;gap:14px;margin:0;font-size:14px}
+.sc-nums b{font-family:var(--display);font-size:20px;font-weight:500;margin-right:4px}
+.sc-pitches{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.sc-pitches figure{margin:0;display:grid;gap:4px}
+.sc-pitches figcaption{font-size:12px}
+.sc-kp{display:grid;grid-template-columns:64px 1fr 2fr 36px;gap:6px;align-items:center}
+.sc-clips{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:280px;overflow:auto}
+.sc-print{display:none;white-space:pre-wrap;margin:0}
+@media print{
+  .sc-noprint,.snav,.bnav,.side,.topbar,header.app-top{display:none!important}
+  .sc-doc textarea{display:none}
+  .sc-print{display:block}
+  .sc-doc input,.sc-doc select{border:0;padding:0;background:none}
+}
+.tg-bar .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink,#fff);font-weight:600}
+.tg-bar .seg button:last-child[aria-pressed="true"]{background:#6b7a8f;color:#fff}

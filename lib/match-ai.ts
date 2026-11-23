@@ -31,6 +31,8 @@ export type AiPlayer = {
   recent: string[];
   /** Estimates from automatic video analysis, if the player was identified by shirt number. */
   video?: string;
+  /** Events the analyst tagged for this player on the match video. */
+  tags?: string;
 };
 export type AiMatch = {
   ageGroup: string;
@@ -112,6 +114,7 @@ function prompt(match: AiMatch, players: AiPlayer[]) {
       p.goals_now.length ? `Current development goals: ${p.goals_now.map((g) => `${g.title} (${g.area})`).join("; ")}` : "Current development goals: none.",
       p.recent.length ? `Focus from their recent match feedback: ${p.recent.join("; ")}` : "",
       p.video ? `From automatic video analysis (an estimate, partial): ${p.video}` : "",
+      p.tags ? `Tagged on the match video by the analyst: ${p.tags}` : "",
       `</player>`,
     ]
       .filter(Boolean)

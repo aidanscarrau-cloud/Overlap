@@ -27,6 +27,7 @@ const NAV = [
   { href: "/fitness", label: "Fitness", short: "Fitness", icon: "i-clock" },
   { href: "/trials", label: "Trials", short: "Trials", icon: "i-trial" },
   { href: "/insights", label: "Insights", short: "Insights", icon: "i-chart" },
+  { href: "/analysis", label: "Analysis", short: "Analysis", icon: "i-board" },
   {
     href: "/announcements",
     label: "Announcements",
@@ -39,9 +40,9 @@ const NAV = [
 
 // Players and parents get a short, plain menu; nothing they don't need.
 // Bigger tools that work on a phone but are easier on a computer.
-const DESK = ["/drills", "/trials", "/insights", "/club"];
+const DESK = ["/drills", "/trials", "/insights", "/analysis", "/club"];
 // Sections that need Overlap Pro.
-const PRO_PATHS = ["/development", "/fitness", "/trials", "/insights", "/drills"];
+const PRO_PATHS = ["/development", "/fitness", "/trials", "/insights", "/drills", "/analysis"];
 
 const FAMILY_NAV = [
   { href: "/home", label: "Home", short: "Home", icon: "i-home" },
