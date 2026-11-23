@@ -40,6 +40,8 @@ export type AiMatch = {
   lengthMins: number;
   teamReport: string;
   focus: string;
+  /** From automatic video analysis, if the coach ran it: e.g. "Possession 58% us, 42% them". */
+  videoStats?: string;
 };
 export type AiDrill = { ref: string; name: string; kind: string; ages: string; about: string };
 
@@ -117,6 +119,7 @@ function prompt(match: AiMatch, players: AiPlayer[]) {
     `Age group: ${match.ageGroup || "not given"}. Opponent: ${match.opponent} (${match.homeAway}${match.competition ? `, ${match.competition}` : ""}). Score: ${score}. Match length: ${match.lengthMins} mins.`,
     match.focus ? `What the team has been working on at training: ${match.focus}` : "",
     match.teamReport ? `Coach's team report: ${match.teamReport}` : "",
+    match.videoStats ? `From automatic video analysis (an estimate): ${match.videoStats}` : "",
     `</match>`,
     ``,
     ...lines,

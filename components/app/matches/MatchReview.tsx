@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../AppProvider";
 import { ProBadge, Upgrade, usePro } from "../Pro";
+import { VideoStats } from "./VideoStats";
 import { LIBRARY_BY_KEY } from "@/lib/library-drills";
 import { areaLabel } from "@/lib/idp";
 import { errMsg } from "@/lib/format";
@@ -58,6 +59,7 @@ function Review({ match }: { match: Match }) {
     <div className="mr">
       <p className="mr-staff">🔒 Coaching staff only. Players and parents can&apos;t see anything on this tab.</p>
       <VideoCard match={match} />
+      <VideoStats match={match} />
       {!rows.length ? (
         <p className="muted" style={{ margin: 0 }}>
           Pick the squad on the Squad tab first. Then you can review each player here.

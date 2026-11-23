@@ -1,0 +1,10 @@
+# For running the worker locally (CPU). Modal installs its own copy, see modal_app.py.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0
+torchvision==0.29.2
+rfdetr==1.12.1
+trackers==2.7.0
+supervision==0.32.0
+opencv-python-headless==5.1.0.95
+scikit-learn==1.9.1
+numpy==2.5.4

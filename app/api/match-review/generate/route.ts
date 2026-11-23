@@ -41,11 +41,12 @@ export async function POST(request: NextRequest) {
   const since = new Date(Date.now() - 30 * 864e5).toISOString();
   const { count } = await supabase.from("match_reports").select("id", { count: "exact", head: true }).eq("club_id", match.club_id).eq("ai", true).gte("updated_at", since);
 
-  const [{ data: squad }, { data: reviews }, { data: team }, { data: drills }, { data: sessions }] = await Promise.all([
+  const [{ data: squad }, { data: reviews }, { data: team }, { data: drills }, { data: videoRow }, { data: sessions }] = await Promise.all([
     supabase.from("match_players").select("player_id,role,minutes,goals,assists,yellow,red").eq("match_id", matchId),
     supabase.from("match_reviews").select("*").eq("match_id", matchId),
     supabase.from("teams").select("name,age_group").eq("id", match.team_id).maybeSingle(),
     supabase.from("drills").select("id,name,category,description").eq("club_id", match.club_id).order("name").limit(150),
+    supabase.from("match_video_jobs").select("our_team,results").eq("match_id", matchId).eq("status", "done").not("our_team", "is", null).order("created_at", { ascending: false }).limit(1),
     supabase.from("sessions").select("focus").eq("team_id", match.team_id).lte("date", match.date).order("date", { ascending: false }).limit(4),
   ]);
   const want = new Set((body.player_ids ?? []).filter((x) => typeof x === "string"));
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
         theirScore: match.their_score,
         lengthMins: match.length_mins,
         teamReport: scrub(match.report ?? "").slice(0, 2000),
+        videoStats: videoSummary(videoRow?.[0]),
         focus: [...new Set((sessions ?? []).map((s) => (s.focus as string).trim()).filter(Boolean))].join("; ").slice(0, 300),
       },
       aiPlayers,
@@ -152,4 +154,14 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.from("match_reports").upsert(save, { onConflict: "match_id,player_id" });
   if (error) return NextResponse.json({ ok: false, error: error.message });
   return NextResponse.json({ ok: true, written: save.length });
+}
+
+/** One line of team stats from the video analysis, for the AI prompt. */
+function videoSummary(row?: { our_team: number | null; results: unknown } | null) {
+  const r = row?.results as { possession?: { pct?: number[]; by_5_min?: { from_min: number; team0_pct: number | null }[] }; quality?: { ball_seen_pct?: number } } | null | undefined;
+  if (!r?.possession?.pct || row?.our_team == null) return undefined;
+  const us = Math.round(r.possession.pct[row.our_team] ?? 0);
+  const halves = (r.possession.by_5_min ?? []).filter((b) => b.team0_pct !== null);
+  const trend = halves.length >= 4 ? ` By 5-minute block (our %): ${halves.map((b) => `${b.from_min}' ${Math.round(row.our_team === 0 ? b.team0_pct! : 100 - b.team0_pct!)}%`).join(", ")}.` : "";
+  return `Possession ${us}% us, ${100 - us}% them.${trend}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
 }

@@ -115,6 +115,10 @@ export default function Privacy() {
             When a coach asks for draft feedback, Overlap sends the AI service (Anthropic&apos;s Claude) the team&apos;s age group, each player&apos;s position, the coach&apos;s stats and notes, and the club&apos;s drill names. Players are sent as
             &ldquo;Player 1, Player 2&rdquo;: <b>no names, dates of birth, photos, video or contact details are sent</b>, and names typed into notes are removed first.
           </li>
+          <li>
+            Coaches can also upload a match video for automatic team stats such as possession. It goes to private storage (Cloudflare) and is analysed on a cloud computer (Modal) that only counts where the players and ball are. It
+            doesn&apos;t recognise faces or identify anyone, and the video is deleted as soon as the analysis finishes; only the numbers are kept.
+          </li>
           <li>Anthropic doesn&apos;t use this information to train its AI models, and it is processed under its commercial data terms. These requests may be processed outside Australia.</li>
         </ul>
       </section>

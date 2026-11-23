@@ -129,6 +129,27 @@ export type MatchReport = {
   author_name: string;
   updated_at: string;
 };
+/** Automatic stats worked out from a match video (coaching staff only). */
+export type VideoStats = {
+  version: number;
+  video: { seconds: number; analysed_seconds: number; frames_analysed: number; width: number; height: number };
+  quality: { ball_seen_pct: number; players_per_frame: number; tracks: number };
+  teams: { key: 0 | 1; colour: string; tracks: number; presence: number }[];
+  possession: { pct: [number, number]; seconds_with_owner: number; by_5_min: { from_min: number; team0_pct: number | null; seconds: number }[] };
+};
+export type VideoJob = {
+  id: string;
+  match_id: string;
+  status: "uploading" | "queued" | "processing" | "done" | "failed" | "cancelled";
+  progress: number;
+  message: string;
+  file_name: string;
+  file_size: number;
+  our_team: 0 | 1 | null;
+  results: VideoStats | null;
+  created_at: string;
+  updated_at: string;
+};
 export type MatchReply = { match_id: string; player_id: string; going: boolean; note: string; updated_at: string };
 export type Attendance = { session_id: string; player_id: string };
 
@@ -310,6 +331,7 @@ export type ClubData = {
   matchPlayers: MatchPlayer[];
   matchReplies: MatchReply[];
   matchReviews: MatchReview[];
+  videoJobs: VideoJob[];
   matchReports: MatchReport[];
   /** This person's own inbox, newest first (all their clubs). */
   notifications: AppNotification[];
