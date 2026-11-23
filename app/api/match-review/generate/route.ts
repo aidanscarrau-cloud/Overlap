@@ -199,7 +199,9 @@ function videoSummary(row?: { our_team: number | null; results: unknown } | null
         m.defensive_line_m ? ` Back line usually ${Math.round(m.defensive_line_m)} m from our goal.` : "",
       ].join("")
     : "";
-  return `Possession ${us}% us, ${100 - us}% them.${trend}${pitch}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
+  const rep = (r as { report?: { headline?: string; summary?: string[] } }).report;
+  const analyst = rep?.headline ? ` Analyst report: ${rep.headline} ${(rep.summary ?? []).slice(0, 4).join(" ")}` : "";
+  return `Possession ${us}% us, ${100 - us}% them.${trend}${pitch}${analyst}${(r.quality?.ball_seen_pct ?? 100) < 25 ? " (Low confidence: ball often not visible.)" : ""}`;
 }
 
 /** Match totals from tagged events, for the AI prompt. */

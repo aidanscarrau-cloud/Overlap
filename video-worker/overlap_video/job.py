@@ -27,11 +27,16 @@ def tidy_old_data() -> None:
     if not os.path.isdir(DATA_DIR):
         return
     cutoff = time.time() - KEEP_DAYS * 86400
+    import shutil
+
     for name in os.listdir(DATA_DIR):
         p = os.path.join(DATA_DIR, name)
         try:
-            if name.endswith(".npz") and os.path.getmtime(p) < cutoff:
-                os.remove(p)
+            if os.path.getmtime(p) < cutoff:
+                if name.endswith(".npz"):
+                    os.remove(p)
+                elif name.endswith("_frames") and os.path.isdir(p):
+                    shutil.rmtree(p, ignore_errors=True)
         except OSError:
             pass
 
@@ -128,5 +133,24 @@ def run_map(job: dict, secret: str) -> None:
         print("mapping failed", job_id, repr(e))
         try:
             post(cb, secret, {"job_id": job_id, "mapping_error": f"Couldn't map the pitch: {str(e)[:200]}"})
+        except Exception as e2:
+            print("couldn't report failure:", e2)
+
+
+def run_report(job: dict, secret: str) -> None:
+    """Write the AI analyst report from the key moments' frames and the match numbers."""
+    from .report import write_report
+
+    job_id, cb = job["job_id"], job["callback_url"]
+    try:
+        frames = data_file(job_id)[:-4] + "_frames"
+        if not os.path.isdir(frames):
+            raise RuntimeError("The frames for this video have expired or weren't saved. Analyse the video again.")
+        report = write_report(job, frames)
+        post(cb, secret, {"job_id": job_id, "report": json.loads(json.dumps(report, default=float))})
+    except Exception as e:
+        print("report failed", job_id, repr(e))
+        try:
+            post(cb, secret, {"job_id": job_id, "report_error": f"Couldn't write the report: {str(e)[:200]}"})
         except Exception as e2:
             print("couldn't report failure:", e2)

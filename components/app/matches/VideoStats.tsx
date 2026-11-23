@@ -6,6 +6,7 @@ import { errMsg } from "@/lib/format";
 import type { Match, VideoJob } from "@/lib/types";
 import { PitchMap } from "./PitchMap";
 import { VideoPlayers } from "./VideoPlayers";
+import { AnalystReport } from "./AnalystReport";
 
 /* Automatic match stats from video (coaching staff only). The coach picks the MP4 they downloaded from
  * Veo; it uploads in parts straight to storage, is analysed on a GPU, and is deleted afterwards. */
@@ -20,7 +21,7 @@ export function VideoStats({ match }: { match: Match }) {
   const abort = useRef<AbortController | null>(null);
 
   // While the server works on it, check back every 8 seconds.
-  const waiting = !!job && !upload && (["queued", "processing"].includes(job.status) || !!job.results?.mapping_pending);
+  const waiting = !!job && !upload && (["queued", "processing"].includes(job.status) || !!job.results?.mapping_pending || !!job.results?.report_pending);
   useEffect(() => {
     if (!waiting || !job) return;
     const t = setInterval(async () => {
@@ -272,6 +273,7 @@ function Results({ job, match }: { job: VideoJob; match: Match }) {
       <small className="muted">Used in this match&apos;s AI feedback.</small>
       <PitchMap job={job} usColour={usCol} themColour={themCol} />
       <VideoPlayers job={job} match={match} />
+      <AnalystReport job={job} match={match} />
     </div>
   );
 }

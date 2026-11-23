@@ -14,7 +14,7 @@ import { errMsg } from "@/lib/format";
 /** Video files opened from this computer, by match (kept while the page is open). */
 const localFiles = new Map<string, string>();
 
-export function Reel({ clips: initial, codes, periods, onClose, title, sources }: { clips: MatchEvent[]; codes?: EventKind[]; periods?: Record<string, Period[]>; onClose: () => void; title?: string; sources?: Record<string, VideoSource> }) {
+export function Reel({ clips: initial, codes, periods, onClose, title, sources, noTrim }: { clips: MatchEvent[]; codes?: EventKind[]; periods?: Record<string, Period[]>; onClose: () => void; title?: string; sources?: Record<string, VideoSource>; noTrim?: boolean }) {
   const { data, supabase, toast } = useApp();
   const [clips, setClips] = useState(initial);
   const [i, setI] = useState(0);
@@ -136,7 +136,7 @@ export function Reel({ clips: initial, codes, periods, onClose, title, sources }
         <button className="btn sm" type="button" disabled={i + 1 >= clips.length} onClick={() => go(i + 1)}>
           →
         </button>
-        <span className="rl-trim" aria-label="Trim this clip">
+        {!noTrim && <span className="rl-trim" aria-label="Trim this clip">
           Start
           <button type="button" onClick={() => trim("pre", 1)} title="Start a second earlier">
             −1s
@@ -151,7 +151,7 @@ export function Reel({ clips: initial, codes, periods, onClose, title, sources }
           <button type="button" onClick={() => trim("post", 1)} title="End a second later">
             +1s
           </button>
-        </span>
+        </span>}
         <button className="btn sm" type="button" onClick={fullscreen}>
           Full screen (F)
         </button>

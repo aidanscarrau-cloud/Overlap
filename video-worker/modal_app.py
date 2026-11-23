@@ -26,6 +26,7 @@ image = (
         "scikit-learn==1.9.1",
         "numpy==2.5.4",
         "easyocr==1.7.2",
+        "anthropic==2.12.0",
         "fastapi[standard]",
     )
     .add_local_python_source("overlap_video")
@@ -60,6 +61,16 @@ class Worker:
         data.commit()
 
 
+# The AI analyst report: Claude reviews the key moments' frames (needs ANTHROPIC_API_KEY in the overlap-video secret).
+@app.function(image=image, volumes={"/data": data}, secrets=[secret], timeout=900)
+def report_job(job: dict):
+    from overlap_video.job import run_report
+
+    os.environ["OVERLAP_DATA_DIR"] = "/data"
+    data.reload()
+    run_report(job, os.environ["VIDEO_WORKER_SECRET"])
+
+
 # Mapping the pitch is light work: no GPU needed.
 @app.function(image=image, volumes={"/data": data}, secrets=[secret], timeout=600)
 def map_job(job: dict):
@@ -79,6 +90,11 @@ async def start(request: Request):
     if not hmac.compare_digest(auth, f"Bearer {os.environ['VIDEO_WORKER_SECRET']}"):
         raise HTTPException(status_code=401)
     job = await request.json()
+    if job.get("kind") == "report":
+        if not all(isinstance(job.get(k), str) for k in ("job_id", "callback_url")) or not isinstance(job.get("results"), dict):
+            raise HTTPException(status_code=400)
+        report_job.spawn(job)
+        return {"ok": True}
     if job.get("kind") == "map":
         if not all(isinstance(job.get(k), str) for k in ("job_id", "callback_url")) or not isinstance(job.get("taps"), dict):
             raise HTTPException(status_code=400)

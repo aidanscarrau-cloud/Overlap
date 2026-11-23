@@ -5,7 +5,7 @@ export type Position = "GK" | "DEF" | "MID" | "FWD";
 export type Category = "warmup" | "technical" | "tactical" | "game" | "fitness" | "cooldown";
 
 export type Club = { id: string; name: string; logo_url: string | null; brand_primary?: string | null; brand_accent?: string | null; /** "lite" (free) or "pro". Missing (before update 31) counts as Pro. */ plan?: "lite" | "pro"; };
-export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null; /** Match review (AI player feedback) switched on by a club admin for this team (update 33). */ match_ai?: boolean };
+export type Team = { id: string; club_id: string; name: string; age_group: string; coach_name: string; logo_url: string | null; /** Match review (AI player feedback) switched on by a club admin for this team (update 33). */ match_ai?: boolean; /** AI analyst reports from video frames switched on by a club admin (update 40). */ video_ai?: boolean };
 export type Player = {
   id: string;
   club_id: string;
@@ -142,8 +142,25 @@ export type VideoStats = {
   /** Players identified by team and shirt number. */
   players?: { team: 0 | 1; number: number; seen_s: number; on_ball_s: number; tracks: number }[];
   mapping_pending?: boolean;
+  /** Key moments found in the video (for the AI analyst report). */
+  key?: { moments: { id: string; t: number; type: string; team: 0 | 1; x: number | null; length?: number }[]; territory: Record<string, number[]> | null; counts?: Record<string, Record<string, number>> };
+  report?: AnalystReport;
+  report_pending?: boolean;
+  report_error?: string;
+  report_context?: { score?: string; formation?: string; plan?: string; notes?: string };
   mapping_error?: string;
   taps?: Record<string, [number, number]>;
+};
+export type AnalystReport = {
+  headline: string;
+  summary: string[];
+  sections: { key: string; title: string; points: { text: string; moments: string[] }[] }[];
+  key_moments: { id: string; title: string; what_happened: string; coaching_point: string; verdict: "positive" | "negative" | "neutral"; t: number; team: 0 | 1 }[];
+  periods: string;
+  players: { team: "us" | "them"; shirt: number; note: string }[];
+  training_focus: { theme: string; why: string; drills: { ref: string; name: string }[] }[];
+  questions: string[];
+  confidence: string;
 };
 export type TeamMap = {
   /** Share of time in each cell (per 1000), grid[x][y], always attacking left to right. */

@@ -9,3 +9,4 @@ opencv-python-headless==5.1.0.95
 scikit-learn==1.9.1
 numpy==2.5.4
 easyocr==1.7.2
+anthropic==2.12.0

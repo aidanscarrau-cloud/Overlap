@@ -1538,3 +1538,27 @@ button.pl-slot{cursor:pointer}
 .cw-table td .input{min-width:0}
 .cw-key{width:52px;text-align:center;font-family:var(--font-mono,monospace);text-transform:uppercase}
 .cw-acts{white-space:nowrap}
+
+/* ---------- AI analyst report ---------- */
+.ar{display:grid;gap:12px}
+.ar p{margin:0;font-size:14.5px}
+.ar-doc{border-top:1px solid var(--line);padding-top:14px}
+.ar-head h3{margin:4px 0 0;font-family:var(--display);font-weight:500;font-size:22px;line-height:1.25}
+.ar-doc section{display:grid;gap:6px}
+.ar-doc h4{margin:0;font-size:15px;font-family:var(--display);font-weight:500}
+.ar-list{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14.5px}
+.ar-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ar-chips{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:4px;vertical-align:middle}
+.ar-chip{font:inherit;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer;color:var(--ink)}
+.ar-chip:hover{border-color:var(--accent)}
+.ar-moments{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ar-moments li{display:grid;grid-template-columns:72px 1fr;gap:10px;padding:10px;border-radius:10px;border:1px solid var(--line);border-left-width:4px}
+.ar-moments li.positive{border-left-color:var(--good)}
+.ar-moments li.negative{border-left-color:var(--bad)}
+.ar-moments li.neutral{border-left-color:var(--muted)}
+.ar-moments b{font-size:14.5px}
+.ar-moments p{font-size:14px;margin-top:2px}
+.ar-cp span{font-weight:600}
+.ar-t{font:inherit;font-size:13px;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--accent);height:fit-content}
+.ar-conf{font-size:12.5px!important}
+@media print{.ar-noprint,.vs-pick,.vs-poss,.vs-mins,.vp,.mr-card:not(:has(.ar-doc)),.mr-staff,.mr-head,.mr-list,.subtabs,.sheet-head{display:none!important}}

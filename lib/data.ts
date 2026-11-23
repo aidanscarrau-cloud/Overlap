@@ -116,6 +116,7 @@ export async function getClubData(): Promise<ClubData> {
       // Goal scorers for families, who can't see the whole squad (only after update 35).
       supabase.rpc("match_scorers"),
       supabase.from("match_video_jobs").select("id,numbers").eq("club_id", clubId),
+      supabase.from("teams").select("id,video_ai").eq("club_id", clubId),
     ]);
 
   // If we already know which club to show, load it at the same time as the memberships.
@@ -126,7 +127,7 @@ export async function getClubData(): Promise<ClubData> {
   const mine = mems.find((m) => m.club_id === wanted) ?? mems[0];
   const clubId = mine.club_id;
 
-  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows, reviewRows, reportRows, aiRow, videoRows, videoJobs, scorerRows, numberRows] =
+  const [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates, profile, inbox, prefs, matches, matchPlayers, matchReplies, selfReviews, chatAllowed, chats, brand, lineups, fitnessDays, fitnessResults, fitnessBands, injuries, trials, trialDates, trialApplicants, trialAttendance, trialRatings, planRow, avatarRows, reviewRows, reportRows, aiRow, videoRows, videoJobs, scorerRows, numberRows, videoAiRows] =
     guessed && mine.club_id === wanted ? guessed : await loadClub(clubId);
   for (const r of [teams, players, drills, sessions, attendance, members, memberTeams, memberPlayers, playerTeams, rolePerms, playerNotes, sessionNotes, announcements, replies, loads, evaluations, goals, goalUpdates]) if (r.error) throw r.error;
 
@@ -191,7 +192,8 @@ export async function getClubData(): Promise<ClubData> {
     myTeamIds,
     teams: (() => {
       const on = new Set(aiRow.error ? [] : ((aiRow.data ?? []) as { id: string; match_ai: boolean }[]).filter((t) => t.match_ai).map((t) => t.id));
-      return teamList.map((t) => ({ ...t, match_ai: on.has(t.id) }));
+      const vid = new Set(videoAiRows.error ? [] : ((videoAiRows.data ?? []) as { id: string; video_ai: boolean }[]).filter((t) => t.video_ai).map((t) => t.id));
+      return teamList.map((t) => ({ ...t, match_ai: on.has(t.id), video_ai: vid.has(t.id) }));
     })(),
     players: playerList,
     drills: (drills.data ?? []) as Drill[],

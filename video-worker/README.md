@@ -19,6 +19,15 @@ panorama of the ground. The coach taps 4+ known points on the panorama (halfway 
 corners); `pitchmap.py` solves the camera's position and height and the pitch size, and `mapping.py`
 works out heat maps, the ball in each third, distance covered, back-line height and width.
 
+## AI analyst report
+
+After the analysis, `moments.py` finds the key moments (attacks into the final third, the ball won high,
+dangerous moments near goal, long spells) from the tracking, and saves a 2 × 2 frame strip for each plus a few
+wide shots of the teams' shapes (`data/<job>_frames/`, kept 30 days). When a coach asks for the report,
+`report.py` sends those frames and the match numbers to Claude, which writes the analyst's report. Add
+`ANTHROPIC_API_KEY` to the `overlap-video` Modal secret for this. Frames go to Anthropic only for teams whose
+admin has switched on AI video reports.
+
 ## Try it on a clip (CPU)
 
     python -m venv .venv && . .venv/bin/activate

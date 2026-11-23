@@ -270,13 +270,25 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
     say(0.92, "Working out the teams")
     teams, team_of, centres = assign_teams(track_colours, track_seen, s)
     say(0.96, "Adding up possession")
-    poss, on_ball = possession(timeline, team_of, centres, s)
+    poss, on_ball, owners = possession(timeline, team_of, centres, s)
     numbers = {tid: shirt for tid in track_seen if reader is not None and (shirt := reader.number_of(tid)) is not None}
     people_stats = player_summary(track_seen, team_of, numbers, on_ball, s)
     if debug_dir:
         draw_debug(debug_dir, snaps, teams, team_of, centres)
     say(0.97, "Working out where the camera was looking")
-    pitch_view = camera_rays(reg, timeline, views, team_of, centres, data_path, numbers)
+    pitch_view, rows = camera_rays(reg, timeline, views, team_of, centres, data_path, numbers)
+    # Key moments and their frames, for the AI analyst report (kept with the positions, 30 days).
+    key = {"moments": [], "territory": None}
+    if rows is not None:
+        from .moments import find_moments, save_frames, shape_times
+
+        say(0.98, "Finding the key moments")
+        key = find_moments(rows, {round(float(tt), 1): o for tt, o in owners})
+        if data_path and key["moments"]:
+            try:
+                save_frames(path, key["moments"], shape_times(timeline), data_path[:-4] + "_frames")
+            except Exception as e:  # the report can still be written from the numbers
+                print("couldn't save frames:", e)
 
     return {
         "version": 1,
@@ -289,6 +301,7 @@ def analyse(path: str, s: Settings | None = None, progress: Callable[[float, str
         "teams": teams,
         "possession": poss,
         "players": people_stats,
+        "key": key,
         "pitch_view": pitch_view,
     }
 
@@ -319,7 +332,7 @@ def camera_rays(reg, timeline, views, team_of, centres, data_path, numbers=None)
     try:
         solve_cameras(reg.keys)
     except Exception as e:  # mapping is a bonus; the team stats still stand
-        return {"error": f"Couldn't work out the camera: {str(e)[:120]}"}
+        return {"error": f"Couldn't work out the camera: {str(e)[:120]}"}, None
     rows = []
     for (t, ball, players), (k, H, sc) in zip(timeline, views):
         if k < 0 or reg.keys[k].R is None:
@@ -333,12 +346,13 @@ def camera_rays(reg, timeline, views, team_of, centres, data_path, numbers=None)
         if ball:
             rows.append((t, -1, -1, *r[-1], 1, -1))
     if not rows:
-        return {"error": "Couldn't place anyone on the pitch."}
+        return {"error": "Couldn't place anyone on the pitch."}, None
+    arr = np.array(rows, dtype=np.float32)
     if data_path:
-        np.savez_compressed(data_path, rows=np.array(rows, dtype=np.float32))
+        np.savez_compressed(data_path, rows=arr)
     pano, info = render_pano(reg.keys, 1600)
     ok, jpg = cv2.imencode(".jpg", pano, [cv2.IMWRITE_JPEG_QUALITY, 78])
-    return {"pano_jpeg": base64.b64encode(jpg.tobytes()).decode() if ok else None, "pano": info, "keyframes": len(reg.keys), "placed": sum(k.R is not None for k in reg.keys), "points": len(rows)}
+    return {"pano_jpeg": base64.b64encode(jpg.tobytes()).decode() if ok else None, "pano": info, "keyframes": len(reg.keys), "placed": sum(k.R is not None for k in reg.keys), "points": len(rows)}, arr
 
 
 def detect(model, frame: np.ndarray, field: np.ndarray, threshold: float, tiles: bool):
@@ -480,7 +494,7 @@ def possession(timeline, team_of, centres, s: Settings):
         a = sum(per_min[m][0] for m in range(m0, m0 + 5) if m in per_min)
         b = sum(per_min[m][1] for m in range(m0, m0 + 5) if m in per_min)
         by_5.append({"from_min": m0, "team0_pct": round(100 * a / (a + b), 1) if a + b else None, "seconds": round(a + b, 1)})
-    return {"pct": pct, "seconds_with_owner": round(known, 1), "by_5_min": by_5}, on_ball
+    return {"pct": pct, "seconds_with_owner": round(known, 1), "by_5_min": by_5}, on_ball, smooth
 
 
 def draw_debug(folder: str, snaps, teams, team_of, centres):
