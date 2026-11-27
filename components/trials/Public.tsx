@@ -218,7 +218,7 @@ export function OfferResponse({ token, offer, askDecline, preview }: { token: st
         </div>
         <h1>Welcome to {offer.team}!</h1>
         <p>
-          {offer.player} is now part of the team. {offer.club.name} uses Overlap for training times, matches and team chat. Set up your account to get started; you&apos;ll be linked to {offer.player} straight away.
+          {offer.player} is now part of the team. {offer.club.name} is trialling Overlap for training times, matches and team chat. Set up your account to get started; you&apos;ll be linked to {offer.player} straight away.
         </p>
         {code && (
           <>

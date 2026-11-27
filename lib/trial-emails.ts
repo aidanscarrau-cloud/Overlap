@@ -49,7 +49,7 @@ export function offerEmail(
         heading: "What happens next",
         items: [
           `Press Accept the place. ${first} is added to the ${o.team} squad straight away.`,
-          `We'll email you a link and a club code to set up your free Overlap account. ${o.club.name} uses Overlap for training times, matches, team chat and player development.`,
+          `We'll email you a link and a club code to set up your free Overlap account. ${o.club.name} is trialling Overlap for training times, matches, team chat and player development.`,
           `Create your account and press Join club. You'll be linked to ${first} automatically.`,
           "Reply to training and matches, see the schedule and chat with the team, all from your phone.",
         ],
@@ -85,7 +85,7 @@ export function welcomeEmail(
     greeting: `Hi ${o.parentName.split(" ")[0] || "there"},`,
     paragraphs: [
       invite ? `${o.club.name} is moving ${o.team} onto Overlap, and ${first} is already in the squad.` : `Great news: ${first} is now part of ${o.team}!`,
-      `${o.club.name} uses Overlap for training times, matches, team chat and ${first}'s development. It takes about a minute to set up.`,
+      `${o.club.name} is trialling Overlap for training times, matches, team chat and ${first}'s development. It takes about a minute to set up.`,
     ],
     code: { label: "Your club code", value: o.code },
     button: { label: "Set up my account", url: join },
