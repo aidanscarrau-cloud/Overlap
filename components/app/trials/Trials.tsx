@@ -474,7 +474,7 @@ function TrialView({
       };
       toast(
         j.ok
-          ? `Sent 2 test emails to ${j.to}: the offer, and the welcome email families get after accepting.`
+          ? `Sent 3 test emails to ${j.to}: 1 Offer (when you pick a player), 2 Welcome (after they accept), 3 Not selected (when you press Not this time).`
           : (j.error ?? "Couldn't send"),
       );
     } catch {
@@ -563,7 +563,7 @@ function TrialView({
                   disabled={testing}
                   onClick={sendTest}
                 >
-                  {testing ? "Sending…" : "Send me a test offer"}
+                  {testing ? "Sending…" : "Send me test emails"}
                 </button>
                 <button className="btn sm" onClick={onEdit}>
                   Edit
@@ -1920,7 +1920,7 @@ function SendSheet({
           {kind === "offer"
             ? "Each family gets an email with Accept and Decline buttons. When they accept, the player is added to the team and the family is sent an invite to join the club on Overlap."
             : kind === "not_selected"
-              ? "Each family gets a kind thank-you email letting them know there isn't a place this time."
+              ? "Each family gets a kind thank-you email letting them know that, unfortunately, there isn't a place this time, with encouragement to keep playing and an offer of feedback."
               : "Each family gets an email with the trial dates and times."}
         </p>
         <p className="tr-names">

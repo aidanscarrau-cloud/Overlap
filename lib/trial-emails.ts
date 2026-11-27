@@ -28,10 +28,10 @@ export function offerEmail(
     club: o.club,
     siteUrl: o.siteUrl,
     banner: o.test
-      ? "TEST: this is what families will get. Nothing changes if you press the buttons."
+      ? "TEST EMAIL 1 OF 3 – THE OFFER. Families get this when you press Send offer on a player. It asks them to accept or decline the place. Nothing changes if you press the buttons."
       : undefined,
     kicker: "Trial result",
-    subject: `${o.test ? "[Test] " : ""}${first} has been offered a place in ${o.team}`,
+    subject: `${o.test ? "[Test 1 of 3: Offer] " : ""}${first} has been offered a place in ${o.team}`,
     greeting: `Hi ${o.parentName.split(" ")[0] || "there"},`,
     paragraphs: [
       `Thanks for coming along to ${o.trialTitle}. We'd love ${first} to join ${o.team}!`,
@@ -59,6 +59,44 @@ export function offerEmail(
   };
 }
 
+/** "Unfortunately not this time": a kind no for families whose child wasn't picked. */
+export function notSelectedEmail(
+  o: Base & {
+    player: string;
+    parentName: string;
+    team: string;
+    trialTitle: string;
+    message?: string;
+    coach?: string;
+    cc?: string;
+    replyTo?: string;
+    test?: boolean;
+  },
+) {
+  const first = o.player.split(" ")[0];
+  const sign = o.coach ? `${o.coach}, ${o.club.name}` : o.club.name;
+  return {
+    to: o.to,
+    cc: o.cc,
+    replyTo: o.replyTo,
+    club: o.club,
+    siteUrl: o.siteUrl,
+    banner: o.test ? "TEST EMAIL 3 OF 3 – NOT SELECTED. Families get this when you press Not this time on a player (you can untick emailing if you've told them in person)." : undefined,
+    kicker: "Trial result",
+    subject: `${o.test ? "[Test 3 of 3: Not selected] " : ""}${o.trialTitle}: thank you for trialling`,
+    greeting: `Hi ${o.parentName.split(" ")[0] || "there"},`,
+    paragraphs: [
+      `Thank you for bringing ${first} to ${o.trialTitle}. We really enjoyed having ${first} along.`,
+      `Unfortunately, we're not able to offer ${first} a place in ${o.team} this time. We had lots of good players and only a few spots, so it was a hard decision.`,
+      ...(o.message ? [o.message] : []),
+      `Please don't let this stop ${first} playing. We'd love to see ${first} keep at it and come along to our next trials.`,
+      "If you'd like some feedback, just reply to this email.",
+      `– ${sign}`,
+    ],
+    footer: `You're getting this because ${first} trialled with ${o.club.name}.`,
+  };
+}
+
 export function welcomeEmail(
   o: Base & {
     player: string;
@@ -78,10 +116,10 @@ export function welcomeEmail(
     club: o.club,
     siteUrl: o.siteUrl,
     banner: o.test
-      ? "TEST: this is the email families get after they accept. The code below is a sample and won't work."
+      ? "TEST EMAIL 2 OF 3 – WELCOME. Families get this automatically once they press Accept on the offer. It's how they set up their Overlap account. The code below is a sample and won't work."
       : undefined,
     kicker: invite ? "You're invited" : "Welcome to the club",
-    subject: invite ? `${o.club.name}: join ${first}'s team on Overlap` : `${o.test ? "[Test] " : ""}Welcome to ${o.club.name}: set up your account`,
+    subject: invite ? `${o.club.name}: join ${first}'s team on Overlap` : `${o.test ? "[Test 2 of 3: Welcome] " : ""}Welcome to ${o.club.name}: set up your account`,
     greeting: `Hi ${o.parentName.split(" ")[0] || "there"},`,
     paragraphs: [
       invite ? `${o.club.name} is moving ${o.team} onto Overlap, and ${first} is already in the squad.` : `Great news: ${first} is now part of ${o.team}!`,

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mailer, sendClubMessage } from "@/lib/email-server";
 import { dateLine } from "@/lib/trials";
-import { offerEmail, welcomeEmail } from "@/lib/trial-emails";
+import { notSelectedEmail, offerEmail, welcomeEmail } from "@/lib/trial-emails";
 
 type Kind = "offer" | "not_selected" | "details" | "test";
 type Row = { id: string; trial_id: string; full_name: string; parent_name: string; parent_email: string; player_email: string; offer_token: string; status: string };
@@ -60,23 +60,9 @@ export async function POST(request: NextRequest) {
           offerEmail({ to: r.parent_email, cc: r.player_email || undefined, replyTo: auth.user.email ?? undefined, club, siteUrl, player: r.full_name, parentName: r.parent_name, team, trialTitle: trial.title, url: `${siteUrl}/t/offer/${r.offer_token}`, message, coach }),
         );
       } else if (kind === "not_selected") {
-        await sendClubMessage({
-          to: r.parent_email,
-          cc: r.player_email || undefined,
-          replyTo: auth.user.email ?? undefined,
-          club,
-          siteUrl,
-          kicker: "Trial result",
-          subject: `${trial.title}: thank you`,
-          greeting: hi,
-          paragraphs: [
-            `Thank you for bringing ${first} to ${trial.title}. It was a tough decision with lots of good players, and unfortunately we can't offer ${first} a place in ${team} this time.`,
-            ...extra,
-            `We hope to see ${first} keep playing and trial again. Reply to this email if you'd like feedback.`,
-            `– ${sign}`,
-          ],
-          footer: `You're getting this because ${first} trialled with ${club.name}.`,
-        });
+        await sendClubMessage(
+          notSelectedEmail({ to: r.parent_email, cc: r.player_email || undefined, replyTo: auth.user.email ?? undefined, club, siteUrl, player: r.full_name, parentName: r.parent_name, team, trialTitle: trial.title, message, coach }),
+        );
       } else {
         await sendClubMessage({
           to: r.parent_email,
@@ -112,7 +98,7 @@ async function loadTrial(supabase: Supa, id: string) {
   return { trial, team, club: { name: c?.name ?? "Your club", logo: c?.logo_url, primary: c?.brand_primary, accent: c?.brand_accent } };
 }
 
-// Sends the coach (only ever their own address) the offer email and the welcome email exactly as a family
+// Sends the coach (only ever their own address) the offer, welcome and "not this time" emails exactly as a family
 // would get them, with links to a preview page that doesn't change anything.
 async function sendTest(request: NextRequest, supabase: Supa, user: { email?: string; user_metadata?: Record<string, unknown> }, trialId: string, message: string) {
   if (!user.email) return NextResponse.json({ ok: false, error: "Your account has no email address." });
@@ -125,8 +111,9 @@ async function sendTest(request: NextRequest, supabase: Supa, user: { email?: st
   try {
     await sendClubMessage(offerEmail({ ...common, trialTitle: t.trial.title, url: `${siteUrl}/t/offer/preview?t=${t.trial.slug}`, message, coach }));
     await sendClubMessage(welcomeEmail({ ...common, code: "SAMPLE12" }));
+    await sendClubMessage(notSelectedEmail({ ...common, trialTitle: t.trial.title, coach }));
   } catch (e) {
     return NextResponse.json({ ok: false, error: (e as Error).message });
   }
-  return NextResponse.json({ ok: true, sent: 2, to: user.email });
+  return NextResponse.json({ ok: true, sent: 3, to: user.email });
 }
